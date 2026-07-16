@@ -88,3 +88,34 @@ link de acesso por e-mail. Ao entrar (por esse link, por senha, ou pelo
 Google, usando o mesmo e-mail convidado), o sistema vincula automaticamente o
 usuário ao time via a função `accept_team_invite` (valida no próprio banco
 que o e-mail do convite bate com o do usuário autenticado).
+
+## Funcionalidades adicionais
+
+- **Esqueci minha senha**: link na tela de login, reaproveita `/auth/callback`
+  e a página `/redefinir-senha` (também usada em `/meu-time/conta`).
+- **Gerador de rodadas**: na aba Jogos, cria automaticamente os confrontos
+  todos-contra-todos (turno único ou ida e volta).
+- **Artilharia e cartões**: lançados por jogo (aba Jogos → "Eventos"), com
+  tabelas em Estatísticas (admin) e na página pública do campeonato.
+- **Fase de grupos**: times podem receber um campo "Grupo" opcional; a
+  classificação passa a ser calculada por grupo quando ao menos um time tiver
+  grupo definido.
+- **Chaveamento**: `/campeonato/[id]/chaveamento` mostra os jogos agrupados
+  por rodada/fase, ordenados pela data mais próxima — é só visualização, não
+  faz avanço automático de vencedor para a próxima fase.
+- **Exportar classificação como imagem**: botão na página pública do
+  campeonato, gera um PNG da tabela via `html2canvas-pro`.
+- **CI**: `.github/workflows/ci.yml` roda typecheck, lint, testes (Vitest) e
+  build a cada push/PR.
+
+## Múltiplos admins por campeonato (co-organizadores)
+
+A base de dados já suporta isso — tabela `championship_admins` e a função
+`is_championship_admin()` (usada em todas as policies de escrita) já aceitam
+tanto o dono original quanto qualquer usuário listado nessa tabela para o
+mesmo campeonato. **Ainda não existe uma tela para gerenciar isso** (só dá
+para adicionar um co-admin rodando um `insert` direto no Supabase). Se for
+usar isso de verdade, também será preciso ajustar o redirecionamento
+pós-login e a listagem "/campeonatos" para considerar campeonatos
+co-administrados, não só os que o usuário é dono — avise que eu implemento
+essa parte.
