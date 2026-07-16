@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { revalidateChampionship } from "@/lib/revalidate";
 
 function parseTeamId(formData: FormData) {
   const value = String(formData.get("team_id") || "");
@@ -20,21 +20,42 @@ function parsePosition(formData: FormData) {
   return value ? value : null;
 }
 
+async function assertTeamBelongsToChampionship(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  championshipId: string,
+  teamId: string | null
+) {
+  if (!teamId) return;
+
+  const { data, error } = await supabase
+    .from("teams")
+    .select("id")
+    .eq("championship_id", championshipId)
+    .eq("id", teamId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("O time selecionado não pertence a este campeonato.");
+}
+
 export async function createPlayer(championshipId: string, formData: FormData) {
   const name = String(formData.get("name") || "").trim();
-  if (!name) return;
+  if (!name) throw new Error("Informe o nome do jogador.");
 
+  const teamId = parseTeamId(formData);
   const supabase = await createClient();
+  await assertTeamBelongsToChampionship(supabase, championshipId, teamId);
+
   const { error } = await supabase.from("players").insert({
     championship_id: championshipId,
     name,
-    team_id: parseTeamId(formData),
+    team_id: teamId,
     number: parseNumber(formData),
     position: parsePosition(formData),
   });
 
   if (error) throw new Error(error.message);
-  revalidatePath(`/campeonatos/${championshipId}/jogadores`);
+  revalidateChampionship(championshipId);
 }
 
 export async function updatePlayer(
@@ -43,21 +64,27 @@ export async function updatePlayer(
   formData: FormData
 ) {
   const name = String(formData.get("name") || "").trim();
-  if (!name) return;
+  if (!name) throw new Error("Informe o nome do jogador.");
 
+  const teamId = parseTeamId(formData);
   const supabase = await createClient();
-  const { error } = await supabase
+  await assertTeamBelongsToChampionship(supabase, championshipId, teamId);
+
+  const { data, error } = await supabase
     .from("players")
     .update({
       name,
-      team_id: parseTeamId(formData),
+      team_id: teamId,
       number: parseNumber(formData),
       position: parsePosition(formData),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
-  revalidatePath(`/campeonatos/${championshipId}/jogadores`);
+  if (!data) throw new Error("Jogador não encontrado ou sem permissão para editar.");
+  revalidateChampionship(championshipId);
 }
 
 export async function deletePlayer(id: string, championshipId: string) {
@@ -65,5 +92,5 @@ export async function deletePlayer(id: string, championshipId: string) {
   const { error } = await supabase.from("players").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
-  revalidatePath(`/campeonatos/${championshipId}/jogadores`);
+  revalidateChampionship(championshipId);
 }

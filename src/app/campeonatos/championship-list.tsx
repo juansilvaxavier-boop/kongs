@@ -11,6 +11,10 @@ type Championship = {
   created_at: string;
 };
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
+}
+
 export function ChampionshipList({ items }: { items: Championship[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -21,8 +25,12 @@ export function ChampionshipList({ items }: { items: Championship[] }) {
           {editingId === championship.id ? (
             <form
               action={async (formData) => {
-                await renameChampionship(championship.id, formData);
-                setEditingId(null);
+                try {
+                  await renameChampionship(championship.id, formData);
+                  setEditingId(null);
+                } catch (error) {
+                  alert(errorMessage(error));
+                }
               }}
               className="flex flex-col gap-2"
             >
@@ -76,7 +84,11 @@ export function ChampionshipList({ items }: { items: Championship[] }) {
                         `Excluir o campeonato "${championship.name}"? Essa ação não pode ser desfeita.`
                       )
                     ) {
-                      await deleteChampionship(championship.id);
+                      try {
+                        await deleteChampionship(championship.id);
+                      } catch (error) {
+                        alert(errorMessage(error));
+                      }
                     }
                   }}
                 >

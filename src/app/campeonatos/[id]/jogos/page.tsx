@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { Button, Card, EmptyState, Input, Label, PageHeader, Select } from "@/components/ui";
+import { naturalCompare } from "@/lib/datetime";
 import { createGame } from "./actions";
+import { GameDateField } from "./game-date-field";
 import { GameTable } from "./game-table";
 
 export default async function JogosPage({
@@ -11,12 +13,11 @@ export default async function JogosPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: games }, { data: teams }] = await Promise.all([
+  const [{ data: gamesData }, { data: teams }] = await Promise.all([
     supabase
       .from("games")
       .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played")
       .eq("championship_id", id)
-      .order("round")
       .order("date", { ascending: true, nullsFirst: false }),
     supabase
       .from("teams")
@@ -24,6 +25,10 @@ export default async function JogosPage({
       .eq("championship_id", id)
       .order("name"),
   ]);
+
+  const games = gamesData
+    ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
+    : gamesData;
 
   const createGameWithId = createGame.bind(null, id);
   const hasEnoughTeams = (teams ?? []).length >= 2;
@@ -70,7 +75,7 @@ export default async function JogosPage({
             </div>
             <div className="flex-1 basis-40">
               <Label>Data</Label>
-              <Input name="date" type="datetime-local" />
+              <GameDateField />
             </div>
             <Button type="submit">Agendar</Button>
           </form>

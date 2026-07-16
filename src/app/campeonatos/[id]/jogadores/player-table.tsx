@@ -5,6 +5,10 @@ import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui"
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import { deletePlayer, updatePlayer } from "./actions";
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
+}
+
 type Team = { id: string; name: string };
 type Player = {
   id: string;
@@ -50,8 +54,12 @@ export function PlayerTable({
                 <td colSpan={5} className="px-4 py-3">
                   <form
                     action={async (formData) => {
-                      await updatePlayer(player.id, championshipId, formData);
-                      setEditingId(null);
+                      try {
+                        await updatePlayer(player.id, championshipId, formData);
+                        setEditingId(null);
+                      } catch (error) {
+                        alert(errorMessage(error));
+                      }
                     }}
                     className="flex flex-wrap items-center gap-2"
                   >
@@ -132,7 +140,11 @@ export function PlayerTable({
                           if (
                             window.confirm(`Excluir o jogador "${player.name}"?`)
                           ) {
-                            await deletePlayer(player.id, championshipId);
+                            try {
+                              await deletePlayer(player.id, championshipId);
+                            } catch (error) {
+                              alert(errorMessage(error));
+                            }
                           }
                         }}
                       >

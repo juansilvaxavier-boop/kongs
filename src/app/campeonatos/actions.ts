@@ -3,10 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { revalidateChampionship } from "@/lib/revalidate";
 
 export async function createChampionship(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
-  if (!name) return;
+  if (!name) throw new Error("Informe o nome do campeonato.");
 
   const supabase = await createClient();
   const {
@@ -28,18 +29,21 @@ export async function createChampionship(formData: FormData) {
 
 export async function renameChampionship(id: string, formData: FormData) {
   const name = String(formData.get("name") || "").trim();
-  if (!name) return;
+  if (!name) throw new Error("Informe o nome do campeonato.");
 
   const supabase = await createClient();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("championships")
     .update({ name })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
+  if (!data) throw new Error("Campeonato não encontrado ou sem permissão para editar.");
 
   revalidatePath("/campeonatos");
-  revalidatePath(`/campeonatos/${id}`);
+  revalidateChampionship(id);
 }
 
 export async function deleteChampionship(id: string) {

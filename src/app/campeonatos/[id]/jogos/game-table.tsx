@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
 import { deleteGame, updateGame } from "./actions";
+import { GameDateField } from "./game-date-field";
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
+}
 
 type Team = { id: string; name: string };
 type Game = {
@@ -62,8 +67,12 @@ export function GameTable({
                 <td colSpan={6} className="px-4 py-4">
                   <form
                     action={async (formData) => {
-                      await updateGame(game.id, championshipId, formData);
-                      setEditingId(null);
+                      try {
+                        await updateGame(game.id, championshipId, formData);
+                        setEditingId(null);
+                      } catch (error) {
+                        alert(errorMessage(error));
+                      }
                     }}
                     className="flex flex-col gap-3"
                   >
@@ -75,9 +84,7 @@ export function GameTable({
                         placeholder="Rodada"
                         className="max-w-[9rem]"
                       />
-                      <Input
-                        name="date"
-                        type="datetime-local"
+                      <GameDateField
                         defaultValue={toDatetimeLocal(game.date)}
                         className="max-w-[12rem]"
                       />
@@ -185,7 +192,11 @@ export function GameTable({
                               )}"?`
                             )
                           ) {
-                            await deleteGame(game.id, championshipId);
+                            try {
+                              await deleteGame(game.id, championshipId);
+                            } catch (error) {
+                              alert(errorMessage(error));
+                            }
                           }
                         }}
                       >

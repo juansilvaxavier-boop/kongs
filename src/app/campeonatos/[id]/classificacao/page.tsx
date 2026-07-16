@@ -35,19 +35,6 @@ export default async function ClassificacaoPage({
 
   const standings = computeStandings(teams, games ?? []);
 
-  const columns: { key: keyof (typeof standings)[number]; label: string }[] = [
-    { key: "pos", label: "Pos" },
-    { key: "teamName", label: "Time" },
-    { key: "pts", label: "Pts" },
-    { key: "j", label: "J" },
-    { key: "v", label: "V" },
-    { key: "e", label: "E" },
-    { key: "d", label: "D" },
-    { key: "gp", label: "GP" },
-    { key: "gc", label: "GC" },
-    { key: "sg", label: "SG" },
-  ];
-
   return (
     <div>
       <PageHeader eyebrow="Tabela do campeonato" title="Classificação" />
@@ -56,14 +43,16 @@ export default async function ClassificacaoPage({
         <table className="w-full min-w-[36rem] text-sm">
           <thead>
             <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
-              {columns.map((col) => (
-                <th
-                  key={col.key}
-                  className={`px-4 py-3 ${col.key !== "teamName" ? "text-center" : ""}`}
-                >
-                  {col.label}
-                </th>
-              ))}
+              <th className="px-4 py-3 text-center">Pos</th>
+              <th className="px-4 py-3">Time</th>
+              <th className="px-4 py-3 text-center">Pts</th>
+              <th className="px-4 py-3 text-center">J</th>
+              <th className="px-4 py-3 text-center">V</th>
+              <th className="px-4 py-3 text-center">E</th>
+              <th className="px-4 py-3 text-center">D</th>
+              <th className="px-4 py-3 text-center">GP</th>
+              <th className="px-4 py-3 text-center">GC</th>
+              <th className="px-4 py-3 text-center">SG</th>
             </tr>
           </thead>
           <tbody>

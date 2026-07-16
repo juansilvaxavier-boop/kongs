@@ -4,6 +4,10 @@ import { useState } from "react";
 import { Button, Card, EmptyState, Input, Select } from "@/components/ui";
 import { deleteTeam, updateTeam } from "./actions";
 
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
+}
+
 type Coach = { id: string; name: string };
 type Team = { id: string; name: string; coach_id: string | null };
 
@@ -41,8 +45,12 @@ export function TeamTable({
                 <td colSpan={3} className="px-4 py-3">
                   <form
                     action={async (formData) => {
-                      await updateTeam(team.id, championshipId, formData);
-                      setEditingId(null);
+                      try {
+                        await updateTeam(team.id, championshipId, formData);
+                        setEditingId(null);
+                      } catch (error) {
+                        alert(errorMessage(error));
+                      }
                     }}
                     className="flex flex-wrap items-center gap-2"
                   >
@@ -94,7 +102,11 @@ export function TeamTable({
                       <form
                         action={async () => {
                           if (window.confirm(`Excluir o time "${team.name}"?`)) {
-                            await deleteTeam(team.id, championshipId);
+                            try {
+                              await deleteTeam(team.id, championshipId);
+                            } catch (error) {
+                              alert(errorMessage(error));
+                            }
                           }
                         }}
                       >
