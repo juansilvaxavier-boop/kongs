@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button, Card, EmptyState, Input, Label, PageHeader } from "@/components/ui";
 import { createChampionship } from "./actions";
@@ -5,9 +6,15 @@ import { ChampionshipList } from "./championship-list";
 
 export default async function CampeonatosPage() {
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
   const { data: championships } = await supabase
     .from("championships")
     .select("id, name, created_at")
+    .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
   return (

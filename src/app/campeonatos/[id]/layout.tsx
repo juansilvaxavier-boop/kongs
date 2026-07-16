@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ChampionshipSwitcher, ChampionshipTabs } from "./nav";
 
@@ -13,11 +13,22 @@ export default async function ChampionshipLayout({
   const { id } = await params;
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
   const [{ data: championship }, { data: championships }] = await Promise.all([
-    supabase.from("championships").select("id, name").eq("id", id).maybeSingle(),
     supabase
       .from("championships")
       .select("id, name")
+      .eq("id", id)
+      .eq("owner_id", user.id)
+      .maybeSingle(),
+    supabase
+      .from("championships")
+      .select("id, name")
+      .eq("owner_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
 
