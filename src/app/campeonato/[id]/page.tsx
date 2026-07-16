@@ -6,6 +6,7 @@ import { computeStandings } from "@/lib/standings";
 import { computeTopScorers } from "@/lib/stats";
 import { naturalCompare } from "@/lib/datetime";
 import { gamesWithinTeams, groupTeams } from "@/lib/groups";
+import { ExportImageButton } from "@/components/export-image-button";
 
 export default async function PublicChampionshipPage({
   params,
@@ -43,23 +44,36 @@ export default async function PublicChampionshipPage({
   return (
     <div className="space-y-10">
       <div className="space-y-8">
-        <PageHeader eyebrow="Tabela do campeonato" title="Classificação" />
+        <PageHeader
+          eyebrow="Tabela do campeonato"
+          title="Classificação"
+          action={
+            teams && teams.length > 0 ? (
+              <ExportImageButton
+                targetId="classificacao-export"
+                fileName={`classificacao-${id}`}
+              />
+            ) : undefined
+          }
+        />
         {!teams || teams.length === 0 ? (
           <EmptyState>Ainda não há times cadastrados.</EmptyState>
         ) : (
-          groups.map((group) => (
-            <div key={group.groupName ?? "geral"}>
-              {group.groupName && (
-                <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
-                  {group.groupName}
-                </h2>
-              )}
-              <StandingsTable
-                standings={computeStandings(group.teams, gamesWithinTeams(games, group.teams))}
-                teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
-              />
-            </div>
-          ))
+          <div id="classificacao-export" className="space-y-8 bg-background p-1">
+            {groups.map((group) => (
+              <div key={group.groupName ?? "geral"}>
+                {group.groupName && (
+                  <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+                    {group.groupName}
+                  </h2>
+                )}
+                <StandingsTable
+                  standings={computeStandings(group.teams, gamesWithinTeams(games, group.teams))}
+                  teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
+                />
+              </div>
+            ))}
+          </div>
         )}
       </div>
 

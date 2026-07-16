@@ -1,0 +1,45 @@
+"use client";
+
+import { useState } from "react";
+import { Button } from "./ui";
+
+export function ExportImageButton({
+  targetId,
+  fileName,
+}: {
+  targetId: string;
+  fileName: string;
+}) {
+  const [pending, setPending] = useState(false);
+
+  return (
+    <Button
+      type="button"
+      variant="secondary"
+      disabled={pending}
+      onClick={async () => {
+        const el = document.getElementById(targetId);
+        if (!el) {
+          alert("Não foi possível encontrar o conteúdo para exportar.");
+          return;
+        }
+
+        setPending(true);
+        try {
+          const { default: html2canvas } = await import("html2canvas-pro");
+          const canvas = await html2canvas(el, { backgroundColor: "#0a0f0d" });
+          const link = document.createElement("a");
+          link.download = `${fileName}.png`;
+          link.href = canvas.toDataURL("image/png");
+          link.click();
+        } catch {
+          alert("Não foi possível gerar a imagem. Tente novamente.");
+        } finally {
+          setPending(false);
+        }
+      }}
+    >
+      {pending ? "Gerando..." : "Baixar imagem"}
+    </Button>
+  );
+}
