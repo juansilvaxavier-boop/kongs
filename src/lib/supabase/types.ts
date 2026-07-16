@@ -12,6 +12,58 @@ export type Database = {
   }
   public: {
     Tables: {
+      card_events: {
+        Row: {
+          card_type: string
+          championship_id: string
+          created_at: string
+          game_id: string
+          id: string
+          minute: number | null
+          player_id: string
+        }
+        Insert: {
+          card_type: string
+          championship_id: string
+          created_at?: string
+          game_id: string
+          id?: string
+          minute?: number | null
+          player_id: string
+        }
+        Update: {
+          card_type?: string
+          championship_id?: string
+          created_at?: string
+          game_id?: string
+          id?: string
+          minute?: number | null
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "card_events_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "card_events_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "card_events_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       championship_admins: {
         Row: {
           championship_id: string
@@ -145,6 +197,55 @@ export type Database = {
             columns: ["team_b_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      goal_events: {
+        Row: {
+          championship_id: string
+          created_at: string
+          game_id: string
+          id: string
+          minute: number | null
+          player_id: string
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          game_id: string
+          id?: string
+          minute?: number | null
+          player_id: string
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          game_id?: string
+          id?: string
+          minute?: number | null
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "goal_events_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_events_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "goal_events_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
         ]

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { computeStandings } from "@/lib/standings";
+import { computeTopScorers } from "@/lib/stats";
 import { naturalCompare } from "@/lib/datetime";
 
 export default async function PublicChampionshipPage({
@@ -12,24 +13,28 @@ export default async function PublicChampionshipPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: teams }, { data: gamesData }] = await Promise.all([
-    supabase
-      .from("teams")
-      .select("id, name, crest_url")
-      .eq("championship_id", id)
-      .order("name"),
-    supabase
-      .from("games")
-      .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played")
-      .eq("championship_id", id)
-      .order("date", { ascending: true, nullsFirst: false }),
-  ]);
+  const [{ data: teams }, { data: gamesData }, { data: players }, { data: goals }] =
+    await Promise.all([
+      supabase
+        .from("teams")
+        .select("id, name, crest_url")
+        .eq("championship_id", id)
+        .order("name"),
+      supabase
+        .from("games")
+        .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played")
+        .eq("championship_id", id)
+        .order("date", { ascending: true, nullsFirst: false }),
+      supabase.from("players").select("id, name, team_id").eq("championship_id", id),
+      supabase.from("goal_events").select("player_id").eq("championship_id", id),
+    ]);
 
   const games = gamesData
     ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
     : [];
 
   const standings = computeStandings(teams ?? [], games);
+  const scorers = computeTopScorers(players ?? [], goals ?? [], teams ?? []);
   const teamName = (teamId: string) =>
     teams?.find((t) => t.id === teamId)?.name ?? "?";
 
@@ -131,6 +136,34 @@ export default async function PublicChampionshipPage({
           </Card>
         )}
       </div>
+
+      {scorers.length > 0 && (
+        <div>
+          <PageHeader eyebrow="Estatísticas" title="Artilharia" />
+          <Card className="overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
+                  <th className="px-4 py-3">Jogador</th>
+                  <th className="px-4 py-3">Time</th>
+                  <th className="px-4 py-3 text-center">Gols</th>
+                </tr>
+              </thead>
+              <tbody>
+                {scorers.map((row) => (
+                  <tr key={row.playerId} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 font-medium text-foreground">{row.playerName}</td>
+                    <td className="px-4 py-3 text-muted">{row.teamName}</td>
+                    <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
+                      {row.goals}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        </div>
+      )}
 
       <div>
         <PageHeader eyebrow="Clubes" title="Times" />

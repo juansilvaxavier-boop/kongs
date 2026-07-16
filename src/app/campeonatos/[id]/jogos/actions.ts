@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
+import { generateRoundRobin } from "@/lib/round-robin";
 
 function parseDate(formData: FormData) {
   const value = String(formData.get("date") || "");
@@ -104,6 +105,39 @@ export async function updateGame(
 
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Jogo não encontrado ou sem permissão para editar.");
+  revalidateChampionship(championshipId);
+}
+
+export async function generateRounds(championshipId: string, formData: FormData) {
+  const doubleRound = formData.get("double_round") === "on";
+
+  const supabase = await createClient();
+  const { data: teams, error: teamsError } = await supabase
+    .from("teams")
+    .select("id")
+    .eq("championship_id", championshipId)
+    .order("name");
+
+  if (teamsError) throw new Error(teamsError.message);
+  if (!teams || teams.length < 2) {
+    throw new Error("Cadastre ao menos dois times para gerar as rodadas.");
+  }
+
+  const fixtures = generateRoundRobin(
+    teams.map((t) => t.id),
+    doubleRound
+  );
+
+  const { error } = await supabase.from("games").insert(
+    fixtures.map((f) => ({
+      championship_id: championshipId,
+      round: `Rodada ${f.round}`,
+      team_a_id: f.teamAId,
+      team_b_id: f.teamBId,
+    }))
+  );
+
+  if (error) throw new Error(error.message);
   revalidateChampionship(championshipId);
 }
 

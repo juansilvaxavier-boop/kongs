@@ -10,6 +10,7 @@ const TABS = [
   { slug: "times", label: "Times" },
   { slug: "jogadores", label: "Jogadores" },
   { slug: "tecnicos", label: "Técnicos" },
+  { slug: "estatisticas", label: "Estatísticas" },
 ];
 
 export function ChampionshipTabs({ id }: { id: string }) {

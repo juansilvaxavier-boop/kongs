@@ -4,6 +4,7 @@ import { naturalCompare } from "@/lib/datetime";
 import { createGame } from "./actions";
 import { GameDateField } from "./game-date-field";
 import { GameTable } from "./game-table";
+import { GenerateRoundsForm } from "./generate-rounds-form";
 
 export default async function JogosPage({
   params,
@@ -13,18 +14,31 @@ export default async function JogosPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: gamesData }, { data: teams }] = await Promise.all([
-    supabase
-      .from("games")
-      .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played")
-      .eq("championship_id", id)
-      .order("date", { ascending: true, nullsFirst: false }),
-    supabase
-      .from("teams")
-      .select("id, name")
-      .eq("championship_id", id)
-      .order("name"),
-  ]);
+  const [{ data: gamesData }, { data: teams }, { data: players }, { data: goalEvents }, { data: cardEvents }] =
+    await Promise.all([
+      supabase
+        .from("games")
+        .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played")
+        .eq("championship_id", id)
+        .order("date", { ascending: true, nullsFirst: false }),
+      supabase
+        .from("teams")
+        .select("id, name")
+        .eq("championship_id", id)
+        .order("name"),
+      supabase
+        .from("players")
+        .select("id, name, team_id")
+        .eq("championship_id", id),
+      supabase
+        .from("goal_events")
+        .select("id, player_id, minute, game_id")
+        .eq("championship_id", id),
+      supabase
+        .from("card_events")
+        .select("id, player_id, card_type, minute, game_id")
+        .eq("championship_id", id),
+    ]);
 
   const games = gamesData
     ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
@@ -86,8 +100,19 @@ export default async function JogosPage({
         )}
       </Card>
 
+      {hasEnoughTeams && (
+        <GenerateRoundsForm championshipId={id} teamCount={(teams ?? []).length} />
+      )}
+
       {games && games.length > 0 ? (
-        <GameTable championshipId={id} games={games} teams={teams ?? []} />
+        <GameTable
+          championshipId={id}
+          games={games}
+          teams={teams ?? []}
+          players={players ?? []}
+          goalEvents={goalEvents ?? []}
+          cardEvents={cardEvents ?? []}
+        />
       ) : (
         <EmptyState>Nenhum jogo agendado ainda.</EmptyState>
       )}

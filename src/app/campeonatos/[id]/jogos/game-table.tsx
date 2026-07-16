@@ -1,15 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
 import { deleteGame, updateGame } from "./actions";
 import { GameDateField } from "./game-date-field";
+import { GameEventsPanel } from "./game-events-panel";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
 }
 
 type Team = { id: string; name: string };
+type Player = { id: string; name: string; team_id: string | null };
+type GoalEvent = { id: string; player_id: string; minute: number | null; game_id: string };
+type CardEvent = {
+  id: string;
+  player_id: string;
+  card_type: string;
+  minute: number | null;
+  game_id: string;
+};
 type Game = {
   id: string;
   round: string;
@@ -34,12 +44,19 @@ export function GameTable({
   championshipId,
   games,
   teams,
+  players,
+  goalEvents,
+  cardEvents,
 }: {
   championshipId: string;
   games: Game[];
   teams: Team[];
+  players: Player[];
+  goalEvents: GoalEvent[];
+  cardEvents: CardEvent[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [eventingId, setEventingId] = useState<string | null>(null);
   const teamName = (teamId: string) =>
     teams.find((t) => t.id === teamId)?.name ?? "?";
 
@@ -62,7 +79,8 @@ export function GameTable({
         </thead>
         <tbody>
           {games.map((game) => (
-            <tr key={game.id} className="border-b border-border last:border-0">
+            <Fragment key={game.id}>
+            <tr className="border-b border-border last:border-0">
               {editingId === game.id ? (
                 <td colSpan={6} className="px-4 py-4">
                   <form
@@ -179,6 +197,14 @@ export function GameTable({
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="secondary"
+                        onClick={() =>
+                          setEventingId(eventingId === game.id ? null : game.id)
+                        }
+                      >
+                        Eventos
+                      </Button>
+                      <Button
+                        variant="secondary"
                         onClick={() => setEditingId(game.id)}
                       >
                         {game.played ? "Editar" : "Lançar placar"}
@@ -209,6 +235,22 @@ export function GameTable({
                 </>
               )}
             </tr>
+            {eventingId === game.id && (
+              <tr className="border-b border-border last:border-0">
+                <td colSpan={6} className="bg-surface-2/40 px-4 py-4">
+                  <GameEventsPanel
+                    gameId={game.id}
+                    championshipId={championshipId}
+                    teamAId={game.team_a_id}
+                    teamBId={game.team_b_id}
+                    players={players}
+                    goalEvents={goalEvents}
+                    cardEvents={cardEvents}
+                  />
+                </td>
+              </tr>
+            )}
+            </Fragment>
           ))}
         </tbody>
       </table>
