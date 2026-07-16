@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button, Card, EmptyState, Input, Label, PageHeader, Select } from "@/components/ui";
 import { naturalCompare } from "@/lib/datetime";
@@ -49,7 +50,19 @@ export default async function JogosPage({
 
   return (
     <div>
-      <PageHeader eyebrow="Tabela de jogos" title="Jogos" />
+      <PageHeader
+        eyebrow="Tabela de jogos"
+        title="Jogos"
+        action={
+          <Link
+            href={`/campeonato/${id}/chaveamento`}
+            target="_blank"
+            className="text-sm text-accent hover:underline"
+          >
+            Ver chaveamento →
+          </Link>
+        }
+      />
 
       <Card className="mb-6 p-5">
         {hasEnoughTeams ? (

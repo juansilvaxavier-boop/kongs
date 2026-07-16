@@ -64,7 +64,18 @@ export default async function PublicChampionshipPage({
       </div>
 
       <div>
-        <PageHeader eyebrow="Resultados e agenda" title="Jogos" />
+        <PageHeader
+          eyebrow="Resultados e agenda"
+          title="Jogos"
+          action={
+            <Link
+              href={`/campeonato/${id}/chaveamento`}
+              className="text-sm text-accent hover:underline"
+            >
+              Ver chaveamento →
+            </Link>
+          }
+        />
         {games.length === 0 ? (
           <EmptyState>Nenhum jogo agendado ainda.</EmptyState>
         ) : (
