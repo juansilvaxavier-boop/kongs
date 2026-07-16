@@ -14,7 +14,7 @@ export default async function TimesPage({
   const [{ data: teams }, { data: coaches }, { data: invites }] = await Promise.all([
     supabase
       .from("teams")
-      .select("id, name, coach_id, crest_url, owner_user_id")
+      .select("id, name, coach_id, crest_url, owner_user_id, group_name")
       .eq("championship_id", id)
       .order("name"),
     supabase
@@ -58,6 +58,10 @@ export default async function TimesPage({
           <div className="flex-1 basis-40">
             <Label>Escudo (URL)</Label>
             <Input name="crest_url" type="url" placeholder="https://..." />
+          </div>
+          <div className="w-32">
+            <Label>Grupo</Label>
+            <Input name="group_name" placeholder="Grupo A" />
           </div>
           <Button type="submit">Adicionar</Button>
         </form>

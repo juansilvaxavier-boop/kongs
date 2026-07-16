@@ -21,6 +21,7 @@ type Team = {
   coach_id: string | null;
   crest_url: string | null;
   owner_user_id: string | null;
+  group_name: string | null;
 };
 type Invite = { id: string; team_id: string; email: string };
 
@@ -52,6 +53,7 @@ export function TeamTable({
         <thead>
           <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3">Time</th>
+            <th className="px-4 py-3">Grupo</th>
             <th className="px-4 py-3">Técnico</th>
             <th className="px-4 py-3">Dono do time</th>
             <th className="w-56 px-4 py-3 text-right">Ações</th>
@@ -63,7 +65,7 @@ export function TeamTable({
             return (
               <tr key={team.id} className="border-b border-border last:border-0">
                 {editingId === team.id ? (
-                  <td colSpan={4} className="px-4 py-3">
+                  <td colSpan={5} className="px-4 py-3">
                     <form
                       action={async (formData) => {
                         try {
@@ -100,6 +102,12 @@ export function TeamTable({
                         defaultValue={team.crest_url ?? ""}
                         placeholder="URL do escudo"
                         className="max-w-[10rem]"
+                      />
+                      <Input
+                        name="group_name"
+                        defaultValue={team.group_name ?? ""}
+                        placeholder="Grupo A"
+                        className="max-w-[8rem]"
                       />
                       <Button type="submit">Salvar</Button>
                       <Button
@@ -145,6 +153,9 @@ export function TeamTable({
                   <>
                     <td className="px-4 py-3 font-medium text-foreground">
                       {team.name}
+                    </td>
+                    <td className="px-4 py-3 text-muted">
+                      {team.group_name ?? "—"}
                     </td>
                     <td className="px-4 py-3 text-muted">
                       {coachName(team.coach_id)}

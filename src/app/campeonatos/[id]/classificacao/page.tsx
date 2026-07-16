@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, EmptyState, PageHeader } from "@/components/ui";
+import { EmptyState, PageHeader } from "@/components/ui";
+import { StandingsTable } from "@/components/standings-table";
 import { computeStandings } from "@/lib/standings";
+import { gamesWithinTeams, groupTeams } from "@/lib/groups";
 
 export default async function ClassificacaoPage({
   params,
@@ -13,7 +15,7 @@ export default async function ClassificacaoPage({
   const [{ data: teams }, { data: games }] = await Promise.all([
     supabase
       .from("teams")
-      .select("id, name")
+      .select("id, name, group_name")
       .eq("championship_id", id)
       .order("name"),
     supabase
@@ -33,55 +35,27 @@ export default async function ClassificacaoPage({
     );
   }
 
-  const standings = computeStandings(teams, games ?? []);
+  const groups = groupTeams(teams);
 
   return (
-    <div>
+    <div className="space-y-10">
       <PageHeader eyebrow="Tabela do campeonato" title="Classificação" />
 
-      <Card className="overflow-x-auto">
-        <table className="w-full min-w-[36rem] text-sm">
-          <thead>
-            <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
-              <th className="px-4 py-3 text-center">Pos</th>
-              <th className="px-4 py-3">Time</th>
-              <th className="px-4 py-3 text-center">Pts</th>
-              <th className="px-4 py-3 text-center">J</th>
-              <th className="px-4 py-3 text-center">V</th>
-              <th className="px-4 py-3 text-center">E</th>
-              <th className="px-4 py-3 text-center">D</th>
-              <th className="px-4 py-3 text-center">GP</th>
-              <th className="px-4 py-3 text-center">GC</th>
-              <th className="px-4 py-3 text-center">SG</th>
-            </tr>
-          </thead>
-          <tbody>
-            {standings.map((row) => (
-              <tr
-                key={row.teamId}
-                className="border-b border-border last:border-0"
-              >
-                <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
-                  {row.pos}
-                </td>
-                <td className="px-4 py-3 font-medium text-foreground">
-                  {row.teamName}
-                </td>
-                <td className="px-4 py-3 text-center font-semibold text-foreground">
-                  {row.pts}
-                </td>
-                <td className="px-4 py-3 text-center text-muted">{row.j}</td>
-                <td className="px-4 py-3 text-center text-muted">{row.v}</td>
-                <td className="px-4 py-3 text-center text-muted">{row.e}</td>
-                <td className="px-4 py-3 text-center text-muted">{row.d}</td>
-                <td className="px-4 py-3 text-center text-muted">{row.gp}</td>
-                <td className="px-4 py-3 text-center text-muted">{row.gc}</td>
-                <td className="px-4 py-3 text-center text-muted">{row.sg}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+      {groups.map((group) => (
+        <div key={group.groupName ?? "geral"}>
+          {group.groupName && (
+            <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+              {group.groupName}
+            </h2>
+          )}
+          <StandingsTable
+            standings={computeStandings(
+              group.teams,
+              gamesWithinTeams(games ?? [], group.teams)
+            )}
+          />
+        </div>
+      ))}
     </div>
   );
 }

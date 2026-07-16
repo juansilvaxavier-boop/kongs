@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
+import { StandingsTable } from "@/components/standings-table";
 import { computeStandings } from "@/lib/standings";
 import { computeTopScorers } from "@/lib/stats";
 import { naturalCompare } from "@/lib/datetime";
+import { gamesWithinTeams, groupTeams } from "@/lib/groups";
 
 export default async function PublicChampionshipPage({
   params,
@@ -17,7 +19,7 @@ export default async function PublicChampionshipPage({
     await Promise.all([
       supabase
         .from("teams")
-        .select("id, name, crest_url")
+        .select("id, name, crest_url, group_name")
         .eq("championship_id", id)
         .order("name"),
       supabase
@@ -33,60 +35,31 @@ export default async function PublicChampionshipPage({
     ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
     : [];
 
-  const standings = computeStandings(teams ?? [], games);
   const scorers = computeTopScorers(players ?? [], goals ?? [], teams ?? []);
   const teamName = (teamId: string) =>
     teams?.find((t) => t.id === teamId)?.name ?? "?";
+  const groups = groupTeams(teams ?? []);
 
   return (
     <div className="space-y-10">
-      <div>
+      <div className="space-y-8">
         <PageHeader eyebrow="Tabela do campeonato" title="Classificação" />
-        {standings.length === 0 ? (
+        {!teams || teams.length === 0 ? (
           <EmptyState>Ainda não há times cadastrados.</EmptyState>
         ) : (
-          <Card className="overflow-x-auto">
-            <table className="w-full min-w-[36rem] text-sm">
-              <thead>
-                <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
-                  <th className="px-4 py-3 text-center">Pos</th>
-                  <th className="px-4 py-3">Time</th>
-                  <th className="px-4 py-3 text-center">Pts</th>
-                  <th className="px-4 py-3 text-center">J</th>
-                  <th className="px-4 py-3 text-center">V</th>
-                  <th className="px-4 py-3 text-center">E</th>
-                  <th className="px-4 py-3 text-center">D</th>
-                  <th className="px-4 py-3 text-center">GP</th>
-                  <th className="px-4 py-3 text-center">GC</th>
-                  <th className="px-4 py-3 text-center">SG</th>
-                </tr>
-              </thead>
-              <tbody>
-                {standings.map((row) => (
-                  <tr key={row.teamId} className="border-b border-border last:border-0">
-                    <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
-                      {row.pos}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      <Link href={`/campeonato/${id}/time/${row.teamId}`} className="hover:underline">
-                        {row.teamName}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-center font-semibold text-foreground">
-                      {row.pts}
-                    </td>
-                    <td className="px-4 py-3 text-center text-muted">{row.j}</td>
-                    <td className="px-4 py-3 text-center text-muted">{row.v}</td>
-                    <td className="px-4 py-3 text-center text-muted">{row.e}</td>
-                    <td className="px-4 py-3 text-center text-muted">{row.d}</td>
-                    <td className="px-4 py-3 text-center text-muted">{row.gp}</td>
-                    <td className="px-4 py-3 text-center text-muted">{row.gc}</td>
-                    <td className="px-4 py-3 text-center text-muted">{row.sg}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
+          groups.map((group) => (
+            <div key={group.groupName ?? "geral"}>
+              {group.groupName && (
+                <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+                  {group.groupName}
+                </h2>
+              )}
+              <StandingsTable
+                standings={computeStandings(group.teams, gamesWithinTeams(games, group.teams))}
+                teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
+              />
+            </div>
+          ))
         )}
       </div>
 

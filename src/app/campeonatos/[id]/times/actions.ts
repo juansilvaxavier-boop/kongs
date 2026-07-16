@@ -14,6 +14,11 @@ function parseCrestUrl(formData: FormData) {
   return value ? value : null;
 }
 
+function parseGroupName(formData: FormData) {
+  const value = String(formData.get("group_name") || "").trim();
+  return value ? value : null;
+}
+
 async function assertCoachBelongsToChampionship(
   supabase: Awaited<ReturnType<typeof createClient>>,
   championshipId: string,
@@ -45,6 +50,7 @@ export async function createTeam(championshipId: string, formData: FormData) {
     name,
     coach_id: coachId,
     crest_url: parseCrestUrl(formData),
+    group_name: parseGroupName(formData),
   });
 
   if (error) throw new Error(error.message);
@@ -65,7 +71,12 @@ export async function updateTeam(
 
   const { data, error } = await supabase
     .from("teams")
-    .update({ name, coach_id: coachId, crest_url: parseCrestUrl(formData) })
+    .update({
+      name,
+      coach_id: coachId,
+      crest_url: parseCrestUrl(formData),
+      group_name: parseGroupName(formData),
+    })
     .eq("id", id)
     .select("id")
     .maybeSingle();

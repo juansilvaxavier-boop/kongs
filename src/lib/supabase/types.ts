@@ -343,6 +343,7 @@ export type Database = {
           coach_id: string | null
           created_at: string
           crest_url: string | null
+          group_name: string | null
           id: string
           name: string
           owner_user_id: string | null
@@ -352,6 +353,7 @@ export type Database = {
           coach_id?: string | null
           created_at?: string
           crest_url?: string | null
+          group_name?: string | null
           id?: string
           name: string
           owner_user_id?: string | null
@@ -361,6 +363,7 @@ export type Database = {
           coach_id?: string | null
           created_at?: string
           crest_url?: string | null
+          group_name?: string | null
           id?: string
           name?: string
           owner_user_id?: string | null
