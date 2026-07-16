@@ -1,0 +1,206 @@
+"use client";
+
+import { useState } from "react";
+import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
+import { deleteGame, updateGame } from "./actions";
+
+type Team = { id: string; name: string };
+type Game = {
+  id: string;
+  round: string;
+  team_a_id: string;
+  team_b_id: string;
+  date: string | null;
+  score_a: number | null;
+  score_b: number | null;
+  played: boolean;
+};
+
+function toDatetimeLocal(iso: string | null) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(
+    date.getDate()
+  )}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+export function GameTable({
+  championshipId,
+  games,
+  teams,
+}: {
+  championshipId: string;
+  games: Game[];
+  teams: Team[];
+}) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const teamName = (teamId: string) =>
+    teams.find((t) => t.id === teamId)?.name ?? "?";
+
+  if (games.length === 0) {
+    return <EmptyState>Nenhum jogo agendado ainda.</EmptyState>;
+  }
+
+  return (
+    <Card className="overflow-x-auto">
+      <table className="w-full min-w-[52rem] text-sm">
+        <thead>
+          <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
+            <th className="px-4 py-3">Rodada</th>
+            <th className="px-4 py-3">Data</th>
+            <th className="px-4 py-3">Confronto</th>
+            <th className="px-4 py-3">Placar</th>
+            <th className="px-4 py-3">Status</th>
+            <th className="w-48 px-4 py-3 text-right">Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          {games.map((game) => (
+            <tr key={game.id} className="border-b border-border last:border-0">
+              {editingId === game.id ? (
+                <td colSpan={6} className="px-4 py-4">
+                  <form
+                    action={async (formData) => {
+                      await updateGame(game.id, championshipId, formData);
+                      setEditingId(null);
+                    }}
+                    className="flex flex-col gap-3"
+                  >
+                    <div className="flex flex-wrap gap-2">
+                      <Input
+                        name="round"
+                        defaultValue={game.round}
+                        required
+                        placeholder="Rodada"
+                        className="max-w-[9rem]"
+                      />
+                      <Input
+                        name="date"
+                        type="datetime-local"
+                        defaultValue={toDatetimeLocal(game.date)}
+                        className="max-w-[12rem]"
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Select
+                        name="team_a_id"
+                        defaultValue={game.team_a_id}
+                        className="max-w-[10rem]"
+                      >
+                        {teams.map((team) => (
+                          <option key={team.id} value={team.id}>
+                            {team.name}
+                          </option>
+                        ))}
+                      </Select>
+                      <Input
+                        name="score_a"
+                        type="number"
+                        min={0}
+                        defaultValue={game.score_a ?? ""}
+                        placeholder="Placar"
+                        className="max-w-[4.5rem] text-center"
+                      />
+                      <span className="text-muted">x</span>
+                      <Input
+                        name="score_b"
+                        type="number"
+                        min={0}
+                        defaultValue={game.score_b ?? ""}
+                        placeholder="Placar"
+                        className="max-w-[4.5rem] text-center"
+                      />
+                      <Select
+                        name="team_b_id"
+                        defaultValue={game.team_b_id}
+                        className="max-w-[10rem]"
+                      >
+                        {teams.map((team) => (
+                          <option key={team.id} value={team.id}>
+                            {team.name}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-muted">
+                      <input
+                        type="checkbox"
+                        name="played"
+                        defaultChecked={game.played}
+                        className="h-4 w-4 rounded border-border accent-accent"
+                      />
+                      Jogo realizado (com placar lançado)
+                    </label>
+                    <div className="flex gap-2">
+                      <Button type="submit">Salvar</Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => setEditingId(null)}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  </form>
+                </td>
+              ) : (
+                <>
+                  <td className="px-4 py-3 text-foreground">{game.round}</td>
+                  <td className="px-4 py-3 text-muted">
+                    {game.date
+                      ? new Date(game.date).toLocaleString("pt-BR", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })
+                      : "—"}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    {teamName(game.team_a_id)} x {teamName(game.team_b_id)}
+                  </td>
+                  <td className="px-4 py-3 text-foreground">
+                    {game.played
+                      ? `${game.score_a} - ${game.score_b}`
+                      : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge tone={game.played ? "success" : "warning"}>
+                      {game.played ? "Realizado" : "Agendado"}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => setEditingId(game.id)}
+                      >
+                        {game.played ? "Editar" : "Lançar placar"}
+                      </Button>
+                      <form
+                        action={async () => {
+                          if (
+                            window.confirm(
+                              `Excluir o jogo "${teamName(game.team_a_id)} x ${teamName(
+                                game.team_b_id
+                              )}"?`
+                            )
+                          ) {
+                            await deleteGame(game.id, championshipId);
+                          }
+                        }}
+                      >
+                        <Button type="submit" variant="danger">
+                          Excluir
+                        </Button>
+                      </form>
+                    </div>
+                  </td>
+                </>
+              )}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
+  );
+}
