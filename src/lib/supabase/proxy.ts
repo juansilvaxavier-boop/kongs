@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
 
-const PROTECTED_PREFIX = "/campeonatos";
+const PROTECTED_PREFIXES = ["/campeonatos", "/meu-time", "/sem-acesso"];
 const AUTH_PATH = "/login";
 
 export async function updateSession(request: NextRequest) {
@@ -33,8 +34,11 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
+  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix)
+  );
 
-  if (!user && pathname.startsWith(PROTECTED_PREFIX)) {
+  if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = AUTH_PATH;
     url.searchParams.set("redirectTo", pathname);
@@ -43,7 +47,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && pathname === AUTH_PATH) {
     const url = request.nextUrl.clone();
-    url.pathname = PROTECTED_PREFIX;
+    url.pathname = await resolveAuthenticatedDestination(supabase);
     url.search = "";
     return NextResponse.redirect(url);
   }

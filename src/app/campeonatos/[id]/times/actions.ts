@@ -2,9 +2,15 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
+import { getSiteUrl } from "@/lib/site-url";
 
 function parseCoachId(formData: FormData) {
   const value = String(formData.get("coach_id") || "");
+  return value ? value : null;
+}
+
+function parseCrestUrl(formData: FormData) {
+  const value = String(formData.get("crest_url") || "").trim();
   return value ? value : null;
 }
 
@@ -38,6 +44,7 @@ export async function createTeam(championshipId: string, formData: FormData) {
     championship_id: championshipId,
     name,
     coach_id: coachId,
+    crest_url: parseCrestUrl(formData),
   });
 
   if (error) throw new Error(error.message);
@@ -58,7 +65,7 @@ export async function updateTeam(
 
   const { data, error } = await supabase
     .from("teams")
-    .update({ name, coach_id: coachId })
+    .update({ name, coach_id: coachId, crest_url: parseCrestUrl(formData) })
     .eq("id", id)
     .select("id")
     .maybeSingle();
@@ -71,6 +78,40 @@ export async function updateTeam(
 export async function deleteTeam(id: string, championshipId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("teams").delete().eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidateChampionship(championshipId);
+}
+
+export async function inviteTeamOwner(
+  championshipId: string,
+  teamId: string,
+  formData: FormData
+) {
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  if (!email) throw new Error("Informe o e-mail do dono do time.");
+
+  const supabase = await createClient();
+
+  const { error: insertError } = await supabase.from("team_invites").insert({
+    championship_id: championshipId,
+    team_id: teamId,
+    email,
+  });
+  if (insertError) throw new Error(insertError.message);
+
+  const { error: otpError } = await supabase.auth.signInWithOtp({
+    email,
+    options: { emailRedirectTo: `${getSiteUrl()}/auth/callback` },
+  });
+  if (otpError) throw new Error(otpError.message);
+
+  revalidateChampionship(championshipId);
+}
+
+export async function cancelTeamInvite(id: string, championshipId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("team_invites").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
   revalidateChampionship(championshipId);

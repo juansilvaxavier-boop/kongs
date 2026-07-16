@@ -168,27 +168,75 @@ export type Database = {
           },
         ]
       }
+      team_invites: {
+        Row: {
+          accepted_at: string | null
+          championship_id: string
+          created_at: string
+          email: string
+          id: string
+          team_id: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          championship_id: string
+          created_at?: string
+          email: string
+          id?: string
+          team_id: string
+        }
+        Update: {
+          accepted_at?: string | null
+          championship_id?: string
+          created_at?: string
+          email?: string
+          id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_invites_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_invites_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           championship_id: string
           coach_id: string | null
           created_at: string
+          crest_url: string | null
           id: string
           name: string
+          owner_user_id: string | null
         }
         Insert: {
           championship_id: string
           coach_id?: string | null
           created_at?: string
+          crest_url?: string | null
           id?: string
           name: string
+          owner_user_id?: string | null
         }
         Update: {
           championship_id?: string
           coach_id?: string | null
           created_at?: string
+          crest_url?: string | null
           id?: string
           name?: string
+          owner_user_id?: string | null
         }
         Relationships: [
           {
@@ -207,12 +255,31 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accept_team_invite: { Args: { p_invite_id: string }; Returns: undefined }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

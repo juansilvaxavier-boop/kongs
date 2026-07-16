@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
+import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
 
 export type AuthState = {
   error: string | null;
@@ -32,7 +33,7 @@ export async function signInWithPassword(
     return { error: "E-mail ou senha inválidos.", info: null };
   }
 
-  redirect("/campeonatos");
+  redirect(await resolveAuthenticatedDestination(supabase));
 }
 
 export async function signUpWithPassword(
@@ -59,13 +60,27 @@ export async function signUpWithPassword(
   }
 
   if (data.session) {
-    redirect("/campeonatos");
+    redirect(await resolveAuthenticatedDestination(supabase));
   }
 
   return {
     error: null,
     info: "Cadastro criado! Verifique seu e-mail para confirmar a conta antes de entrar.",
   };
+}
+
+export async function signInWithGoogle() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: `${getSiteUrl()}/auth/callback` },
+  });
+
+  if (error || !data.url) {
+    throw new Error(error?.message ?? "Não foi possível iniciar o login com o Google.");
+  }
+
+  redirect(data.url);
 }
 
 export async function signInWithMagicLink(

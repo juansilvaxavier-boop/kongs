@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
+import { isAdmin } from "@/lib/auth/roles";
 
 export async function createChampionship(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
@@ -14,6 +15,9 @@ export async function createChampionship(formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  if (!(await isAdmin(supabase))) {
+    throw new Error("Apenas a organização pode criar campeonatos.");
+  }
 
   const { data, error } = await supabase
     .from("championships")
