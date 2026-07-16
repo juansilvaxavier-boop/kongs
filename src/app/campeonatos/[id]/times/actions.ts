@@ -116,3 +116,25 @@ export async function cancelTeamInvite(id: string, championshipId: string) {
   if (error) throw new Error(error.message);
   revalidateChampionship(championshipId);
 }
+
+export async function resendTeamInvite(id: string, championshipId: string) {
+  const supabase = await createClient();
+
+  const { data: invite, error: fetchError } = await supabase
+    .from("team_invites")
+    .select("email")
+    .eq("id", id)
+    .is("accepted_at", null)
+    .maybeSingle();
+
+  if (fetchError) throw new Error(fetchError.message);
+  if (!invite) throw new Error("Convite não encontrado ou já aceito.");
+
+  const { error: otpError } = await supabase.auth.signInWithOtp({
+    email: invite.email,
+    options: { emailRedirectTo: `${getSiteUrl()}/auth/callback` },
+  });
+  if (otpError) throw new Error(otpError.message);
+
+  revalidateChampionship(championshipId);
+}

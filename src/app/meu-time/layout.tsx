@@ -39,6 +39,9 @@ export default async function MeuTimeLayout({
             <span className="hidden text-sm text-muted sm:inline">
               {user.email}
             </span>
+            <Link href="/meu-time/conta" className="text-sm text-muted hover:text-accent">
+              Minha conta
+            </Link>
             <form action={signOut}>
               <Button type="submit" variant="secondary">
                 Sair

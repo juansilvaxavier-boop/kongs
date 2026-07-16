@@ -2,7 +2,12 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
 
-const PROTECTED_PREFIXES = ["/campeonatos", "/meu-time", "/sem-acesso"];
+const PROTECTED_PREFIXES = [
+  "/campeonatos",
+  "/meu-time",
+  "/sem-acesso",
+  "/redefinir-senha",
+];
 const AUTH_PATH = "/login";
 
 export async function updateSession(request: NextRequest) {

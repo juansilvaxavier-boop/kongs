@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { Button, Input, Label } from "@/components/ui";
 import {
   type AuthState,
+  sendPasswordReset,
   signInWithGoogle,
   signInWithMagicLink,
   signInWithPassword,
@@ -33,7 +34,7 @@ function GoogleIcon() {
   );
 }
 
-type Mode = "signin" | "signup" | "magic";
+type Mode = "signin" | "signup" | "magic" | "recover";
 
 const initialAuthState: AuthState = { error: null, info: null };
 
@@ -52,6 +53,10 @@ export function LoginForm() {
     signInWithMagicLink,
     initialAuthState
   );
+  const [recoverState, recoverAction, recoverPending] = useActionState(
+    sendPasswordReset,
+    initialAuthState
+  );
 
   const tabs: { id: Mode; label: string }[] = [
     { id: "signin", label: "Entrar" },
@@ -61,22 +66,24 @@ export function LoginForm() {
 
   return (
     <div className="w-full max-w-sm">
-      <div className="mb-6 flex rounded-lg border border-border bg-surface-2 p-1 text-sm">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setMode(tab.id)}
-            className={`flex-1 rounded-md px-2 py-1.5 font-medium transition ${
-              mode === tab.id
-                ? "bg-accent text-[#06110a]"
-                : "text-muted hover:text-foreground"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {mode !== "recover" && (
+        <div className="mb-6 flex rounded-lg border border-border bg-surface-2 p-1 text-sm">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setMode(tab.id)}
+              className={`flex-1 rounded-md px-2 py-1.5 font-medium transition ${
+                mode === tab.id
+                  ? "bg-accent text-[#06110a]"
+                  : "text-muted hover:text-foreground"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {mode === "signin" && (
         <form action={signInAction} className="space-y-4">
@@ -85,7 +92,16 @@ export function LoginForm() {
             <Input type="email" name="email" required placeholder="voce@email.com" />
           </div>
           <div>
-            <Label>Senha</Label>
+            <div className="mb-1 flex items-center justify-between">
+              <Label>Senha</Label>
+              <button
+                type="button"
+                onClick={() => setMode("recover")}
+                className="text-xs text-muted hover:text-accent"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
             <Input type="password" name="password" required placeholder="••••••••" />
           </div>
           {signInState.error && (
@@ -140,6 +156,31 @@ export function LoginForm() {
           <Button type="submit" className="w-full" disabled={magicPending}>
             {magicPending ? "Enviando..." : "Enviar link mágico"}
           </Button>
+        </form>
+      )}
+
+      {mode === "recover" && (
+        <form action={recoverAction} className="space-y-4">
+          <div>
+            <Label>E-mail</Label>
+            <Input type="email" name="email" required placeholder="voce@email.com" />
+          </div>
+          {recoverState.error && (
+            <p className="text-sm text-danger">{recoverState.error}</p>
+          )}
+          {recoverState.info && (
+            <p className="text-sm text-accent">{recoverState.info}</p>
+          )}
+          <Button type="submit" className="w-full" disabled={recoverPending}>
+            {recoverPending ? "Enviando..." : "Enviar link para redefinir senha"}
+          </Button>
+          <button
+            type="button"
+            onClick={() => setMode("signin")}
+            className="w-full text-center text-xs text-muted hover:text-foreground"
+          >
+            ← Voltar para o login
+          </button>
         </form>
       )}
 

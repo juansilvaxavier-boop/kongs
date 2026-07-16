@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
-import { cancelTeamInvite, deleteTeam, inviteTeamOwner, updateTeam } from "./actions";
+import {
+  cancelTeamInvite,
+  deleteTeam,
+  inviteTeamOwner,
+  resendTeamInvite,
+  updateTeam,
+} from "./actions";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
@@ -149,6 +155,20 @@ export function TeamTable({
                       ) : invite ? (
                         <div className="flex items-center gap-2">
                           <Badge tone="warning">Convite enviado: {invite.email}</Badge>
+                          <button
+                            type="button"
+                            className="text-xs text-muted underline hover:text-accent"
+                            onClick={async () => {
+                              try {
+                                await resendTeamInvite(invite.id, championshipId);
+                                alert("Convite reenviado.");
+                              } catch (error) {
+                                alert(errorMessage(error));
+                              }
+                            }}
+                          >
+                            reenviar
+                          </button>
                           <button
                             type="button"
                             className="text-xs text-muted underline hover:text-danger"

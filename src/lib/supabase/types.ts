@@ -12,6 +12,32 @@ export type Database = {
   }
   public: {
     Tables: {
+      championship_admins: {
+        Row: {
+          championship_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "championship_admins_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       championships: {
         Row: {
           created_at: string
@@ -280,6 +306,10 @@ export type Database = {
     Functions: {
       accept_team_invite: { Args: { p_invite_id: string }; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
+      is_championship_admin: {
+        Args: { p_championship_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

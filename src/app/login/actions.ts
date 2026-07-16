@@ -108,6 +108,30 @@ export async function signInWithMagicLink(
   };
 }
 
+export async function sendPasswordReset(
+  _prevState: AuthState,
+  formData: FormData
+): Promise<AuthState> {
+  const email = String(formData.get("email") || "").trim();
+  if (!email) {
+    return { error: "Informe seu e-mail.", info: null };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${getSiteUrl()}/auth/callback?next=/redefinir-senha`,
+  });
+
+  if (error) {
+    return { error: error.message, info: null };
+  }
+
+  return {
+    error: null,
+    info: "Enviamos um link para redefinir sua senha por e-mail.",
+  };
+}
+
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
