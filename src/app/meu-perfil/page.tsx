@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
@@ -44,15 +45,21 @@ export default async function MeuPerfilPage() {
       </header>
 
       <div className="mx-auto w-full max-w-2xl flex-1 px-4 py-8 sm:px-6">
-        <PageHeader eyebrow={user.email ?? ""} title="Meu perfil" />
+        <PageHeader
+          eyebrow={user.email ?? ""}
+          title="Meu perfil"
+          action={
+            <Link href="/campeonato" className="text-sm text-accent hover:underline">
+              Ver campeonatos →
+            </Link>
+          }
+        />
 
-        {profile?.persona && (
-          <p className="-mt-4 mb-6 text-sm text-muted">
-            Você pode visualizar, comentar e compartilhar as informações dos
-            campeonatos. Apenas o organizador pode criar e alterar dados de um
-            campeonato.
-          </p>
-        )}
+        <p className="-mt-4 mb-6 text-sm text-muted">
+          Você pode visualizar, comentar e compartilhar as informações dos
+          campeonatos. Apenas o organizador pode criar e alterar dados de um
+          campeonato.
+        </p>
 
         <Card className="p-5">
           <form action={updateProfile} className="flex flex-col gap-4">
