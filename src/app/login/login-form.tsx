@@ -75,7 +75,7 @@ export function LoginForm() {
               onClick={() => setMode(tab.id)}
               className={`flex-1 rounded-md px-2 py-1.5 font-medium transition ${
                 mode === tab.id
-                  ? "bg-accent text-[#06110a]"
+                  ? "brand-gradient-1 text-black"
                   : "text-muted hover:text-foreground"
               }`}
             >

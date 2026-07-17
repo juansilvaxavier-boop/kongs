@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
+import { BrandMark, Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
 import { signOut } from "@/app/login/actions";
 import { updateProfile } from "./actions";
 
@@ -29,9 +29,7 @@ export default async function MeuPerfilPage() {
       <header className="border-b border-border bg-surface/70 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-4 sm:px-6">
           <span className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent font-display text-lg font-bold text-[#06110a]">
-              K
-            </span>
+            <BrandMark />
             <span className="font-display text-lg font-bold uppercase tracking-wide">
               Kongs Campeonatos
             </span>

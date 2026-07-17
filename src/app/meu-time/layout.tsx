@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getOwnedTeam } from "@/lib/auth/roles";
 import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
 import { signOut } from "@/app/login/actions";
-import { Button } from "@/components/ui";
+import { BrandMark, Button } from "@/components/ui";
 
 export default async function MeuTimeLayout({
   children,
@@ -28,9 +28,7 @@ export default async function MeuTimeLayout({
       <header className="border-b border-border bg-surface/70 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href="/meu-time" className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent font-display text-lg font-bold text-[#06110a]">
-              K
-            </span>
+            <BrandMark />
             <span className="font-display text-lg font-bold uppercase tracking-wide">
               {team.name}
             </span>

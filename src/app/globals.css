@@ -1,15 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0f0d;
-  --surface: #10201a;
-  --surface-2: #142a21;
-  --border: #1f3d31;
-  --foreground: #eef7f1;
-  --muted: #93a99e;
-  --accent: #b6f000;
-  --accent-2: #ffb703;
-  --danger: #ff5c5c;
+  --background: #faf9fb;
+  --surface: #ffffff;
+  --surface-2: #f1f0f5;
+  --border: #e6e4ec;
+  --foreground: #000000;
+  --muted: #68666f;
+  --accent: #059669;
+  --accent-2: #b45309;
+  --danger: #dc2626;
+  --brand-gradient-1: linear-gradient(135deg, #a4fe30, #00fe87);
+  --brand-gradient-2: linear-gradient(135deg, #0ff5f2, #5fa8ff);
 }
 
 @theme inline {
@@ -28,7 +30,7 @@
 
 body {
   background:
-    radial-gradient(circle at top, rgba(182, 240, 0, 0.06), transparent 45%),
+    radial-gradient(circle at top, rgba(0, 254, 135, 0.10), transparent 45%),
     var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
@@ -36,19 +38,34 @@ body {
 }
 
 ::selection {
-  background: var(--accent);
-  color: #06110a;
+  background: #00fe87;
+  color: #000000;
 }
 
 .pitch-lines {
   background-image:
     repeating-linear-gradient(
       90deg,
-      rgba(182, 240, 0, 0.035) 0px,
-      rgba(182, 240, 0, 0.035) 1px,
+      rgba(0, 0, 0, 0.035) 0px,
+      rgba(0, 0, 0, 0.035) 1px,
       transparent 1px,
       transparent 64px
     );
+}
+
+.brand-gradient-1 {
+  background-image: var(--brand-gradient-1);
+}
+
+.brand-gradient-2 {
+  background-image: var(--brand-gradient-2);
+}
+
+.brand-gradient-text {
+  background-image: var(--brand-gradient-1);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .scrollbar-thin::-webkit-scrollbar {

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ShareButton } from "@/components/share-button";
+import { BrandMark } from "@/components/ui";
 
 export default async function PublicChampionshipLayout({
   children,
@@ -26,9 +27,7 @@ export default async function PublicChampionshipLayout({
       <header className="border-b border-border bg-surface/70 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href={`/campeonato/${id}`} className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent font-display text-lg font-bold text-[#06110a]">
-              K
-            </span>
+            <BrandMark />
             <span className="font-display text-lg font-bold uppercase tracking-wide">
               {championship.name}
             </span>

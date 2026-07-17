@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
+import { Badge, BrandMark, Card, EmptyState, PageHeader } from "@/components/ui";
 
 export default async function CampeonatosPublicosPage() {
   const supabase = await createClient();
@@ -14,9 +14,7 @@ export default async function CampeonatosPublicosPage() {
     <main className="pitch-lines flex min-h-dvh flex-1 flex-col">
       <header className="border-b border-border bg-surface/70 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-2 px-4 py-4 sm:px-6">
-          <span className="flex h-8 w-8 items-center justify-center rounded-md bg-accent font-display text-lg font-bold text-[#06110a]">
-            K
-          </span>
+          <BrandMark />
           <span className="font-display text-lg font-bold uppercase tracking-wide">
             Kongs Campeonatos
           </span>

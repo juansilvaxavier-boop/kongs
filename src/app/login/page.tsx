@@ -1,9 +1,13 @@
+import { BrandMark } from "@/components/ui";
 import { LoginForm } from "./login-form";
 
 export default function LoginPage() {
   return (
     <main className="pitch-lines flex flex-1 flex-col items-center justify-center px-4 py-16">
       <div className="mb-10 text-center">
+        <div className="mb-4 flex justify-center">
+          <BrandMark size="lg" />
+        </div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-accent">
           Painel do organizador
         </p>

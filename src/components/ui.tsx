@@ -4,6 +4,23 @@ function cn(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
+export function BrandMark({ size = "md" }: { size?: "md" | "lg" }) {
+  const sizes: Record<string, string> = {
+    md: "h-8 w-8 text-lg",
+    lg: "h-14 w-14 text-2xl",
+  };
+  return (
+    <span
+      className={cn(
+        "brand-gradient-2 flex items-center justify-center rounded-full font-display font-bold text-black",
+        sizes[size]
+      )}
+    >
+      K
+    </span>
+  );
+}
+
 export function Card({
   children,
   className,
@@ -58,7 +75,7 @@ export function Button({
 }) {
   const variants: Record<string, string> = {
     primary:
-      "bg-accent text-[#06110a] hover:brightness-110 font-semibold shadow-[0_0_0_1px_rgba(182,240,0,0.4)]",
+      "brand-gradient-1 text-black hover:brightness-105 font-semibold shadow-[0_0_0_1px_rgba(0,254,135,0.35)]",
     secondary:
       "bg-surface-2 text-foreground border border-border hover:border-accent/60",
     danger: "bg-danger/10 text-danger border border-danger/40 hover:bg-danger/20",
