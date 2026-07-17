@@ -6,17 +6,17 @@ function cn(...classes: Array<string | false | undefined>) {
 
 export function BrandMark({ size = "md" }: { size?: "md" | "lg" }) {
   const sizes: Record<string, string> = {
-    md: "h-8 w-8 text-lg",
-    lg: "h-14 w-14 text-2xl",
+    md: "h-8 w-8",
+    lg: "h-14 w-14",
   };
   return (
-    <span
-      className={cn(
-        "brand-gradient-2 flex items-center justify-center rounded-full font-display font-bold text-black",
-        sizes[size]
-      )}
-    >
-      K
+    <span className={cn("inline-block overflow-hidden rounded-full", sizes[size])}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo.png"
+        alt="Kongs Campeonatos"
+        className="h-full w-full scale-125 object-cover"
+      />
     </span>
   );
 }
