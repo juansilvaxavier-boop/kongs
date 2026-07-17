@@ -53,6 +53,7 @@ export default async function JogosPage({
 
   const createGameWithId = createGame.bind(null, id);
   const hasEnoughTeams = (teams ?? []).length >= 2;
+  const hasDrawnGames = (games ?? []).length > 0;
   const pools = groupTeamsByFormat(championship?.format ?? "liga", teams ?? []);
   const poolSizes = pools.map((pool) => pool.teams.length);
 
@@ -112,7 +113,12 @@ export default async function JogosPage({
             </div>
             <div className="flex-1 basis-40">
               <Label>Data</Label>
-              <GameDateField />
+              <GameDateField disabled={!hasDrawnGames} />
+              {!hasDrawnGames && (
+                <p className="mt-1 text-xs text-muted">
+                  Disponível após o sorteio dos confrontos.
+                </p>
+              )}
             </div>
             <Button type="submit">Agendar</Button>
           </form>

@@ -12,29 +12,39 @@ export default async function TimesPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: championship }, { data: teams }, { data: coaches }, { data: invites }] =
-    await Promise.all([
-      supabase
-        .from("championships")
-        .select("format, team_count, group_count")
-        .eq("id", id)
-        .maybeSingle(),
-      supabase
-        .from("teams")
-        .select("id, name, coach_id, crest_url, owner_user_id, group_name")
-        .eq("championship_id", id)
-        .order("name"),
-      supabase
-        .from("coaches")
-        .select("id, name")
-        .eq("championship_id", id)
-        .order("name"),
-      supabase
-        .from("team_invites")
-        .select("id, team_id, email")
-        .eq("championship_id", id)
-        .is("accepted_at", null),
-    ]);
+  const [
+    { data: championship },
+    { data: teams },
+    { data: coaches },
+    { data: invites },
+    { data: players },
+  ] = await Promise.all([
+    supabase
+      .from("championships")
+      .select("format, team_count, group_count")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("teams")
+      .select("id, name, coach_id, crest_url, owner_user_id, group_name")
+      .eq("championship_id", id)
+      .order("name"),
+    supabase
+      .from("coaches")
+      .select("id, name")
+      .eq("championship_id", id)
+      .order("name"),
+    supabase
+      .from("team_invites")
+      .select("id, team_id, email")
+      .eq("championship_id", id)
+      .is("accepted_at", null),
+    supabase
+      .from("players")
+      .select("id, name, team_id, number, position")
+      .eq("championship_id", id)
+      .order("name"),
+  ]);
 
   const createTeamWithId = createTeam.bind(null, id);
   const showGroups = championship?.format === "copa";
@@ -108,6 +118,7 @@ export default async function TimesPage({
         teams={teams ?? []}
         coaches={coaches ?? []}
         invites={invites ?? []}
+        players={players ?? []}
         groupLabels={groupLabels}
         showGroups={showGroups}
       />

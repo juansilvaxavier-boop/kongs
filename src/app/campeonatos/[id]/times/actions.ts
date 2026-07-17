@@ -186,3 +186,102 @@ export async function resendTeamInvite(id: string, championshipId: string) {
 
   revalidateChampionship(championshipId);
 }
+
+// Jogadores e técnicos são cadastrados dentro do fluxo do time (elenco
+// expansível na aba Times), não em telas separadas.
+
+function parseNumber(formData: FormData) {
+  const value = String(formData.get("number") || "");
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parsePosition(formData: FormData) {
+  const value = String(formData.get("position") || "").trim();
+  return value ? value : null;
+}
+
+export async function createPlayer(
+  championshipId: string,
+  teamId: string,
+  formData: FormData
+) {
+  const name = String(formData.get("name") || "").trim();
+  if (!name) throw new Error("Informe o nome do jogador.");
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("players").insert({
+    championship_id: championshipId,
+    name,
+    team_id: teamId,
+    number: parseNumber(formData),
+    position: parsePosition(formData),
+  });
+
+  if (error) throw new Error(error.message);
+  revalidateChampionship(championshipId);
+}
+
+export async function updatePlayer(
+  id: string,
+  championshipId: string,
+  formData: FormData
+) {
+  const name = String(formData.get("name") || "").trim();
+  if (!name) throw new Error("Informe o nome do jogador.");
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("players")
+    .update({
+      name,
+      number: parseNumber(formData),
+      position: parsePosition(formData),
+    })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Jogador não encontrado ou sem permissão para editar.");
+  revalidateChampionship(championshipId);
+}
+
+export async function deletePlayer(id: string, championshipId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("players").delete().eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidateChampionship(championshipId);
+}
+
+export async function setOrCreateTeamCoach(
+  teamId: string,
+  championshipId: string,
+  formData: FormData
+) {
+  const newCoachName = String(formData.get("new_coach_name") || "").trim();
+  const existingCoachId = String(formData.get("coach_id") || "");
+
+  const supabase = await createClient();
+  let coachId: string | null = existingCoachId || null;
+
+  if (newCoachName) {
+    const { data, error } = await supabase
+      .from("coaches")
+      .insert({ championship_id: championshipId, name: newCoachName })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    coachId = data.id;
+  }
+
+  const { error } = await supabase
+    .from("teams")
+    .update({ coach_id: coachId })
+    .eq("id", teamId);
+  if (error) throw new Error(error.message);
+
+  revalidateChampionship(championshipId);
+}

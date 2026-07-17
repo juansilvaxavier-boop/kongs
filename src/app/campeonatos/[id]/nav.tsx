@@ -8,8 +8,6 @@ const TABS = [
   { slug: "classificacao", label: "Classificação" },
   { slug: "jogos", label: "Jogos" },
   { slug: "times", label: "Times" },
-  { slug: "jogadores", label: "Jogadores" },
-  { slug: "tecnicos", label: "Técnicos" },
   { slug: "estatisticas", label: "Estatísticas" },
   { slug: "configuracoes", label: "Configurações" },
 ];

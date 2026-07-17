@@ -50,12 +50,18 @@ export async function createGame(championshipId: string, formData: FormData) {
   const supabase = await createClient();
   await assertTeamsBelongToChampionship(supabase, championshipId, teamAId, teamBId);
 
+  const { count } = await supabase
+    .from("games")
+    .select("id", { count: "exact", head: true })
+    .eq("championship_id", championshipId);
+  const hasDrawnGames = (count ?? 0) > 0;
+
   const { error } = await supabase.from("games").insert({
     championship_id: championshipId,
     round,
     team_a_id: teamAId,
     team_b_id: teamBId,
-    date: parseDate(formData),
+    date: hasDrawnGames ? parseDate(formData) : null,
   });
 
   if (error) throw new Error(error.message);

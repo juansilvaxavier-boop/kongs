@@ -9,6 +9,7 @@ import {
   resendTeamInvite,
   updateTeam,
 } from "./actions";
+import { TeamRoster } from "./team-roster";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
@@ -24,12 +25,20 @@ type Team = {
   group_name: string | null;
 };
 type Invite = { id: string; team_id: string; email: string };
+type Player = {
+  id: string;
+  name: string;
+  team_id: string | null;
+  number: number | null;
+  position: string | null;
+};
 
 export function TeamTable({
   championshipId,
   teams,
   coaches,
   invites,
+  players,
   groupLabels,
   showGroups,
 }: {
@@ -37,11 +46,13 @@ export function TeamTable({
   teams: Team[];
   coaches: Coach[];
   invites: Invite[];
+  players: Player[];
   groupLabels: string[] | null;
   showGroups: boolean;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [invitingId, setInvitingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const coachName = (coachId: string | null) =>
     coaches.find((c) => c.id === coachId)?.name ?? "—";
   const pendingInvite = (teamId: string) =>
@@ -224,6 +235,14 @@ export function TeamTable({
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex justify-end gap-2">
+                        <Button
+                          variant="secondary"
+                          onClick={() =>
+                            setExpandedId(expandedId === team.id ? null : team.id)
+                          }
+                        >
+                          {expandedId === team.id ? "Fechar elenco" : "Elenco"}
+                        </Button>
                         {!team.owner_user_id && !invite && (
                           <Button
                             variant="secondary"
@@ -260,6 +279,21 @@ export function TeamTable({
               </tr>
             );
           })}
+          {teams.map((team) =>
+            expandedId === team.id ? (
+              <tr key={`${team.id}-roster`} className="border-b border-border last:border-0">
+                <td colSpan={5} className="p-0">
+                  <TeamRoster
+                    championshipId={championshipId}
+                    teamId={team.id}
+                    coachId={team.coach_id}
+                    coaches={coaches}
+                    players={players.filter((p) => p.team_id === team.id)}
+                  />
+                </td>
+              </tr>
+            ) : null
+          )}
         </tbody>
       </table>
     </Card>
