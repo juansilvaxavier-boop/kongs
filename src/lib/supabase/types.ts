@@ -90,24 +90,65 @@ export type Database = {
           },
         ]
       }
+      championship_comments: {
+        Row: {
+          body: string
+          championship_id: string
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          championship_id: string
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          championship_id?: string
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "championship_comments_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       championships: {
         Row: {
           created_at: string
+          format: string
+          has_knockout_stage: boolean
           id: string
           name: string
           owner_id: string
+          yellow_cards_for_suspension: number
         }
         Insert: {
           created_at?: string
+          format?: string
+          has_knockout_stage?: boolean
           id?: string
           name: string
           owner_id: string
+          yellow_cards_for_suspension?: number
         }
         Update: {
           created_at?: string
+          format?: string
+          has_knockout_stage?: boolean
           id?: string
           name?: string
           owner_id?: string
+          yellow_cards_for_suspension?: number
         }
         Relationships: []
       }
@@ -294,6 +335,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          persona: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          persona?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          persona?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       team_invites: {
         Row: {

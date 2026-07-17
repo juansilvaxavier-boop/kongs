@@ -10,6 +10,12 @@ export async function createChampionship(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   if (!name) throw new Error("Informe o nome do campeonato.");
 
+  const format = String(formData.get("format") || "liga");
+  if (format !== "liga" && format !== "copa") {
+    throw new Error("Formato inválido.");
+  }
+  const hasKnockoutStage = formData.get("has_knockout_stage") === "on";
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -21,7 +27,12 @@ export async function createChampionship(formData: FormData) {
 
   const { data, error } = await supabase
     .from("championships")
-    .insert({ name, owner_id: user.id })
+    .insert({
+      name,
+      owner_id: user.id,
+      format,
+      has_knockout_stage: hasKnockoutStage,
+    })
     .select("id")
     .single();
 

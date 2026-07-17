@@ -1,4 +1,4 @@
-import { type ButtonHTMLAttributes, type InputHTMLAttributes, type SelectHTMLAttributes, type ReactNode } from "react";
+import { type ButtonHTMLAttributes, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes, type ReactNode } from "react";
 
 function cn(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -83,6 +83,21 @@ export function Input({
 }: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
+      className={cn(
+        "w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-muted/70 outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/40",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
+export function Textarea({
+  className,
+  ...props
+}: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
       className={cn(
         "w-full rounded-lg border border-border bg-surface-2 px-3 py-2 text-sm text-foreground placeholder:text-muted/70 outline-none focus:border-accent/70 focus:ring-1 focus:ring-accent/40",
         className

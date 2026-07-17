@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState } from "@/components/ui";
+import { computeSuspensions } from "@/lib/discipline";
 
 export default async function PublicTeamPage({
   params,
@@ -10,21 +11,42 @@ export default async function PublicTeamPage({
   const { id, teamId } = await params;
   const supabase = await createClient();
 
-  const [{ data: team }, { data: players }] = await Promise.all([
-    supabase
-      .from("teams")
-      .select("id, name, crest_url, coach_id")
-      .eq("championship_id", id)
-      .eq("id", teamId)
-      .maybeSingle(),
-    supabase
-      .from("players")
-      .select("id, name, number, position")
-      .eq("team_id", teamId)
-      .order("number", { ascending: true, nullsFirst: false }),
-  ]);
+  const [{ data: championship }, { data: team }, { data: players }, { data: cardEvents }, { data: games }] =
+    await Promise.all([
+      supabase
+        .from("championships")
+        .select("yellow_cards_for_suspension")
+        .eq("id", id)
+        .maybeSingle(),
+      supabase
+        .from("teams")
+        .select("id, name, crest_url, coach_id")
+        .eq("championship_id", id)
+        .eq("id", teamId)
+        .maybeSingle(),
+      supabase
+        .from("players")
+        .select("id, name, number, position, team_id")
+        .eq("team_id", teamId)
+        .order("number", { ascending: true, nullsFirst: false }),
+      supabase
+        .from("card_events")
+        .select("player_id, card_type, game_id")
+        .eq("championship_id", id),
+      supabase
+        .from("games")
+        .select("id, team_a_id, team_b_id, date, round, played")
+        .eq("championship_id", id),
+    ]);
 
   if (!team) notFound();
+
+  const suspensions = computeSuspensions(
+    players ?? [],
+    cardEvents ?? [],
+    games ?? [],
+    championship?.yellow_cards_for_suspension ?? 3
+  );
 
   const { data: coachRow } = team.coach_id
     ? await supabase.from("coaches").select("name").eq("id", team.coach_id).maybeSingle()
@@ -66,26 +88,37 @@ export default async function PublicTeamPage({
                 <th className="px-4 py-3">Nº</th>
                 <th className="px-4 py-3">Jogador</th>
                 <th className="px-4 py-3">Posição</th>
+                <th className="px-4 py-3">Situação</th>
               </tr>
             </thead>
             <tbody>
-              {players.map((player) => (
-                <tr key={player.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
-                    {player.number ?? "—"}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    {player.name}
-                  </td>
-                  <td className="px-4 py-3">
-                    {player.position ? (
-                      <Badge>{player.position}</Badge>
-                    ) : (
-                      <span className="text-muted">—</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
+              {players.map((player) => {
+                const status = suspensions.get(player.id);
+                return (
+                  <tr key={player.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
+                      {player.number ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      {player.name}
+                    </td>
+                    <td className="px-4 py-3">
+                      {player.position ? (
+                        <Badge>{player.position}</Badge>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {status?.suspended ? (
+                        <Badge tone="warning">Suspenso</Badge>
+                      ) : (
+                        <span className="text-muted">—</span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </Card>

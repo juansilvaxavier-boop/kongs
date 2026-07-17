@@ -2,7 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { EmptyState, PageHeader } from "@/components/ui";
 import { StandingsTable } from "@/components/standings-table";
 import { computeStandings } from "@/lib/standings";
-import { gamesWithinTeams, groupTeams } from "@/lib/groups";
+import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
 
 export default async function ClassificacaoPage({
   params,
@@ -12,7 +12,8 @@ export default async function ClassificacaoPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: teams }, { data: games }] = await Promise.all([
+  const [{ data: championship }, { data: teams }, { data: games }] = await Promise.all([
+    supabase.from("championships").select("format").eq("id", id).maybeSingle(),
     supabase
       .from("teams")
       .select("id, name, group_name")
@@ -35,7 +36,7 @@ export default async function ClassificacaoPage({
     );
   }
 
-  const groups = groupTeams(teams);
+  const groups = groupTeamsByFormat(championship?.format ?? "liga", teams);
 
   return (
     <div className="space-y-10">

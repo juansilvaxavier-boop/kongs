@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Button, Card, EmptyState, Input, Label, PageHeader } from "@/components/ui";
+import { Button, Card, EmptyState, Input, Label, PageHeader, Select } from "@/components/ui";
 import { createChampionship } from "./actions";
 import { ChampionshipList } from "./championship-list";
 
@@ -25,8 +25,11 @@ export default async function CampeonatosPage() {
       />
 
       <Card className="mb-8 p-5">
-        <form action={createChampionship} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex-1">
+        <form
+          action={createChampionship}
+          className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
+        >
+          <div className="flex-1 basis-48">
             <Label>Novo campeonato</Label>
             <Input
               name="name"
@@ -34,6 +37,21 @@ export default async function CampeonatosPage() {
               placeholder="Ex.: Campeonato Municipal 2026"
             />
           </div>
+          <div className="w-40">
+            <Label>Formato</Label>
+            <Select name="format" defaultValue="liga">
+              <option value="liga">Liga (pontos corridos)</option>
+              <option value="copa">Copa (fase de grupos)</option>
+            </Select>
+          </div>
+          <label className="flex items-center gap-2 pb-2 text-sm text-muted">
+            <input
+              type="checkbox"
+              name="has_knockout_stage"
+              className="h-4 w-4 rounded border-border accent-accent"
+            />
+            Com mata-mata
+          </label>
           <Button type="submit">Criar campeonato</Button>
         </form>
       </Card>

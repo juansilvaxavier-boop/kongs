@@ -41,6 +41,19 @@ export function groupTeams<T extends Team>(teams: T[]): TeamGroup<T>[] {
 }
 
 /**
+ * Aplica o agrupamento de acordo com o formato do campeonato: em "copa",
+ * agrupa por group_name (fase de grupos); em "liga", sempre uma tabela
+ * única, ignorando qualquer group_name que os times tenham.
+ */
+export function groupTeamsByFormat<T extends Team>(
+  format: string,
+  teams: T[]
+): TeamGroup<T>[] {
+  if (format === "copa") return groupTeams(teams);
+  return [{ groupName: null, teams }];
+}
+
+/**
  * Filtra jogos para os que envolvem apenas times de um mesmo grupo
  * (usado para calcular a classificação de cada grupo isoladamente).
  */

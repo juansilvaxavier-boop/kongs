@@ -15,8 +15,13 @@ export default async function JogosPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: gamesData }, { data: teams }, { data: players }, { data: goalEvents }, { data: cardEvents }] =
+  const [{ data: championship }, { data: gamesData }, { data: teams }, { data: players }, { data: goalEvents }, { data: cardEvents }] =
     await Promise.all([
+      supabase
+        .from("championships")
+        .select("has_knockout_stage")
+        .eq("id", id)
+        .maybeSingle(),
       supabase
         .from("games")
         .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played")
@@ -54,13 +59,15 @@ export default async function JogosPage({
         eyebrow="Tabela de jogos"
         title="Jogos"
         action={
-          <Link
-            href={`/campeonato/${id}/chaveamento`}
-            target="_blank"
-            className="text-sm text-accent hover:underline"
-          >
-            Ver chaveamento →
-          </Link>
+          championship?.has_knockout_stage ? (
+            <Link
+              href={`/campeonato/${id}/chaveamento`}
+              target="_blank"
+              className="text-sm text-accent hover:underline"
+            >
+              Ver chaveamento →
+            </Link>
+          ) : undefined
         }
       />
 

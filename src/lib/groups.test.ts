@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gamesWithinTeams, groupTeams } from "./groups";
+import { gamesWithinTeams, groupTeams, groupTeamsByFormat } from "./groups";
 
 describe("groupTeams", () => {
   it("returns a single ungrouped bucket when no team has a group", () => {
@@ -33,6 +33,23 @@ describe("groupTeams", () => {
 
     expect(groups.map((g) => g.groupName)).toEqual(["Grupo A", "Sem grupo"]);
     expect(groups[1].teams.map((t) => t.id)).toEqual(["b"]);
+  });
+});
+
+describe("groupTeamsByFormat", () => {
+  const teams = [
+    { id: "a", name: "A", group_name: "Grupo B" },
+    { id: "b", name: "B", group_name: "Grupo A" },
+  ];
+
+  it("groups by group_name for copa", () => {
+    const groups = groupTeamsByFormat("copa", teams);
+    expect(groups.map((g) => g.groupName)).toEqual(["Grupo A", "Grupo B"]);
+  });
+
+  it("always returns a single table for liga, ignoring group_name", () => {
+    const groups = groupTeamsByFormat("liga", teams);
+    expect(groups).toEqual([{ groupName: null, teams }]);
   });
 });
 

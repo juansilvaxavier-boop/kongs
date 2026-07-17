@@ -22,7 +22,7 @@ export default async function MeuTimePage() {
   if (!user) redirect("/login");
 
   const team = await getOwnedTeam(supabase, user.id);
-  if (!team) redirect("/sem-acesso");
+  if (!team) redirect("/meu-perfil");
 
   const [{ data: fullTeam }, { data: coaches }, { data: players }] =
     await Promise.all([

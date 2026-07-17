@@ -10,6 +10,10 @@ Sistema web de gestão de campeonatos de futebol, com 4 papéis de acesso:
 - **Jogador** e **Torcida**: sem login, páginas públicas somente leitura em
   `/campeonato/[id]` (campeonato inteiro) e `/campeonato/[id]/time/[teamId]`
   (elenco de um time).
+- **Conta pública (qualquer pessoa que se cadastrar)**: não é dono de time
+  nem admin. Tem um espaço de perfil em `/meu-perfil` (nome, foto, e se é
+  jogador/treinador/torcedor) e pode comentar nas páginas públicas dos
+  campeonatos com essa conta — mas não pode criar/editar nada.
 
 Todos os dados ficam no Supabase (Postgres), protegidos por Row Level
 Security de acordo com o papel do usuário.
@@ -107,6 +111,25 @@ que o e-mail do convite bate com o do usuário autenticado).
   campeonato, gera um PNG da tabela via `html2canvas-pro`.
 - **CI**: `.github/workflows/ci.yml` roda typecheck, lint, testes (Vitest) e
   build a cada push/PR.
+- **Formato do campeonato**: definido na criação (aba "Campeonatos") ou depois
+  em `/campeonatos/[id]/configuracoes` — **Copa** calcula uma classificação
+  separada por grupo (campo "Grupo" dos times); **Liga** sempre usa uma
+  tabela única, ignorando o grupo. Em ambos, dá pra ligar/desligar a opção
+  "mata-mata", que só controla se o link "Ver chaveamento" aparece.
+- **Regras de disciplina**: o número de cartões amarelos que suspende o
+  jogador para a próxima partida é configurável por campeonato (padrão 3,
+  em Configurações); cartão vermelho sempre suspende. O cálculo
+  (`src/lib/discipline.ts`) é informativo — não há controle de escalação
+  no sistema — e aparece como coluna "Situação" em Estatísticas (admin) e
+  como badge "Suspenso" no elenco público do time.
+- **Perfis**: qualquer conta que não seja admin nem dono de time cai em
+  `/meu-perfil` para preencher nome, foto (URL) e persona
+  (jogador/treinador/torcedor).
+- **Comentários públicos**: na página pública de cada campeonato, usuários
+  logados podem comentar (usa `championship_comments`); comentários mostram
+  nome/foto/persona do perfil de quem comentou, quando preenchidos. Visitante
+  sem conta vê os comentários mas precisa entrar para escrever. Há também um
+  botão "Compartilhar" (Web Share API com fallback para copiar o link).
 
 ## Múltiplos admins por campeonato (co-organizadores)
 

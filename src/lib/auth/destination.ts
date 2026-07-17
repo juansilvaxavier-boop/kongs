@@ -35,5 +35,5 @@ export async function resolveAuthenticatedDestination(
 
   if (ownedTeam) return "/meu-time";
 
-  return "/sem-acesso";
+  return "/meu-perfil";
 }

@@ -5,8 +5,9 @@ import { StandingsTable } from "@/components/standings-table";
 import { computeStandings } from "@/lib/standings";
 import { computeTopScorers } from "@/lib/stats";
 import { naturalCompare } from "@/lib/datetime";
-import { gamesWithinTeams, groupTeams } from "@/lib/groups";
+import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
 import { ExportImageButton } from "@/components/export-image-button";
+import { CommentsSection } from "./comments-section";
 
 export default async function PublicChampionshipPage({
   params,
@@ -16,8 +17,17 @@ export default async function PublicChampionshipPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: teams }, { data: gamesData }, { data: players }, { data: goals }] =
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [{ data: championship }, { data: teams }, { data: gamesData }, { data: players }, { data: goals }, { data: comments }] =
     await Promise.all([
+      supabase
+        .from("championships")
+        .select("format, has_knockout_stage")
+        .eq("id", id)
+        .maybeSingle(),
       supabase
         .from("teams")
         .select("id, name, crest_url, group_name")
@@ -30,7 +40,21 @@ export default async function PublicChampionshipPage({
         .order("date", { ascending: true, nullsFirst: false }),
       supabase.from("players").select("id, name, team_id").eq("championship_id", id),
       supabase.from("goal_events").select("player_id").eq("championship_id", id),
+      supabase
+        .from("championship_comments")
+        .select("id, user_id, body, created_at")
+        .eq("championship_id", id)
+        .order("created_at", { ascending: false }),
     ]);
+
+  const commenterIds = [...new Set((comments ?? []).map((c) => c.user_id))];
+  const { data: commentProfiles } =
+    commenterIds.length > 0
+      ? await supabase
+          .from("profiles")
+          .select("user_id, display_name, avatar_url, persona")
+          .in("user_id", commenterIds)
+      : { data: [] };
 
   const games = gamesData
     ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
@@ -39,7 +63,7 @@ export default async function PublicChampionshipPage({
   const scorers = computeTopScorers(players ?? [], goals ?? [], teams ?? []);
   const teamName = (teamId: string) =>
     teams?.find((t) => t.id === teamId)?.name ?? "?";
-  const groups = groupTeams(teams ?? []);
+  const groups = groupTeamsByFormat(championship?.format ?? "liga", teams ?? []);
 
   return (
     <div className="space-y-10">
@@ -82,12 +106,14 @@ export default async function PublicChampionshipPage({
           eyebrow="Resultados e agenda"
           title="Jogos"
           action={
-            <Link
-              href={`/campeonato/${id}/chaveamento`}
-              className="text-sm text-accent hover:underline"
-            >
-              Ver chaveamento →
-            </Link>
+            championship?.has_knockout_stage ? (
+              <Link
+                href={`/campeonato/${id}/chaveamento`}
+                className="text-sm text-accent hover:underline"
+              >
+                Ver chaveamento →
+              </Link>
+            ) : undefined
           }
         />
         {games.length === 0 ? (
@@ -191,6 +217,13 @@ export default async function PublicChampionshipPage({
           <EmptyState>Nenhum time cadastrado ainda.</EmptyState>
         )}
       </div>
+
+      <CommentsSection
+        championshipId={id}
+        comments={comments ?? []}
+        profiles={commentProfiles ?? []}
+        currentUserId={user?.id ?? null}
+      />
     </div>
   );
 }

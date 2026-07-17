@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ShareButton } from "@/components/share-button";
 
 export default async function PublicChampionshipLayout({
   children,
@@ -32,9 +33,12 @@ export default async function PublicChampionshipLayout({
               {championship.name}
             </span>
           </Link>
-          <span className="text-xs uppercase tracking-wide text-muted">
-            Página pública
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-xs uppercase tracking-wide text-muted sm:inline">
+              Página pública
+            </span>
+            <ShareButton title={championship.name} />
+          </div>
         </div>
       </header>
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
