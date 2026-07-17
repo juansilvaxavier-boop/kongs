@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
 import { generateRoundRobin } from "@/lib/round-robin";
-import { groupTeamsByFormat } from "@/lib/groups";
+import { groupTeamsByFormat, shuffle } from "@/lib/groups";
 
 function parseDate(formData: FormData) {
   const value = String(formData.get("date") || "");
@@ -159,10 +159,8 @@ export async function generateRounds(
   for (const pool of pools) {
     if (pool.teams.length < 2) continue;
 
-    const fixtures = generateRoundRobin(
-      pool.teams.map((t) => t.id),
-      Math.trunc(rounds)
-    );
+    const shuffledTeamIds = shuffle(pool.teams.map((t) => t.id));
+    const fixtures = generateRoundRobin(shuffledTeamIds, Math.trunc(rounds));
 
     for (const fixture of fixtures) {
       const roundLabel = pool.groupName

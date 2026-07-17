@@ -41,6 +41,9 @@ export function GenerateRoundsForm({
     (sum, size) => sum + gamesForPool(size, rounds),
     0
   );
+  const gamesPerTeamByPoolSize = [...new Set(eligiblePools)]
+    .sort((a, b) => a - b)
+    .map((size) => ({ size, gamesPerTeam: (size - 1) * rounds }));
 
   async function handleGenerate() {
     if (
@@ -104,7 +107,7 @@ export function GenerateRoundsForm({
         </p>
         <div className="flex flex-wrap items-end gap-4">
           <div className="w-56">
-            <Label>Jogos por adversário no grupo</Label>
+            <Label>Vezes que cada time enfrenta o mesmo adversário</Label>
             <Input
               type="number"
               min={1}
@@ -119,6 +122,18 @@ export function GenerateRoundsForm({
             {pending ? "Gerando..." : `Gerar ${totalGames} jogos`}
           </Button>
         </div>
+        {gamesPerTeamByPoolSize.length > 0 && (
+          <p className="mt-3 text-xs text-muted">
+            {gamesPerTeamByPoolSize
+              .map(({ size, gamesPerTeam }) =>
+                gamesPerTeamByPoolSize.length > 1
+                  ? `grupo de ${size} times: ${gamesPerTeam} jogos por time`
+                  : `cada time terá ${gamesPerTeam} jogos`
+              )
+              .join(" · ")}
+            . O sorteio decide aleatoriamente a ordem das rodadas.
+          </p>
+        )}
       </Card>
 
       {phase !== "idle" && (
