@@ -4,7 +4,15 @@ import { createClient } from "@/lib/supabase/server";
 import { assignTeamsToGroups, shuffle } from "@/lib/groups";
 import { revalidateChampionship } from "@/lib/revalidate";
 
-export async function sortearGrupos(championshipId: string) {
+export type SorteioReveal = {
+  teamId: string;
+  teamName: string;
+  groupName: string;
+};
+
+export async function sortearGrupos(
+  championshipId: string
+): Promise<SorteioReveal[]> {
   const supabase = await createClient();
 
   const { data: championship, error: championshipError } = await supabase
@@ -25,13 +33,14 @@ export async function sortearGrupos(championshipId: string) {
 
   const { data: teams, error: teamsError } = await supabase
     .from("teams")
-    .select("id")
+    .select("id, name")
     .eq("championship_id", championshipId);
   if (teamsError) throw new Error(teamsError.message);
   if (!teams || teams.length === 0) {
     throw new Error("Nenhum time cadastrado para sortear.");
   }
 
+  const teamNameById = new Map(teams.map((team) => [team.id, team.name]));
   const shuffledIds = shuffle(teams.map((team) => team.id));
   const assignment = assignTeamsToGroups(shuffledIds, championship.group_count);
 
@@ -44,4 +53,10 @@ export async function sortearGrupos(championshipId: string) {
   }
 
   revalidateChampionship(championshipId);
+
+  return shuffledIds.map((teamId) => ({
+    teamId,
+    teamName: teamNameById.get(teamId) ?? "?",
+    groupName: assignment.get(teamId)!,
+  }));
 }
