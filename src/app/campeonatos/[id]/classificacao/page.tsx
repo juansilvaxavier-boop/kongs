@@ -21,7 +21,7 @@ export default async function ClassificacaoPage({
       .maybeSingle(),
     supabase
       .from("teams")
-      .select("id, name, group_name")
+      .select("id, name, crest_url, group_name")
       .eq("championship_id", id)
       .order("name"),
     supabase

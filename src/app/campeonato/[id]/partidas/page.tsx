@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
+import { TeamCell } from "@/components/team-cell";
 import { naturalCompare } from "@/lib/datetime";
 import { TeamFilter } from "../team-filter";
 
@@ -23,7 +24,7 @@ export default async function PartidasPage({
       .maybeSingle(),
     supabase
       .from("teams")
-      .select("id, name")
+      .select("id, name, crest_url")
       .eq("championship_id", id)
       .order("name"),
     supabase
@@ -41,6 +42,7 @@ export default async function PartidasPage({
     : allGames;
 
   const teamName = (teamId: string) => teams?.find((t) => t.id === teamId)?.name ?? "?";
+  const teamCrest = (teamId: string) => teams?.find((t) => t.id === teamId)?.crest_url ?? null;
 
   return (
     <div>
@@ -92,7 +94,11 @@ export default async function PartidasPage({
                       : "—"}
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">
-                    {teamName(game.team_a_id)} x {teamName(game.team_b_id)}
+                    <div className="flex items-center gap-2">
+                      <TeamCell name={teamName(game.team_a_id)} crestUrl={teamCrest(game.team_a_id)} />
+                      <span className="text-muted">x</span>
+                      <TeamCell name={teamName(game.team_b_id)} crestUrl={teamCrest(game.team_b_id)} />
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-foreground">
                     {game.played ? `${game.score_a} - ${game.score_b}` : "—"}

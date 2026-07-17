@@ -61,7 +61,8 @@ export function PlayerCard({
     lg: "w-56 p-4 text-base",
   };
   const photoSizes = { sm: "h-12 w-12", md: "h-16 w-16", lg: "h-24 w-24" };
-  const crestSizes = { sm: "h-4 w-4", md: "h-5 w-5", lg: "h-7 w-7" };
+  const crestSizes = { sm: "h-6 w-6", md: "h-8 w-8", lg: "h-11 w-11" };
+  const ovrSizes = { sm: "text-3xl", md: "text-4xl", lg: "text-5xl" };
 
   return (
     <div
@@ -69,7 +70,7 @@ export function PlayerCard({
     >
       <div className="flex items-start justify-between">
         <div className="flex flex-col items-center gap-1">
-          <span className="font-display text-2xl font-bold leading-none">
+          <span className={`font-display font-bold leading-none ${ovrSizes[size]}`}>
             {Math.round(attributes.ovr)}
           </span>
           {crestUrl && (

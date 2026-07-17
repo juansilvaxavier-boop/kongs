@@ -215,7 +215,9 @@ export function GameTable({
                     gameId={game.id}
                     championshipId={championshipId}
                     teamAId={game.team_a_id}
+                    teamAName={teamName(game.team_a_id)}
                     teamBId={game.team_b_id}
+                    teamBName={teamName(game.team_b_id)}
                     scoreA={game.score_a}
                     scoreB={game.score_b}
                     played={game.played}

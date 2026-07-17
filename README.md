@@ -103,15 +103,19 @@ que o e-mail do convite bate com o do usuário autenticado).
   e a página `/redefinir-senha` (também usada em `/meu-time/conta`).
 - **Gerador de rodadas**: na aba Jogos, cria automaticamente os confrontos
   todos-contra-todos (turno único ou ida e volta).
-- **Súmula digital**: cada jogo tem um painel de Súmula (aba Jogos → "Súmula")
-  onde o admin lança placar final, gols e cartões — é a única fonte de dados
-  da gamificação. O painel também gera um link público (`/sumula/[token]`,
-  sem login) para enviar aos mesários preencherem ao vivo no dia do jogo; o
-  token fica numa tabela própria sem policy de leitura (só acessível via
-  funções `sumula_*`, SECURITY DEFINER), então não vaza pela leitura pública
-  de `games`. "Gerar novo link" invalida o anterior. Artilharia/cartões
-  aparecem em tabelas em Estatísticas (admin) e na página pública do
-  campeonato.
+- **Súmula digital**: um único link por campeonato (aba Jogos → "Link da
+  súmula", também acessível ao admin em `/sumula/[token]` sem login) que o
+  admin envia ao mesário; o token fica numa tabela própria sem policy de
+  leitura (só acessível via funções `sumula_*`, SECURITY DEFINER), então não
+  vaza pela leitura pública de `games`. "Gerar novo link" invalida o
+  anterior. Ao abrir o link, o mesário escolhe o jogo numa lista
+  (`/sumula/[token]/[gameId]`) e vê duas tabelas lado a lado, uma para cada
+  time (casa/fora), para lançar gols e cartões daquele time; o placar não é
+  mais digitado — é sempre calculado a partir dos gols lançados, e some o
+  botão "Encerrar jogo"/"Reabrir jogo" para marcar o jogo como realizado. O
+  mesmo painel (com o mesmo layout de duas tabelas) existe também para o
+  admin, dentro do jogo na aba Jogos. Artilharia/cartões aparecem em tabelas
+  em Estatísticas (admin) e na página pública do campeonato.
 - **Fase de grupos**: times podem receber um campo "Grupo" opcional; a
   classificação passa a ser calculada por grupo quando ao menos um time tiver
   grupo definido.
@@ -172,10 +176,11 @@ usada pelo trigger `handle_new_player`), com OVR = média dos 6:
 | Zagueiro | 65  | 45  | 58  | 60  | 77  | 79  |
 | Goleiro  | 50  | 30  | 65  | 45  | 78  | 78  |
 
-A única fonte de dados para a evolução é a súmula do jogo (gols, cartões e
-placar, lançados na aba Jogos → "Súmula" ou pelo link público de súmula +
-marcar "Jogo realizado"). Ao salvar o placar (ou editar gols/cartões depois),
-a função SQL `process_game_ovr` (SECURITY DEFINER, porte de
+A única fonte de dados para a evolução é a súmula do jogo (gols e cartões
+lançados na aba Jogos → jogo → súmula, ou pelo link público de súmula, e o
+jogo marcado como "realizado" — o placar é sempre calculado a partir dos
+gols, nunca digitado). Ao marcar o jogo como realizado (ou editar
+gols/cartões depois), a função SQL `process_game_ovr` (SECURITY DEFINER, porte de
 `src/lib/gamification.ts` — mesmas fórmulas, com testes em
 `gamification.test.ts`) recalcula tudo do zero de forma idempotente — reverte
 o lançamento anterior daquele jogo e aplica de novo com os dados atuais.

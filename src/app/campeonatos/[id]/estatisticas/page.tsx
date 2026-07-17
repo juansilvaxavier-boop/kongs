@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
+import { TeamCell } from "@/components/team-cell";
 import { computeDiscipline, computeTopScorers } from "@/lib/stats";
 import { computeSuspensions } from "@/lib/discipline";
 
@@ -25,7 +26,7 @@ export default async function EstatisticasPage({
       .eq("id", id)
       .maybeSingle(),
     supabase.from("players").select("id, name, team_id").eq("championship_id", id),
-    supabase.from("teams").select("id, name").eq("championship_id", id),
+    supabase.from("teams").select("id, name, crest_url").eq("championship_id", id),
     supabase.from("goal_events").select("player_id").eq("championship_id", id),
     supabase.from("card_events").select("player_id, card_type, game_id").eq("championship_id", id),
     supabase
@@ -65,7 +66,9 @@ export default async function EstatisticasPage({
                 {scorers.map((row) => (
                   <tr key={row.playerId} className="border-b border-border last:border-0">
                     <td className="px-4 py-3 font-medium text-foreground">{row.playerName}</td>
-                    <td className="px-4 py-3 text-muted">{row.teamName}</td>
+                    <td className="px-4 py-3 text-muted">
+                      <TeamCell name={row.teamName} crestUrl={row.teamCrestUrl} />
+                    </td>
                     <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
                       {row.goals}
                     </td>
@@ -105,7 +108,9 @@ export default async function EstatisticasPage({
                   return (
                     <tr key={row.playerId} className="border-b border-border last:border-0">
                       <td className="px-4 py-3 font-medium text-foreground">{row.playerName}</td>
-                      <td className="px-4 py-3 text-muted">{row.teamName}</td>
+                      <td className="px-4 py-3 text-muted">
+                      <TeamCell name={row.teamName} crestUrl={row.teamCrestUrl} />
+                    </td>
                       <td className="px-4 py-3 text-center text-foreground">{row.yellow}</td>
                       <td className="px-4 py-3 text-center text-danger">{row.red}</td>
                       <td className="px-4 py-3">

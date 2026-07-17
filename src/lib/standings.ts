@@ -1,4 +1,4 @@
-type Team = { id: string; name: string };
+type Team = { id: string; name: string; crest_url?: string | null };
 type Game = {
   team_a_id: string;
   team_b_id: string;
@@ -11,6 +11,7 @@ export type StandingRow = {
   pos: number;
   teamId: string;
   teamName: string;
+  teamCrestUrl: string | null;
   pts: number;
   j: number;
   v: number;
@@ -24,7 +25,7 @@ export type StandingRow = {
 export function computeStandings(teams: Team[], games: Game[]): StandingRow[] {
   const stats = new Map<
     string,
-    Omit<StandingRow, "pos" | "teamId" | "teamName">
+    Omit<StandingRow, "pos" | "teamId" | "teamName" | "teamCrestUrl">
   >();
 
   for (const team of teams) {
@@ -66,7 +67,12 @@ export function computeStandings(teams: Team[], games: Game[]): StandingRow[] {
 
   const rows = teams.map((team) => {
     const s = stats.get(team.id)!;
-    return { teamId: team.id, teamName: team.name, ...s };
+    return {
+      teamId: team.id,
+      teamName: team.name,
+      teamCrestUrl: team.crest_url ?? null,
+      ...s,
+    };
   });
 
   rows.sort((x, y) => {

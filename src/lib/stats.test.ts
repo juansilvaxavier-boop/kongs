@@ -24,8 +24,20 @@ describe("computeTopScorers", () => {
     const scorers = computeTopScorers(players, goals, teams);
 
     expect(scorers).toEqual([
-      { playerId: "p1", playerName: "Diego Farias", teamName: "Leões da Serra", goals: 3 },
-      { playerId: "p2", playerName: "Igor Salgado", teamName: "Furacão FC", goals: 1 },
+      {
+        playerId: "p1",
+        playerName: "Diego Farias",
+        teamName: "Leões da Serra",
+        teamCrestUrl: null,
+        goals: 3,
+      },
+      {
+        playerId: "p2",
+        playerName: "Igor Salgado",
+        teamName: "Furacão FC",
+        teamCrestUrl: null,
+        goals: 1,
+      },
     ]);
   });
 
@@ -54,6 +66,7 @@ describe("computeDiscipline", () => {
       playerId: "p2",
       playerName: "Igor Salgado",
       teamName: "Furacão FC",
+      teamCrestUrl: null,
       yellow: 0,
       red: 1,
     });
@@ -61,6 +74,7 @@ describe("computeDiscipline", () => {
       playerId: "p1",
       playerName: "Diego Farias",
       teamName: "Leões da Serra",
+      teamCrestUrl: null,
       yellow: 2,
       red: 0,
     });

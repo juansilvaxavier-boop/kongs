@@ -33,13 +33,23 @@ export function StandingsTable({
                 {row.pos}
               </td>
               <td className="px-4 py-3 font-medium text-foreground">
-                {teamHref ? (
-                  <Link href={teamHref(row.teamId)} className="hover:underline">
-                    {row.teamName}
-                  </Link>
-                ) : (
-                  row.teamName
-                )}
+                <div className="flex items-center gap-2">
+                  {row.teamCrestUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={row.teamCrestUrl}
+                      alt=""
+                      className="h-6 w-6 shrink-0 rounded-full object-cover"
+                    />
+                  ) : null}
+                  {teamHref ? (
+                    <Link href={teamHref(row.teamId)} className="hover:underline">
+                      {row.teamName}
+                    </Link>
+                  ) : (
+                    row.teamName
+                  )}
+                </div>
               </td>
               <td className="px-4 py-3 text-center font-semibold text-foreground">
                 {row.pts}

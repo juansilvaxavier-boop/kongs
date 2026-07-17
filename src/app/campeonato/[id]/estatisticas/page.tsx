@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
+import { TeamCell } from "@/components/team-cell";
 import { computeDiscipline, computeTopScorers } from "@/lib/stats";
 import { computeSuspensions } from "@/lib/discipline";
 import { naturalCompare } from "@/lib/datetime";
@@ -163,7 +164,7 @@ export default async function EstatisticasPublicasPage({
                 {scorers.map((row) => (
                   <tr key={row.playerId} className="border-b border-border last:border-0">
                     <td className="px-4 py-3 font-medium text-foreground">{row.playerName}</td>
-                    <td className="px-4 py-3 text-muted">{row.teamName}</td>
+                    <td className="px-4 py-3 text-muted"><TeamCell name={row.teamName} crestUrl={row.teamCrestUrl} /></td>
                     <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
                       {row.goals}
                     </td>
@@ -199,7 +200,7 @@ export default async function EstatisticasPublicasPage({
                   return (
                     <tr key={row.playerId} className="border-b border-border last:border-0">
                       <td className="px-4 py-3 font-medium text-foreground">{row.playerName}</td>
-                      <td className="px-4 py-3 text-muted">{row.teamName}</td>
+                      <td className="px-4 py-3 text-muted"><TeamCell name={row.teamName} crestUrl={row.teamCrestUrl} /></td>
                       <td className="px-4 py-3 text-center text-foreground">{row.yellow}</td>
                       <td className="px-4 py-3 text-center text-danger">{row.red}</td>
                       <td className="px-4 py-3">

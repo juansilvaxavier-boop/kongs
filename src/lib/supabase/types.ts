@@ -124,6 +124,29 @@ export type Database = {
           },
         ]
       }
+      championship_sumula_tokens: {
+        Row: {
+          championship_id: string
+          token: string
+        }
+        Insert: {
+          championship_id: string
+          token?: string
+        }
+        Update: {
+          championship_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "championship_sumula_tokens_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: true
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       championships: {
         Row: {
           created_at: string
@@ -185,29 +208,6 @@ export type Database = {
             columns: ["championship_id"]
             isOneToOne: false
             referencedRelation: "championships"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      game_sumula_tokens: {
-        Row: {
-          game_id: string
-          token: string
-        }
-        Insert: {
-          game_id: string
-          token?: string
-        }
-        Update: {
-          game_id?: string
-          token?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "game_sumula_tokens_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: true
-            referencedRelation: "games"
             referencedColumns: ["id"]
           },
         ]
@@ -647,8 +647,8 @@ export type Database = {
           ritmo: number
         }[]
       }
-      get_or_create_sumula_token: {
-        Args: { p_championship_id: string; p_game_id: string }
+      get_or_create_championship_sumula_token: {
+        Args: { p_championship_id: string }
         Returns: string
       }
       is_admin: { Args: never; Returns: boolean }
@@ -657,14 +657,15 @@ export type Database = {
         Returns: boolean
       }
       process_game_ovr: { Args: { p_game_id: string }; Returns: undefined }
-      regenerate_sumula_token: {
-        Args: { p_championship_id: string; p_game_id: string }
+      regenerate_championship_sumula_token: {
+        Args: { p_championship_id: string }
         Returns: string
       }
       round2: { Args: { x: number }; Returns: number }
       sumula_add_card: {
         Args: {
           p_card_type: string
+          p_game_id: string
           p_minute: number
           p_player_id: string
           p_token: string
@@ -672,7 +673,12 @@ export type Database = {
         Returns: undefined
       }
       sumula_add_goal: {
-        Args: { p_minute: number; p_player_id: string; p_token: string }
+        Args: {
+          p_game_id: string
+          p_minute: number
+          p_player_id: string
+          p_token: string
+        }
         Returns: undefined
       }
       sumula_delete_card: {
@@ -683,11 +689,14 @@ export type Database = {
         Args: { p_goal_id: string; p_token: string }
         Returns: undefined
       }
-      sumula_get_game: {
+      sumula_get_championship: {
         Args: { p_token: string }
+        Returns: { championship_id: string; championship_name: string }[]
+      }
+      sumula_get_game: {
+        Args: { p_game_id: string; p_token: string }
         Returns: {
           championship_id: string
-          championship_name: string
           game_id: string
           played: boolean
           round: string
@@ -699,13 +708,21 @@ export type Database = {
           team_b_name: string
         }[]
       }
-      sumula_update_score: {
-        Args: {
-          p_played: boolean
-          p_score_a: number
-          p_score_b: number
-          p_token: string
-        }
+      sumula_list_games: {
+        Args: { p_token: string }
+        Returns: {
+          date: string
+          game_id: string
+          played: boolean
+          round: string
+          score_a: number
+          score_b: number
+          team_a_name: string
+          team_b_name: string
+        }[]
+      }
+      sumula_set_played: {
+        Args: { p_game_id: string; p_played: boolean; p_token: string }
         Returns: undefined
       }
     }

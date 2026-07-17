@@ -1,5 +1,5 @@
 type Player = { id: string; name: string; team_id: string | null };
-type Team = { id: string; name: string };
+type Team = { id: string; name: string; crest_url?: string | null };
 type GoalEvent = { player_id: string };
 type CardEvent = { player_id: string; card_type: string };
 
@@ -7,6 +7,7 @@ export type ScorerRow = {
   playerId: string;
   playerName: string;
   teamName: string;
+  teamCrestUrl: string | null;
   goals: number;
 };
 
@@ -14,12 +15,21 @@ export type DisciplineRow = {
   playerId: string;
   playerName: string;
   teamName: string;
+  teamCrestUrl: string | null;
   yellow: number;
   red: number;
 };
 
+function teamFor(player: Player, teams: Team[]): Team | undefined {
+  return teams.find((t) => t.id === player.team_id);
+}
+
 function teamNameFor(player: Player, teams: Team[]): string {
-  return teams.find((t) => t.id === player.team_id)?.name ?? "Sem time";
+  return teamFor(player, teams)?.name ?? "Sem time";
+}
+
+function teamCrestFor(player: Player, teams: Team[]): string | null {
+  return teamFor(player, teams)?.crest_url ?? null;
 }
 
 export function computeTopScorers(
@@ -38,6 +48,7 @@ export function computeTopScorers(
       playerId: p.id,
       playerName: p.name,
       teamName: teamNameFor(p, teams),
+      teamCrestUrl: teamCrestFor(p, teams),
       goals: counts.get(p.id) ?? 0,
     }))
     .sort((a, b) => b.goals - a.goals || a.playerName.localeCompare(b.playerName, "pt-BR"));
@@ -64,6 +75,7 @@ export function computeDiscipline(
         playerId: p.id,
         playerName: p.name,
         teamName: teamNameFor(p, teams),
+        teamCrestUrl: teamCrestFor(p, teams),
         yellow: entry.yellow,
         red: entry.red,
       };

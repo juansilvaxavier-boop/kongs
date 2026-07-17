@@ -4,18 +4,18 @@ import { useState } from "react";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import {
-  createCardEvent,
-  createGoalEvent,
-  deleteCardEvent,
-  deleteGoalEvent,
-} from "./events-actions";
-import { setGamePlayed } from "./actions";
+  sumulaAddCard,
+  sumulaAddGoal,
+  sumulaDeleteCard,
+  sumulaDeleteGoal,
+  sumulaSetPlayed,
+} from "../actions";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
 }
 
-type Player = { id: string; name: string; team_id: string | null };
+type Player = { id: string; name: string; team_id: string | null; number: number | null };
 type GoalEvent = { id: string; player_id: string; minute: number | null; game_id: string };
 type CardEvent = {
   id: string;
@@ -26,19 +26,19 @@ type CardEvent = {
 };
 
 function TeamSumulaColumn({
+  token,
+  gameId,
   teamName,
   teamPlayers,
   allPlayers,
-  gameId,
-  championshipId,
   goalEvents,
   cardEvents,
 }: {
+  token: string;
+  gameId: string;
   teamName: string;
   teamPlayers: Player[];
   allPlayers: Player[];
-  gameId: string;
-  championshipId: string;
   goalEvents: GoalEvent[];
   cardEvents: CardEvent[];
 }) {
@@ -49,16 +49,16 @@ function TeamSumulaColumn({
 
   return (
     <Card className="p-3">
-      <h3 className="mb-3 font-display text-sm font-bold uppercase tracking-wide text-foreground">
+      <h2 className="mb-3 font-display text-sm font-bold uppercase tracking-wide text-foreground">
         {teamName}
-      </h3>
+      </h2>
 
       {teamPlayers.length === 0 ? (
-        <p className="text-sm text-muted">Cadastre jogadores neste time para lançar gols e cartões.</p>
+        <p className="text-sm text-muted">Nenhum jogador cadastrado neste time.</p>
       ) : (
         <>
           <div className="mb-4">
-            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Gols</h4>
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Gols</h3>
             <ul className="mb-2 space-y-1">
               {teamGoals.map((goal) => (
                 <li key={goal.id} className="flex items-center justify-between text-sm text-foreground">
@@ -71,7 +71,7 @@ function TeamSumulaColumn({
                     className="text-xs text-muted underline hover:text-danger"
                     onClick={async () => {
                       try {
-                        await deleteGoalEvent(goal.id, championshipId, gameId);
+                        await sumulaDeleteGoal(token, gameId, goal.id);
                       } catch (error) {
                         alert(errorMessage(error));
                       }
@@ -84,7 +84,7 @@ function TeamSumulaColumn({
               {teamGoals.length === 0 && <li className="text-sm text-muted">Nenhum gol lançado.</li>}
             </ul>
             <ActionForm
-              action={(formData) => createGoalEvent(gameId, championshipId, formData)}
+              action={(formData) => sumulaAddGoal(token, gameId, formData)}
               className="flex flex-wrap items-center gap-2"
             >
               <Select name="player_id" required defaultValue="" className="max-w-[9rem]">
@@ -105,7 +105,7 @@ function TeamSumulaColumn({
           </div>
 
           <div>
-            <h4 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Cartões</h4>
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">Cartões</h3>
             <ul className="mb-2 space-y-1">
               {teamCards.map((card) => (
                 <li key={card.id} className="flex items-center justify-between text-sm text-foreground">
@@ -121,7 +121,7 @@ function TeamSumulaColumn({
                     className="text-xs text-muted underline hover:text-danger"
                     onClick={async () => {
                       try {
-                        await deleteCardEvent(card.id, championshipId, gameId);
+                        await sumulaDeleteCard(token, gameId, card.id);
                       } catch (error) {
                         alert(errorMessage(error));
                       }
@@ -134,7 +134,7 @@ function TeamSumulaColumn({
               {teamCards.length === 0 && <li className="text-sm text-muted">Nenhum cartão lançado.</li>}
             </ul>
             <ActionForm
-              action={(formData) => createCardEvent(gameId, championshipId, formData)}
+              action={(formData) => sumulaAddCard(token, gameId, formData)}
               className="flex flex-wrap items-center gap-2"
             >
               <Select name="player_id" required defaultValue="" className="max-w-[9rem]">
@@ -166,9 +166,9 @@ function TeamSumulaColumn({
   );
 }
 
-export function SumulaPanel({
+export function SumulaGamePanel({
+  token,
   gameId,
-  championshipId,
   teamAId,
   teamAName,
   teamBId,
@@ -180,8 +180,8 @@ export function SumulaPanel({
   goalEvents,
   cardEvents,
 }: {
+  token: string;
   gameId: string;
-  championshipId: string;
   teamAId: string;
   teamAName: string;
   teamBId: string;
@@ -197,14 +197,12 @@ export function SumulaPanel({
   const [error, setError] = useState<string | null>(null);
   const teamAPlayers = players.filter((p) => p.team_id === teamAId);
   const teamBPlayers = players.filter((p) => p.team_id === teamBId);
-  const gameGoals = goalEvents.filter((g) => g.game_id === gameId);
-  const gameCards = cardEvents.filter((c) => c.game_id === gameId);
 
   async function togglePlayed() {
     setPending(true);
     setError(null);
     try {
-      await setGamePlayed(gameId, championshipId, !played);
+      await sumulaSetPlayed(token, gameId, !played);
     } catch (err) {
       setError(errorMessage(err));
     } finally {
@@ -216,7 +214,9 @@ export function SumulaPanel({
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 p-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-muted">Placar (gerado pelos gols lançados)</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-muted">
+            Placar (gerado pelos gols lançados)
+          </p>
           <p className="font-display text-2xl font-bold text-foreground">
             {scoreA ?? 0} - {scoreB ?? 0}
           </p>
@@ -224,7 +224,7 @@ export function SumulaPanel({
         <div className="flex items-center gap-2">
           <Badge tone={played ? "success" : "warning"}>{played ? "Realizado" : "Agendado"}</Badge>
           <Button type="button" variant="secondary" onClick={togglePlayed} disabled={pending}>
-            {pending ? "Salvando…" : played ? "Reabrir jogo" : "Marcar como realizado"}
+            {pending ? "Salvando…" : played ? "Reabrir jogo" : "Encerrar jogo"}
           </Button>
         </div>
       </div>
@@ -232,22 +232,22 @@ export function SumulaPanel({
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <TeamSumulaColumn
+          token={token}
+          gameId={gameId}
           teamName={teamAName}
           teamPlayers={teamAPlayers}
           allPlayers={players}
-          gameId={gameId}
-          championshipId={championshipId}
-          goalEvents={gameGoals}
-          cardEvents={gameCards}
+          goalEvents={goalEvents}
+          cardEvents={cardEvents}
         />
         <TeamSumulaColumn
+          token={token}
+          gameId={gameId}
           teamName={teamBName}
           teamPlayers={teamBPlayers}
           allPlayers={players}
-          gameId={gameId}
-          championshipId={championshipId}
-          goalEvents={gameGoals}
-          cardEvents={gameCards}
+          goalEvents={goalEvents}
+          cardEvents={cardEvents}
         />
       </div>
     </div>

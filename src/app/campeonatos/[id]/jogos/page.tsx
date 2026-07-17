@@ -8,6 +8,7 @@ import { createGame } from "./actions";
 import { GameDateField } from "./game-date-field";
 import { GameTable } from "./game-table";
 import { GenerateRoundsForm } from "./generate-rounds-form";
+import { SumulaLinkSection } from "./sumula-link-section";
 
 export default async function JogosPage({
   params,
@@ -75,6 +76,8 @@ export default async function JogosPage({
           ) : undefined
         }
       />
+
+      <SumulaLinkSection championshipId={id} />
 
       {hasEnoughTeams && (
         <GenerateRoundsForm championshipId={id} poolSizes={poolSizes} />

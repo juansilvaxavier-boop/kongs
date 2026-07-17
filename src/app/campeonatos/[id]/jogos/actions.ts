@@ -12,13 +12,6 @@ function parseDate(formData: FormData) {
   return value ? value : null;
 }
 
-function parseScore(formData: FormData, field: "score_a" | "score_b") {
-  const value = String(formData.get(field) || "");
-  if (!value) return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
 async function assertTeamsBelongToChampionship(
   supabase: Awaited<ReturnType<typeof createClient>>,
   championshipId: string,
@@ -107,23 +100,15 @@ export async function updateGame(
   revalidateChampionship(championshipId);
 }
 
-export async function updateGameScore(
+export async function setGamePlayed(
   id: string,
   championshipId: string,
-  formData: FormData
+  played: boolean
 ) {
-  const scoreA = parseScore(formData, "score_a");
-  const scoreB = parseScore(formData, "score_b");
-  const played = formData.get("played") === "on";
-
-  if (played && (scoreA === null || scoreB === null)) {
-    throw new Error("Informe o placar dos dois times para marcar o jogo como realizado.");
-  }
-
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("games")
-    .update({ score_a: scoreA, score_b: scoreB, played })
+    .update({ played })
     .eq("id", id)
     .eq("championship_id", championshipId)
     .select("id")
@@ -136,24 +121,21 @@ export async function updateGameScore(
   revalidateChampionship(championshipId);
 }
 
-export async function getSumulaLink(gameId: string, championshipId: string) {
+export async function getChampionshipSumulaLink(championshipId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_or_create_sumula_token", {
-    p_game_id: gameId,
+  const { data, error } = await supabase.rpc("get_or_create_championship_sumula_token", {
     p_championship_id: championshipId,
   });
   if (error) throw new Error(error.message);
   return `${getSiteUrl()}/sumula/${data}`;
 }
 
-export async function regenerateSumulaLink(gameId: string, championshipId: string) {
+export async function regenerateChampionshipSumulaLink(championshipId: string) {
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("regenerate_sumula_token", {
-    p_game_id: gameId,
+  const { data, error } = await supabase.rpc("regenerate_championship_sumula_token", {
     p_championship_id: championshipId,
   });
   if (error) throw new Error(error.message);
-  revalidateChampionship(championshipId);
   return `${getSiteUrl()}/sumula/${data}`;
 }
 
