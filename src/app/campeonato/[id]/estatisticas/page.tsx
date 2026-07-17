@@ -2,7 +2,11 @@ import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { computeDiscipline, computeTopScorers } from "@/lib/stats";
 import { computeSuspensions } from "@/lib/discipline";
+import { naturalCompare } from "@/lib/datetime";
 import { TeamFilter } from "../team-filter";
+import { PlayerComparator, type ComparablePlayer } from "./player-comparator";
+import { TeamOfTheRoundSection, type RoundPlayerInfo } from "./team-of-the-round-section";
+import type { RoundOvrEntry } from "@/lib/team-of-the-round";
 
 export default async function EstatisticasPublicasPage({
   params,
@@ -28,7 +32,10 @@ export default async function EstatisticasPublicasPage({
       .select("yellow_cards_for_suspension")
       .eq("id", id)
       .maybeSingle(),
-    supabase.from("players").select("id, name, team_id").eq("championship_id", id),
+    supabase
+      .from("players")
+      .select("id, name, team_id, position, photo_url")
+      .eq("championship_id", id),
     supabase.from("teams").select("id, name").eq("championship_id", id).order("name"),
     supabase.from("goal_events").select("player_id").eq("championship_id", id),
     supabase
@@ -41,9 +48,27 @@ export default async function EstatisticasPublicasPage({
       .eq("championship_id", id),
   ]);
 
+  const allPlayers = playersData ?? [];
+  const playerIds = allPlayers.map((p) => p.id);
+
+  const [{ data: attributesRows }, { data: historyRows }] = await Promise.all([
+    playerIds.length > 0
+      ? supabase
+          .from("player_attributes")
+          .select("player_id, ovr, ritmo, finalizacao, passe, drible, defesa, fisico")
+          .in("player_id", playerIds)
+      : Promise.resolve({ data: [] }),
+    playerIds.length > 0
+      ? supabase
+          .from("ovr_history")
+          .select("player_id, round, delta")
+          .in("player_id", playerIds)
+      : Promise.resolve({ data: [] }),
+  ]);
+
   const players = teamFilter
-    ? (playersData ?? []).filter((p) => p.team_id === teamFilter)
-    : playersData ?? [];
+    ? allPlayers.filter((p) => p.team_id === teamFilter)
+    : allPlayers;
 
   const scorers = computeTopScorers(players, goals ?? [], teams ?? []);
   const discipline = computeDiscipline(players, cards ?? [], teams ?? []);
@@ -53,6 +78,53 @@ export default async function EstatisticasPublicasPage({
     games ?? [],
     championship?.yellow_cards_for_suspension ?? 3
   );
+
+  const teamNameById = new Map((teams ?? []).map((t) => [t.id, t.name]));
+  const attributesByPlayer = new Map((attributesRows ?? []).map((a) => [a.player_id, a]));
+
+  const comparablePlayers: ComparablePlayer[] = players.map((player) => {
+    const attrs = attributesByPlayer.get(player.id);
+    return {
+      id: player.id,
+      name: player.name,
+      teamName: teamNameById.get(player.team_id ?? "") ?? "Sem time",
+      position: player.position,
+      photoUrl: player.photo_url,
+      attributes: {
+        ovr: attrs?.ovr ?? 70,
+        ritmo: attrs?.ritmo ?? 70,
+        finalizacao: attrs?.finalizacao ?? 70,
+        passe: attrs?.passe ?? 70,
+        drible: attrs?.drible ?? 70,
+        defesa: attrs?.defesa ?? 70,
+        fisico: attrs?.fisico ?? 70,
+      },
+    };
+  });
+
+  const playersById: Record<string, RoundPlayerInfo> = {};
+  for (const player of comparablePlayers) {
+    playersById[player.id] = {
+      name: player.name,
+      photoUrl: player.photoUrl,
+      attributes: player.attributes,
+    };
+  }
+
+  const positionByPlayer = new Map(allPlayers.map((p) => [p.id, p.position]));
+  const entriesByRound: Record<string, RoundOvrEntry[]> = {};
+  for (const entry of historyRows ?? []) {
+    if (!entry.round) continue;
+    const position = positionByPlayer.get(entry.player_id);
+    if (!position) continue;
+    if (!entriesByRound[entry.round]) entriesByRound[entry.round] = [];
+    entriesByRound[entry.round].push({
+      playerId: entry.player_id,
+      position,
+      delta: entry.delta,
+    });
+  }
+  const rounds = Object.keys(entriesByRound).sort(naturalCompare);
 
   return (
     <div className="space-y-10">
@@ -137,6 +209,24 @@ export default async function EstatisticasPublicasPage({
             </table>
           </Card>
         )}
+      </div>
+
+      <div>
+        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+          Time da Rodada
+        </h2>
+        <TeamOfTheRoundSection
+          rounds={rounds}
+          entriesByRound={entriesByRound}
+          playersById={playersById}
+        />
+      </div>
+
+      <div>
+        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+          Comparador de jogadores
+        </h2>
+        <PlayerComparator players={comparablePlayers} />
       </div>
     </div>
   );

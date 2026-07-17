@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Card, Input, Label, Select } from "@/components/ui";
+import { Badge, Button, Card, FileInput, Input, Label, Select } from "@/components/ui";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import {
   createPlayer,
@@ -131,6 +131,10 @@ export function TeamRoster({
               ))}
             </Select>
           </div>
+          <div className="flex-1 basis-40">
+            <Label>Foto</Label>
+            <FileInput name="photo" accept="image/*" />
+          </div>
           <Button type="submit">Adicionar</Button>
         </form>
 
@@ -189,6 +193,7 @@ export function TeamRoster({
                               </option>
                             ))}
                           </Select>
+                          <FileInput name="photo" accept="image/*" className="max-w-[10rem]" />
                           <Button type="submit">Salvar</Button>
                           <Button
                             type="button"

@@ -1,7 +1,8 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Card, EmptyState } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { computeSuspensions } from "@/lib/discipline";
+import { PlayerRosterGrid, type RosterPlayer } from "./player-roster-grid";
 
 export default async function PublicTeamPage({
   params,
@@ -11,35 +12,62 @@ export default async function PublicTeamPage({
   const { id, teamId } = await params;
   const supabase = await createClient();
 
-  const [{ data: championship }, { data: team }, { data: players }, { data: cardEvents }, { data: games }] =
-    await Promise.all([
-      supabase
-        .from("championships")
-        .select("yellow_cards_for_suspension")
-        .eq("id", id)
-        .maybeSingle(),
-      supabase
-        .from("teams")
-        .select("id, name, crest_url, coach_id")
-        .eq("championship_id", id)
-        .eq("id", teamId)
-        .maybeSingle(),
-      supabase
-        .from("players")
-        .select("id, name, number, position, team_id")
-        .eq("team_id", teamId)
-        .order("number", { ascending: true, nullsFirst: false }),
-      supabase
-        .from("card_events")
-        .select("player_id, card_type, game_id")
-        .eq("championship_id", id),
-      supabase
-        .from("games")
-        .select("id, team_a_id, team_b_id, date, round, played")
-        .eq("championship_id", id),
-    ]);
+  const [
+    { data: championship },
+    { data: team },
+    { data: players },
+    { data: cardEvents },
+    { data: games },
+  ] = await Promise.all([
+    supabase
+      .from("championships")
+      .select("yellow_cards_for_suspension")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("teams")
+      .select("id, name, crest_url, coach_id")
+      .eq("championship_id", id)
+      .eq("id", teamId)
+      .maybeSingle(),
+    supabase
+      .from("players")
+      .select("id, name, number, position, team_id, photo_url")
+      .eq("team_id", teamId)
+      .order("number", { ascending: true, nullsFirst: false }),
+    supabase
+      .from("card_events")
+      .select("player_id, card_type, game_id")
+      .eq("championship_id", id),
+    supabase
+      .from("games")
+      .select("id, team_a_id, team_b_id, date, round, played")
+      .eq("championship_id", id),
+  ]);
 
   if (!team) notFound();
+
+  const playerIds = (players ?? []).map((p) => p.id);
+
+  const [{ data: attributesRows }, { data: historyRows }, { data: mvpGames }] =
+    await Promise.all([
+      playerIds.length > 0
+        ? supabase
+            .from("player_attributes")
+            .select("player_id, ovr, ritmo, finalizacao, passe, drible, defesa, fisico")
+            .in("player_id", playerIds)
+        : Promise.resolve({ data: [] }),
+      playerIds.length > 0
+        ? supabase
+            .from("ovr_history")
+            .select("id, player_id, round, reason, delta, created_at")
+            .in("player_id", playerIds)
+            .order("created_at", { ascending: false })
+        : Promise.resolve({ data: [] }),
+      playerIds.length > 0
+        ? supabase.from("games").select("mvp_player_id").in("mvp_player_id", playerIds)
+        : Promise.resolve({ data: [] }),
+    ]);
 
   const suspensions = computeSuspensions(
     players ?? [],
@@ -51,6 +79,44 @@ export default async function PublicTeamPage({
   const { data: coachRow } = team.coach_id
     ? await supabase.from("coaches").select("name").eq("id", team.coach_id).maybeSingle()
     : { data: null };
+
+  const attributesByPlayer = new Map((attributesRows ?? []).map((a) => [a.player_id, a]));
+  const mvpCounts = new Map<string, number>();
+  for (const game of mvpGames ?? []) {
+    if (!game.mvp_player_id) continue;
+    mvpCounts.set(game.mvp_player_id, (mvpCounts.get(game.mvp_player_id) ?? 0) + 1);
+  }
+
+  const rosterPlayers: RosterPlayer[] = (players ?? []).map((player) => {
+    const attrs = attributesByPlayer.get(player.id);
+    return {
+      id: player.id,
+      name: player.name,
+      number: player.number,
+      position: player.position,
+      photoUrl: player.photo_url,
+      suspended: suspensions.get(player.id)?.suspended ?? false,
+      attributes: {
+        ovr: attrs?.ovr ?? 70,
+        ritmo: attrs?.ritmo ?? 70,
+        finalizacao: attrs?.finalizacao ?? 70,
+        passe: attrs?.passe ?? 70,
+        drible: attrs?.drible ?? 70,
+        defesa: attrs?.defesa ?? 70,
+        fisico: attrs?.fisico ?? 70,
+      },
+      history: (historyRows ?? [])
+        .filter((h) => h.player_id === player.id)
+        .map((h) => ({
+          id: h.id,
+          round: h.round,
+          reason: h.reason,
+          delta: h.delta,
+          created_at: h.created_at,
+        })),
+      mvpCount: mvpCounts.get(player.id) ?? 0,
+    };
+  });
 
   return (
     <div>
@@ -80,48 +146,8 @@ export default async function PublicTeamPage({
         </div>
       </div>
 
-      {players && players.length > 0 ? (
-        <Card className="overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
-                <th className="px-4 py-3">Nº</th>
-                <th className="px-4 py-3">Jogador</th>
-                <th className="px-4 py-3">Posição</th>
-                <th className="px-4 py-3">Situação</th>
-              </tr>
-            </thead>
-            <tbody>
-              {players.map((player) => {
-                const status = suspensions.get(player.id);
-                return (
-                  <tr key={player.id} className="border-b border-border last:border-0">
-                    <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
-                      {player.number ?? "—"}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      {player.name}
-                    </td>
-                    <td className="px-4 py-3">
-                      {player.position ? (
-                        <Badge>{player.position}</Badge>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {status?.suspended ? (
-                        <Badge tone="warning">Suspenso</Badge>
-                      ) : (
-                        <span className="text-muted">—</span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </Card>
+      {rosterPlayers.length > 0 ? (
+        <PlayerRosterGrid players={rosterPlayers} />
       ) : (
         <EmptyState>Nenhum jogador cadastrado ainda.</EmptyState>
       )}

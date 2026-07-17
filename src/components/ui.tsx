@@ -174,9 +174,11 @@ export function EmptyState({ children }: { children: ReactNode }) {
 export function Badge({
   children,
   tone = "default",
+  className,
 }: {
   children: ReactNode;
   tone?: "default" | "success" | "warning";
+  className?: string;
 }) {
   const tones: Record<string, string> = {
     default: "bg-surface-2 text-muted border-border",
@@ -187,7 +189,8 @@ export function Badge({
     <span
       className={cn(
         "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
-        tones[tone]
+        tones[tone],
+        className
       )}
     >
       {children}

@@ -409,6 +409,7 @@ export type Database = {
           id: string
           name: string
           number: number | null
+          photo_url: string | null
           position: string | null
           team_id: string | null
         }
@@ -418,6 +419,7 @@ export type Database = {
           id?: string
           name: string
           number?: number | null
+          photo_url?: string | null
           position?: string | null
           team_id?: string | null
         }
@@ -427,6 +429,7 @@ export type Database = {
           id?: string
           name?: string
           number?: number | null
+          photo_url?: string | null
           position?: string | null
           team_id?: string | null
         }

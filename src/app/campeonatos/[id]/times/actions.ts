@@ -202,6 +202,30 @@ function parsePosition(formData: FormData) {
   return value ? value : null;
 }
 
+function parsePhotoFile(formData: FormData): File | null {
+  const file = formData.get("photo");
+  if (file instanceof File && file.size > 0) {
+    validateImageFile(file);
+    return file;
+  }
+  return null;
+}
+
+async function uploadPlayerPhoto(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  playerId: string,
+  file: File
+): Promise<string> {
+  const path = `${playerId}/photo.${fileExtension(file)}`;
+  const { error } = await supabase.storage.from("player-photos").upload(path, file, {
+    upsert: true,
+  });
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage.from("player-photos").getPublicUrl(path);
+  return `${data.publicUrl}?v=${Date.now()}`;
+}
+
 export async function createPlayer(
   championshipId: string,
   teamId: string,
@@ -210,16 +234,31 @@ export async function createPlayer(
   const name = String(formData.get("name") || "").trim();
   if (!name) throw new Error("Informe o nome do jogador.");
 
+  const photoFile = parsePhotoFile(formData);
   const supabase = await createClient();
-  const { error } = await supabase.from("players").insert({
-    championship_id: championshipId,
-    name,
-    team_id: teamId,
-    number: parseNumber(formData),
-    position: parsePosition(formData),
-  });
+  const { data, error } = await supabase
+    .from("players")
+    .insert({
+      championship_id: championshipId,
+      name,
+      team_id: teamId,
+      number: parseNumber(formData),
+      position: parsePosition(formData),
+    })
+    .select("id")
+    .single();
 
   if (error) throw new Error(error.message);
+
+  if (photoFile) {
+    const photoUrl = await uploadPlayerPhoto(supabase, data.id, photoFile);
+    const { error: photoError } = await supabase
+      .from("players")
+      .update({ photo_url: photoUrl })
+      .eq("id", data.id);
+    if (photoError) throw new Error(photoError.message);
+  }
+
   revalidateChampionship(championshipId);
 }
 
@@ -231,13 +270,17 @@ export async function updatePlayer(
   const name = String(formData.get("name") || "").trim();
   if (!name) throw new Error("Informe o nome do jogador.");
 
+  const photoFile = parsePhotoFile(formData);
   const supabase = await createClient();
+  const photoUrl = photoFile ? await uploadPlayerPhoto(supabase, id, photoFile) : undefined;
+
   const { data, error } = await supabase
     .from("players")
     .update({
       name,
       number: parseNumber(formData),
       position: parsePosition(formData),
+      ...(photoUrl ? { photo_url: photoUrl } : {}),
     })
     .eq("id", id)
     .select("id")
