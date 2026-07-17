@@ -131,61 +131,37 @@ export async function deleteTeam(id: string, championshipId: string) {
   revalidateChampionship(championshipId);
 }
 
-export async function inviteTeamOwner(
-  championshipId: string,
-  teamId: string,
-  formData: FormData
-) {
-  const email = String(formData.get("email") || "").trim().toLowerCase();
-  if (!email) throw new Error("Informe o e-mail do dono do time.");
-
+export async function getTeamRosterLink(teamId: string) {
   const supabase = await createClient();
-
-  const { error: insertError } = await supabase.from("team_invites").insert({
-    championship_id: championshipId,
-    team_id: teamId,
-    email,
+  const { data, error } = await supabase.rpc("get_or_create_team_roster_token", {
+    p_team_id: teamId,
   });
-  if (insertError) throw new Error(insertError.message);
-
-  const { error: otpError } = await supabase.auth.signInWithOtp({
-    email,
-    options: { emailRedirectTo: `${getSiteUrl()}/auth/callback` },
-  });
-  if (otpError) throw new Error(otpError.message);
-
-  revalidateChampionship(championshipId);
-}
-
-export async function cancelTeamInvite(id: string, championshipId: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("team_invites").delete().eq("id", id);
-
   if (error) throw new Error(error.message);
-  revalidateChampionship(championshipId);
+  return `${getSiteUrl()}/elenco/${data}`;
 }
 
-export async function resendTeamInvite(id: string, championshipId: string) {
+export async function regenerateTeamRosterLink(teamId: string) {
   const supabase = await createClient();
-
-  const { data: invite, error: fetchError } = await supabase
-    .from("team_invites")
-    .select("email")
-    .eq("id", id)
-    .is("accepted_at", null)
-    .maybeSingle();
-
-  if (fetchError) throw new Error(fetchError.message);
-  if (!invite) throw new Error("Convite não encontrado ou já aceito.");
-
-  const { error: otpError } = await supabase.auth.signInWithOtp({
-    email: invite.email,
-    options: { emailRedirectTo: `${getSiteUrl()}/auth/callback` },
+  const { data, error } = await supabase.rpc("regenerate_team_roster_token", {
+    p_team_id: teamId,
   });
-  if (otpError) throw new Error(otpError.message);
-
-  revalidateChampionship(championshipId);
+  if (error) throw new Error(error.message);
+  return `${getSiteUrl()}/elenco/${data}`;
 }
+
+export async function getTeamRosterStatus(teamId: string) {
+  const link = await getTeamRosterLink(teamId);
+  const token = link.split("/").pop()!;
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("roster_get_team", { p_token: token });
+  if (error) throw new Error(error.message);
+  const row = data?.[0];
+  return {
+    playerCount: row?.player_count ?? 0,
+    submitted: Boolean(row?.submitted_at),
+  };
+}
+
 
 // Jogadores e técnicos são cadastrados dentro do fluxo do time (elenco
 // expansível na aba Times), não em telas separadas.
@@ -200,6 +176,12 @@ function parseNumber(formData: FormData) {
 function parsePosition(formData: FormData) {
   const value = String(formData.get("position") || "").trim();
   return value ? value : null;
+}
+
+function parseBirthDate(formData: FormData): string {
+  const value = String(formData.get("birth_date") || "").trim();
+  if (!value) throw new Error("Informe a data de nascimento do jogador.");
+  return value;
 }
 
 function parseDocument(formData: FormData) {
@@ -259,6 +241,7 @@ export async function createPlayer(
 
   const photoFile = parsePhotoFile(formData);
   const document = parseDocument(formData);
+  const birthDate = parseBirthDate(formData);
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("players")
@@ -270,6 +253,7 @@ export async function createPlayer(
       position: parsePosition(formData),
       document_type: document.document_type,
       document_number: document.document_number,
+      birth_date: birthDate,
     })
     .select("id")
     .single();
@@ -298,6 +282,7 @@ export async function updatePlayer(
 
   const photoFile = parsePhotoFile(formData);
   const document = parseDocument(formData);
+  const birthDate = parseBirthDate(formData);
   const supabase = await createClient();
   const photoUrl = photoFile ? await uploadPlayerPhoto(supabase, id, photoFile) : undefined;
 
@@ -309,6 +294,7 @@ export async function updatePlayer(
       position: parsePosition(formData),
       document_type: document.document_type,
       document_number: document.document_number,
+      birth_date: birthDate,
       ...(photoUrl ? { photo_url: photoUrl } : {}),
     })
     .eq("id", id)

@@ -17,7 +17,6 @@ export default async function TimesPage({
     { data: championship },
     { data: teams },
     { data: coaches },
-    { data: invites },
     { data: players },
   ] = await Promise.all([
     supabase
@@ -36,13 +35,8 @@ export default async function TimesPage({
       .eq("championship_id", id)
       .order("name"),
     supabase
-      .from("team_invites")
-      .select("id, team_id, email")
-      .eq("championship_id", id)
-      .is("accepted_at", null),
-    supabase
       .from("players")
-      .select("id, name, team_id, number, position, document_type, document_number")
+      .select("id, name, team_id, number, position, document_type, document_number, birth_date")
       .eq("championship_id", id)
       .order("name"),
   ]);
@@ -118,7 +112,6 @@ export default async function TimesPage({
         championshipId={id}
         teams={teams ?? []}
         coaches={coaches ?? []}
-        invites={invites ?? []}
         players={players ?? []}
         groupLabels={groupLabels}
         showGroups={showGroups}

@@ -26,6 +26,7 @@ type Player = {
   position: string | null;
   document_type: string | null;
   document_number: string | null;
+  birth_date: string | null;
 };
 
 export function TeamRoster({
@@ -124,6 +125,10 @@ export function TeamRoster({
               ))}
             </Select>
           </div>
+          <div className="w-40">
+            <Label>Data de nascimento</Label>
+            <Input name="birth_date" type="date" required />
+          </div>
           <div className="w-28">
             <Label>Documento</Label>
             <Select name="document_type" defaultValue="">
@@ -193,6 +198,13 @@ export function TeamRoster({
                               </option>
                             ))}
                           </Select>
+                          <Input
+                            name="birth_date"
+                            type="date"
+                            defaultValue={player.birth_date ?? ""}
+                            required
+                            className="max-w-[10rem]"
+                          />
                           <Select
                             name="document_type"
                             defaultValue={player.document_type ?? ""}

@@ -87,15 +87,25 @@ exige credenciais do Google Cloud que só o dono da conta pode gerar:
 2. No painel do Supabase, vá em **Authentication → Sign In / Providers →
    Google**, ative e cole o Client ID e o Client Secret gerados.
 
-## Convite de dono de time
+## Link do elenco (cadastro pelo responsável do time)
 
-O fluxo de convite (`Convidar dono` na tela de Times) não usa a chave de
-service role: ele grava um convite pendente e chama
-`supabase.auth.signInWithOtp`, que cria a conta (se não existir) e envia um
-link de acesso por e-mail. Ao entrar (por esse link, por senha, ou pelo
-Google, usando o mesmo e-mail convidado), o sistema vincula automaticamente o
-usuário ao time via a função `accept_team_invite` (valida no próprio banco
-que o e-mail do convite bate com o do usuário autenticado).
+Na tela de Times, o botão `Link do elenco` gera um link individual por time
+(`/elenco/[token]`, sem login) — mesmo padrão de capability-URL da súmula:
+o token fica numa tabela própria (`team_roster_tokens`) sem policy de
+leitura, só acessível via funções `roster_*` (SECURITY DEFINER). O admin
+copia e envia esse link ao responsável pelo time, que cadastra os jogadores
+(até 20, travado no banco) e o técnico (1 por time, já garantido pelo
+schema). Nome completo, documento e posição são obrigatórios; os demais
+campos são opcionais. Enquanto o cadastro não é enviado, o responsável pode
+salvar e voltar ao link quantas vezes quiser; o botão "Enviar cadastro" é
+definitivo — a partir daí as funções `roster_*` passam a recusar qualquer
+alteração para aquele token (o admin pode gerar um novo link, o que também
+reabre a edição). "Gerar novo link" invalida o anterior.
+
+O fluxo antigo de convite por e-mail (`accept_team_invite` +
+`supabase.auth.signInWithOtp`, ligado à área `/meu-time`) continua existindo
+no banco, mas não tem mais botão na tela de Times — foi substituído pelo
+link acima.
 
 ## Funcionalidades adicionais
 
@@ -145,7 +155,8 @@ que o e-mail do convite bate com o do usuário autenticado).
 - **Cadastro vinculado ao time**: jogadores e técnicos não têm mais abas
   próprias — são cadastrados dentro da aba Times, num painel "Elenco" que
   abre como modal sobreposto por time (cria/edita/remove jogadores e
-  técnico ali mesmo). Jogador pode ter um documento (CPF ou RG + número).
+  técnico ali mesmo). Jogador pode ter um documento (CPF ou RG + número) e
+  a data de nascimento é obrigatória.
 - **Upload real de imagem**: escudo do time (`crests`), foto de perfil
   (`avatars`) e foto do jogador (`player-photos`) são upload de arquivo de
   verdade (Supabase Storage), não mais campos de URL.

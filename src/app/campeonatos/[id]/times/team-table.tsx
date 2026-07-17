@@ -3,14 +3,9 @@
 import { useState } from "react";
 import { Badge, Button, Card, EmptyState, FileInput, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
-import {
-  cancelTeamInvite,
-  deleteTeam,
-  inviteTeamOwner,
-  resendTeamInvite,
-  updateTeam,
-} from "./actions";
+import { deleteTeam, updateTeam } from "./actions";
 import { TeamRoster } from "./team-roster";
+import { TeamRosterLinkPanel } from "./team-roster-link-panel";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
@@ -25,7 +20,6 @@ type Team = {
   owner_user_id: string | null;
   group_name: string | null;
 };
-type Invite = { id: string; team_id: string; email: string };
 type Player = {
   id: string;
   name: string;
@@ -34,13 +28,13 @@ type Player = {
   position: string | null;
   document_type: string | null;
   document_number: string | null;
+  birth_date: string | null;
 };
 
 export function TeamTable({
   championshipId,
   teams,
   coaches,
-  invites,
   players,
   groupLabels,
   showGroups,
@@ -48,18 +42,15 @@ export function TeamTable({
   championshipId: string;
   teams: Team[];
   coaches: Coach[];
-  invites: Invite[];
   players: Player[];
   groupLabels: string[] | null;
   showGroups: boolean;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [invitingId, setInvitingId] = useState<string | null>(null);
+  const [linkingId, setLinkingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const coachName = (coachId: string | null) =>
     coaches.find((c) => c.id === coachId)?.name ?? "—";
-  const pendingInvite = (teamId: string) =>
-    invites.find((invite) => invite.team_id === teamId);
   const expandedTeam = teams.find((t) => t.id === expandedId) ?? null;
 
   if (teams.length === 0) {
@@ -81,7 +72,6 @@ export function TeamTable({
         </thead>
         <tbody>
           {teams.map((team) => {
-            const invite = pendingInvite(team.id);
             return (
               <tr key={team.id} className="border-b border-border last:border-0">
                 {editingId === team.id ? (
@@ -143,29 +133,20 @@ export function TeamTable({
                       </Button>
                     </ActionForm>
                   </td>
-                ) : invitingId === team.id ? (
-                  <td colSpan={4} className="px-4 py-3">
-                    <ActionForm
-                      action={(formData) => inviteTeamOwner(championshipId, team.id, formData)}
-                      onSuccess={() => setInvitingId(null)}
-                      className="flex flex-wrap items-center gap-2"
-                    >
-                      <Input
-                        name="email"
-                        type="email"
-                        required
-                        placeholder="e-mail do dono do time"
-                        className="max-w-xs"
-                      />
-                      <SubmitButton pendingText="Enviando…">Enviar convite</SubmitButton>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        onClick={() => setInvitingId(null)}
-                      >
-                        Cancelar
-                      </Button>
-                    </ActionForm>
+                ) : linkingId === team.id ? (
+                  <td colSpan={5} className="px-4 py-3">
+                    <div className="flex flex-col gap-2">
+                      <TeamRosterLinkPanel teamId={team.id} />
+                      <div>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => setLinkingId(null)}
+                        >
+                          Fechar
+                        </Button>
+                      </div>
+                    </div>
                   </td>
                 ) : (
                   <>
@@ -191,37 +172,6 @@ export function TeamTable({
                     <td className="px-4 py-3">
                       {team.owner_user_id ? (
                         <Badge tone="success">Vinculado</Badge>
-                      ) : invite ? (
-                        <div className="flex items-center gap-2">
-                          <Badge tone="warning">Convite enviado: {invite.email}</Badge>
-                          <button
-                            type="button"
-                            className="text-xs text-muted underline hover:text-accent"
-                            onClick={async () => {
-                              try {
-                                await resendTeamInvite(invite.id, championshipId);
-                                alert("Convite reenviado.");
-                              } catch (error) {
-                                alert(errorMessage(error));
-                              }
-                            }}
-                          >
-                            reenviar
-                          </button>
-                          <button
-                            type="button"
-                            className="text-xs text-muted underline hover:text-danger"
-                            onClick={async () => {
-                              try {
-                                await cancelTeamInvite(invite.id, championshipId);
-                              } catch (error) {
-                                alert(errorMessage(error));
-                              }
-                            }}
-                          >
-                            cancelar
-                          </button>
-                        </div>
                       ) : (
                         <span className="text-muted">Sem dono vinculado</span>
                       )}
@@ -234,14 +184,12 @@ export function TeamTable({
                         >
                           Elenco
                         </Button>
-                        {!team.owner_user_id && !invite && (
-                          <Button
-                            variant="secondary"
-                            onClick={() => setInvitingId(team.id)}
-                          >
-                            Convidar dono
-                          </Button>
-                        )}
+                        <Button
+                          variant="secondary"
+                          onClick={() => setLinkingId(team.id)}
+                        >
+                          Link do elenco
+                        </Button>
                         <Button
                           variant="secondary"
                           onClick={() => setEditingId(team.id)}

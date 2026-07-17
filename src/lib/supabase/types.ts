@@ -436,6 +436,7 @@ export type Database = {
       }
       players: {
         Row: {
+          birth_date: string | null
           championship_id: string
           created_at: string
           document_number: string | null
@@ -448,6 +449,7 @@ export type Database = {
           team_id: string | null
         }
         Insert: {
+          birth_date?: string | null
           championship_id: string
           created_at?: string
           document_number?: string | null
@@ -460,6 +462,7 @@ export type Database = {
           team_id?: string | null
         }
         Update: {
+          birth_date?: string | null
           championship_id?: string
           created_at?: string
           document_number?: string | null
@@ -563,6 +566,45 @@ export type Database = {
           },
         ]
       }
+      team_roster_tokens: {
+        Row: {
+          championship_id: string
+          created_at: string
+          submitted_at: string | null
+          team_id: string
+          token: string
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          submitted_at?: string | null
+          team_id: string
+          token?: string
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          submitted_at?: string | null
+          team_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_roster_tokens_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_roster_tokens_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: true
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       teams: {
         Row: {
           championship_id: string
@@ -651,6 +693,10 @@ export type Database = {
         Args: { p_championship_id: string }
         Returns: string
       }
+      get_or_create_team_roster_token: {
+        Args: { p_team_id: string }
+        Returns: string
+      }
       is_admin: { Args: never; Returns: boolean }
       is_championship_admin: {
         Args: { p_championship_id: string }
@@ -660,6 +706,82 @@ export type Database = {
       regenerate_championship_sumula_token: {
         Args: { p_championship_id: string }
         Returns: string
+      }
+      regenerate_team_roster_token: {
+        Args: { p_team_id: string }
+        Returns: string
+      }
+      roster_add_player: {
+        Args: {
+          p_birth_date: string
+          p_document_number: string
+          p_document_type: string
+          p_name: string
+          p_number: number
+          p_position: string
+          p_token: string
+        }
+        Returns: string
+      }
+      roster_delete_player: {
+        Args: { p_player_id: string; p_token: string }
+        Returns: undefined
+      }
+      roster_get_team: {
+        Args: { p_token: string }
+        Returns: {
+          championship_name: string
+          coach_id: string
+          coach_name: string
+          crest_url: string
+          player_count: number
+          submitted_at: string
+          team_id: string
+          team_name: string
+        }[]
+      }
+      roster_list_players: {
+        Args: { p_token: string }
+        Returns: {
+          birth_date: string
+          document_number: string
+          document_type: string
+          id: string
+          name: string
+          number: number
+          position: string
+        }[]
+      }
+      roster_set_coach: {
+        Args: { p_coach_name: string; p_token: string }
+        Returns: undefined
+      }
+      roster_submit: { Args: { p_token: string }; Returns: undefined }
+      roster_update_player: {
+        Args: {
+          p_birth_date: string
+          p_document_number: string
+          p_document_type: string
+          p_name: string
+          p_number: number
+          p_player_id: string
+          p_position: string
+          p_token: string
+        }
+        Returns: undefined
+      }
+      roster_validate_player: {
+        Args: {
+          p_birth_date: string
+          p_document_number: string
+          p_document_type: string
+          p_name: string
+          p_position: string
+        }
+        Returns: {
+          v_document_number: string
+          v_document_type: string
+        }[]
       }
       round2: { Args: { x: number }; Returns: number }
       sumula_add_card: {
@@ -691,7 +813,10 @@ export type Database = {
       }
       sumula_get_championship: {
         Args: { p_token: string }
-        Returns: { championship_id: string; championship_name: string }[]
+        Returns: {
+          championship_id: string
+          championship_name: string
+        }[]
       }
       sumula_get_game: {
         Args: { p_game_id: string; p_token: string }
