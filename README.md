@@ -126,14 +126,57 @@ que o e-mail do convite bate com o do usuário autenticado).
   (`src/lib/discipline.ts`) é informativo — não há controle de escalação
   no sistema — e aparece como coluna "Situação" em Estatísticas (admin) e
   como badge "Suspenso" no elenco público do time.
-- **Perfis**: qualquer conta que não seja admin nem dono de time cai em
-  `/meu-perfil` para preencher nome, foto (URL) e persona
-  (jogador/treinador/torcedor).
 - **Comentários públicos**: na página pública de cada campeonato, usuários
   logados podem comentar (usa `championship_comments`); comentários mostram
   nome/foto/persona do perfil de quem comentou, quando preenchidos. Visitante
   sem conta vê os comentários mas precisa entrar para escrever. Há também um
   botão "Compartilhar" (Web Share API com fallback para copiar o link).
+- **Cadastro vinculado ao time**: jogadores e técnicos não têm mais abas
+  próprias — são cadastrados dentro da aba Times, num painel "Elenco"
+  expansível por time (cria/edita/remove jogadores e técnico ali mesmo).
+- **Upload real de imagem**: escudo do time (`crests`), foto de perfil
+  (`avatars`) e foto do jogador (`player-photos`) são upload de arquivo de
+  verdade (Supabase Storage), não mais campos de URL.
+- **Datas de jogo só após o sorteio**: o formulário de agendar jogo manual
+  só libera o campo de data depois que a competição já tem pelo menos um
+  jogo (ou seja, depois de gerar/sortear os confrontos), reforçado também
+  no servidor.
+- **Página pública em abas**: `/campeonato/[id]` virou 4 abas (Visão Geral,
+  Classificação, Partidas, Estatísticas) com um filtro por time em
+  Partidas/Estatísticas; visitantes logados veem o mesmo menu lateral do
+  `/inicio` fixo enquanto navegam.
+
+## Gamificação (cartas estilo FIFA)
+
+Cada jogador tem uma carta com OVR e 6 atributos (Ritmo, Finalização, Passe,
+Drible, Defesa, Físico), todos começando em 70 — sem autoavaliação nem input
+manual, a evolução vem só do desempenho em campo. Raridade da carta: Bronze
+(OVR < 70), Prata (70–79), Ouro (80+).
+
+A única fonte de dados para a evolução é a súmula do jogo (gols, cartões e
+placar, já lançados na aba Jogos → "Eventos" + marcar "Realizado"). Ao marcar
+um jogo como realizado (ou editar gols/cartões depois), o sistema
+(`src/app/campeonatos/[id]/jogos/ovr-processing.ts`) recalcula tudo do zero
+de forma idempotente — reverte o lançamento anterior daquele jogo e aplica de
+novo com os dados atuais — usando as fórmulas em `src/lib/gamification.ts`:
+
+- `Base = Gols×0.30 + Vitória×0.20 − Amarelos×0.15 − Vermelhos×0.50`
+- Atacantes/Meias/Laterais/Volantes: `ΔOVR = Base`
+- Zagueiros: `ΔOVR = Base + (3.5 − Gols sofridos)×0.15`
+- Goleiros: `ΔOVR = Base + (3.5 − Gols sofridos)×0.25`
+
+Cada motivo gera uma linha no histórico (`ovr_history`, público para leitura)
+exibida na carta como "+0.30 · 1 Gol". O craque da partida (`mvp_player_id`
+em `games`) é automaticamente quem tiver o maior ΔOVR no jogo.
+
+Na página pública de cada time (`/campeonato/[id]/time/[teamId]`), o elenco
+aparece como cartas clicáveis; ao abrir uma, toca uma animação simples de
+"abertura de pacote" antes de mostrar o histórico de evolução, a contagem de
+MVPs e um botão para baixar a carta como imagem. Na aba Estatísticas há
+também um **Comparador de jogadores** (duas cartas lado a lado, destacando em
+verde o atributo maior) e o **Time da Rodada** (1 Goleiro, 2 Zagueiros, 2
+Meias, 1 Atacante — os de maior ΔOVR somado naquela rodada; ver
+`src/lib/team-of-the-round.ts`).
 
 ## Múltiplos admins por campeonato (co-organizadores)
 
