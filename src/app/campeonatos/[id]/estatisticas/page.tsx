@@ -53,8 +53,8 @@ export default async function EstatisticasPage({
             Nenhum gol lançado ainda. Lance gols na aba Jogos, em &quot;Súmula&quot;.
           </EmptyState>
         ) : (
-          <Card className="overflow-hidden">
-            <table className="w-full text-sm">
+          <Card className="overflow-x-auto">
+            <table className="w-full min-w-[24rem] text-sm">
               <thead>
                 <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
                   <th className="px-4 py-3">Jogador</th>
@@ -91,8 +91,8 @@ export default async function EstatisticasPage({
         {discipline.length === 0 ? (
           <EmptyState>Nenhum cartão lançado ainda.</EmptyState>
         ) : (
-          <Card className="overflow-hidden">
-            <table className="w-full text-sm">
+          <Card className="overflow-x-auto">
+            <table className="w-full min-w-[32rem] text-sm">
               <thead>
                 <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
                   <th className="px-4 py-3">Jogador</th>

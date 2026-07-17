@@ -25,8 +25,8 @@ export function OwnPlayerTable({ players }: { players: Player[] }) {
   }
 
   return (
-    <Card className="overflow-hidden">
-      <table className="w-full text-sm">
+    <Card className="overflow-x-auto">
+      <table className="w-full min-w-[28rem] text-sm">
         <thead>
           <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3">Jogador</th>

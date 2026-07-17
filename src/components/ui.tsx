@@ -57,7 +57,7 @@ export function PageHeader({
             {eyebrow}
           </p>
         ) : null}
-        <h1 className="font-display text-3xl font-bold uppercase tracking-wide text-foreground">
+        <h1 className="font-display text-2xl font-bold uppercase tracking-wide text-foreground sm:text-3xl">
           {title}
         </h1>
       </div>

@@ -208,8 +208,8 @@ export function RosterPanel({
         {players.length === 0 ? (
           <EmptyState>Nenhum jogador cadastrado ainda.</EmptyState>
         ) : (
-          <Card className="overflow-hidden">
-            <table className="w-full text-sm">
+          <Card className="overflow-x-auto">
+            <table className="w-full min-w-[48rem] text-sm">
               <thead>
                 <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
                   <th className="px-3 py-2">Foto</th>

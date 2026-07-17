@@ -46,7 +46,7 @@ export default async function PublicChampionshipLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 gap-8 px-4 py-8 sm:px-6">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:gap-8">
         {user && <SidebarNav />}
         <div className="min-w-0 flex-1">
           <PublicChampionshipTabs id={id} />

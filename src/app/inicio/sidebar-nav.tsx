@@ -15,14 +15,14 @@ export function SidebarNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="flex w-48 shrink-0 flex-col gap-1">
+    <nav className="no-scrollbar -mx-4 flex items-center gap-1 overflow-x-auto px-4 sm:mx-0 sm:px-0 md:w-48 md:shrink-0 md:items-stretch md:flex-col md:overflow-visible">
       {TABS.map((tab) => {
         const active = pathname === tab.href;
         return (
           <Link
             key={tab.href}
             href={tab.href}
-            className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+            className={`shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition md:w-full ${
               active
                 ? "bg-surface-2 text-accent"
                 : "text-muted hover:bg-surface-2 hover:text-foreground"
@@ -32,8 +32,8 @@ export function SidebarNav() {
           </Link>
         );
       })}
-      <form action={signOut} className="mt-2">
-        <Button type="submit" variant="secondary" className="w-full">
+      <form action={signOut} className="shrink-0 md:mt-2 md:w-full">
+        <Button type="submit" variant="secondary" className="whitespace-nowrap md:w-full">
           Sair
         </Button>
       </form>
