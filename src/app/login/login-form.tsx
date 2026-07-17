@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { Button, Input, Label } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 import {
   type AuthState,
   sendPasswordReset,
@@ -102,7 +103,7 @@ export function LoginForm() {
                 Esqueci minha senha
               </button>
             </div>
-            <Input type="password" name="password" required placeholder="••••••••" />
+            <PasswordInput name="password" required placeholder="••••••••" />
           </div>
           {signInState.error && (
             <p className="text-sm text-danger">{signInState.error}</p>
@@ -121,8 +122,7 @@ export function LoginForm() {
           </div>
           <div>
             <Label>Senha</Label>
-            <Input
-              type="password"
+            <PasswordInput
               name="password"
               required
               minLength={6}
