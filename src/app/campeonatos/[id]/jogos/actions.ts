@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
 import { generateRoundRobinForTotalRounds } from "@/lib/round-robin";
 import { groupTeamsByFormat, shuffle } from "@/lib/groups";
+import { processGameOvr } from "./ovr-processing";
 
 function parseDate(formData: FormData) {
   const value = String(formData.get("date") || "");
@@ -112,6 +113,8 @@ export async function updateGame(
 
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Jogo não encontrado ou sem permissão para editar.");
+
+  await processGameOvr(supabase, championshipId, id);
   revalidateChampionship(championshipId);
 }
 

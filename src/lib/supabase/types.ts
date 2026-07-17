@@ -193,6 +193,8 @@ export type Database = {
           created_at: string
           date: string | null
           id: string
+          mvp_player_id: string | null
+          ovr_processed_at: string | null
           played: boolean
           round: string
           score_a: number | null
@@ -205,6 +207,8 @@ export type Database = {
           created_at?: string
           date?: string | null
           id?: string
+          mvp_player_id?: string | null
+          ovr_processed_at?: string | null
           played?: boolean
           round: string
           score_a?: number | null
@@ -217,6 +221,8 @@ export type Database = {
           created_at?: string
           date?: string | null
           id?: string
+          mvp_player_id?: string | null
+          ovr_processed_at?: string | null
           played?: boolean
           round?: string
           score_a?: number | null
@@ -292,6 +298,105 @@ export type Database = {
             foreignKeyName: "goal_events_player_id_fkey"
             columns: ["player_id"]
             isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ovr_history: {
+        Row: {
+          championship_id: string
+          created_at: string
+          delta: number
+          game_id: string | null
+          id: string
+          player_id: string
+          reason: string
+          round: string | null
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          delta: number
+          game_id?: string | null
+          id?: string
+          player_id: string
+          reason: string
+          round?: string | null
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          delta?: number
+          game_id?: string | null
+          id?: string
+          player_id?: string
+          reason?: string
+          round?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ovr_history_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ovr_history_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ovr_history_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      player_attributes: {
+        Row: {
+          defesa: number
+          drible: number
+          finalizacao: number
+          fisico: number
+          ovr: number
+          passe: number
+          player_id: string
+          ritmo: number
+          updated_at: string
+        }
+        Insert: {
+          defesa?: number
+          drible?: number
+          finalizacao?: number
+          fisico?: number
+          ovr?: number
+          passe?: number
+          player_id: string
+          ritmo?: number
+          updated_at?: string
+        }
+        Update: {
+          defesa?: number
+          drible?: number
+          finalizacao?: number
+          fisico?: number
+          ovr?: number
+          passe?: number
+          player_id?: string
+          ritmo?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_attributes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: true
             referencedRelation: "players"
             referencedColumns: ["id"]
           },

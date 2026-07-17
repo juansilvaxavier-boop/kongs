@@ -75,7 +75,7 @@ export function GameEventsPanel({
                 className="text-xs text-muted underline hover:text-danger"
                 onClick={async () => {
                   try {
-                    await deleteGoalEvent(goal.id, championshipId);
+                    await deleteGoalEvent(goal.id, championshipId, gameId);
                   } catch (error) {
                     alert(errorMessage(error));
                   }
@@ -138,7 +138,7 @@ export function GameEventsPanel({
                 className="text-xs text-muted underline hover:text-danger"
                 onClick={async () => {
                   try {
-                    await deleteCardEvent(card.id, championshipId);
+                    await deleteCardEvent(card.id, championshipId, gameId);
                   } catch (error) {
                     alert(errorMessage(error));
                   }

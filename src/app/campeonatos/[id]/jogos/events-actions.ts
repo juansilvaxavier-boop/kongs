@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
+import { processGameOvr } from "./ovr-processing";
 
 function parseMinute(formData: FormData) {
   const value = String(formData.get("minute") || "");
@@ -60,14 +61,20 @@ export async function createGoalEvent(
   });
 
   if (error) throw new Error(error.message);
+  await processGameOvr(supabase, championshipId, gameId);
   revalidateChampionship(championshipId);
 }
 
-export async function deleteGoalEvent(id: string, championshipId: string) {
+export async function deleteGoalEvent(
+  id: string,
+  championshipId: string,
+  gameId: string
+) {
   const supabase = await createClient();
   const { error } = await supabase.from("goal_events").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
+  await processGameOvr(supabase, championshipId, gameId);
   revalidateChampionship(championshipId);
 }
 
@@ -95,13 +102,19 @@ export async function createCardEvent(
   });
 
   if (error) throw new Error(error.message);
+  await processGameOvr(supabase, championshipId, gameId);
   revalidateChampionship(championshipId);
 }
 
-export async function deleteCardEvent(id: string, championshipId: string) {
+export async function deleteCardEvent(
+  id: string,
+  championshipId: string,
+  gameId: string
+) {
   const supabase = await createClient();
   const { error } = await supabase.from("card_events").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
+  await processGameOvr(supabase, championshipId, gameId);
   revalidateChampionship(championshipId);
 }
