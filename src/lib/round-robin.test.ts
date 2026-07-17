@@ -3,13 +3,17 @@ import { generateRoundRobin } from "./round-robin";
 
 describe("generateRoundRobin", () => {
   it("returns nothing for fewer than 2 teams", () => {
-    expect(generateRoundRobin([], false)).toEqual([]);
-    expect(generateRoundRobin(["a"], false)).toEqual([]);
+    expect(generateRoundRobin([], 1)).toEqual([]);
+    expect(generateRoundRobin(["a"], 1)).toEqual([]);
+  });
+
+  it("returns nothing for zero or negative rounds", () => {
+    expect(generateRoundRobin(["a", "b"], 0)).toEqual([]);
   });
 
   it("schedules every pair exactly once for an even number of teams (single round)", () => {
     const teams = ["a", "b", "c", "d"];
-    const fixtures = generateRoundRobin(teams, false);
+    const fixtures = generateRoundRobin(teams, 1);
 
     // 4 times, turno único: 3 rodadas x 2 jogos = 6 jogos (todos os pares)
     expect(fixtures).toHaveLength(6);
@@ -22,7 +26,7 @@ describe("generateRoundRobin", () => {
 
   it("gives every team a bye exactly once for an odd number of teams", () => {
     const teams = ["a", "b", "c"];
-    const fixtures = generateRoundRobin(teams, false);
+    const fixtures = generateRoundRobin(teams, 1);
 
     // 3 times: 3 rodadas, 1 jogo por rodada (o terceiro time folga)
     expect(fixtures).toHaveLength(3);
@@ -32,15 +36,25 @@ describe("generateRoundRobin", () => {
 
   it("doubles the fixtures and mirrors home/away for ida e volta", () => {
     const teams = ["a", "b"];
-    const fixtures = generateRoundRobin(teams, true);
+    const fixtures = generateRoundRobin(teams, 2);
 
     expect(fixtures).toHaveLength(2);
     expect(fixtures[0]).toEqual({ round: 1, teamAId: "a", teamBId: "b" });
     expect(fixtures[1]).toEqual({ round: 2, teamAId: "b", teamBId: "a" });
   });
 
+  it("supports extra rounds beyond ida e volta, alternating mando", () => {
+    const teams = ["a", "b"];
+    const fixtures = generateRoundRobin(teams, 3);
+
+    expect(fixtures).toHaveLength(3);
+    expect(fixtures[0]).toEqual({ round: 1, teamAId: "a", teamBId: "b" });
+    expect(fixtures[1]).toEqual({ round: 2, teamAId: "b", teamBId: "a" });
+    expect(fixtures[2]).toEqual({ round: 3, teamAId: "a", teamBId: "b" });
+  });
+
   it("never schedules a team against itself", () => {
-    const fixtures = generateRoundRobin(["a", "b", "c", "d", "e"], true);
+    const fixtures = generateRoundRobin(["a", "b", "c", "d", "e"], 2);
     expect(fixtures.every((f) => f.teamAId !== f.teamBId)).toBe(true);
   });
 });

@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
 import { generateRoundRobin } from "@/lib/round-robin";
+import { groupTeamsByFormat } from "@/lib/groups";
 
 function parseDate(formData: FormData) {
   const value = String(formData.get("date") || "");
@@ -108,37 +109,89 @@ export async function updateGame(
   revalidateChampionship(championshipId);
 }
 
-export async function generateRounds(championshipId: string, formData: FormData) {
-  const doubleRound = formData.get("double_round") === "on";
+export type GeneratedGamePreview = {
+  round: string;
+  teamAName: string;
+  teamBName: string;
+};
+
+export async function generateRounds(
+  championshipId: string,
+  formData: FormData
+): Promise<GeneratedGamePreview[]> {
+  const rounds = Number(formData.get("rounds") || "1");
+  if (!Number.isFinite(rounds) || rounds < 1) {
+    throw new Error(
+      "Informe quantas vezes cada time deve enfrentar o mesmo adversário (mínimo 1)."
+    );
+  }
 
   const supabase = await createClient();
-  const { data: teams, error: teamsError } = await supabase
-    .from("teams")
-    .select("id")
-    .eq("championship_id", championshipId)
-    .order("name");
+  const [{ data: championship }, { data: teams, error: teamsError }] = await Promise.all([
+    supabase
+      .from("championships")
+      .select("format")
+      .eq("id", championshipId)
+      .maybeSingle(),
+    supabase
+      .from("teams")
+      .select("id, name, group_name")
+      .eq("championship_id", championshipId)
+      .order("name"),
+  ]);
 
   if (teamsError) throw new Error(teamsError.message);
   if (!teams || teams.length < 2) {
     throw new Error("Cadastre ao menos dois times para gerar as rodadas.");
   }
 
-  const fixtures = generateRoundRobin(
-    teams.map((t) => t.id),
-    doubleRound
-  );
+  const pools = groupTeamsByFormat(championship?.format ?? "liga", teams);
+  const teamNameById = new Map(teams.map((t) => [t.id, t.name]));
 
-  const { error } = await supabase.from("games").insert(
-    fixtures.map((f) => ({
-      championship_id: championshipId,
-      round: `Rodada ${f.round}`,
-      team_a_id: f.teamAId,
-      team_b_id: f.teamBId,
-    }))
-  );
+  const gamesToInsert: {
+    championship_id: string;
+    round: string;
+    team_a_id: string;
+    team_b_id: string;
+  }[] = [];
+  const preview: GeneratedGamePreview[] = [];
 
+  for (const pool of pools) {
+    if (pool.teams.length < 2) continue;
+
+    const fixtures = generateRoundRobin(
+      pool.teams.map((t) => t.id),
+      Math.trunc(rounds)
+    );
+
+    for (const fixture of fixtures) {
+      const roundLabel = pool.groupName
+        ? `${pool.groupName} - Rodada ${fixture.round}`
+        : `Rodada ${fixture.round}`;
+
+      gamesToInsert.push({
+        championship_id: championshipId,
+        round: roundLabel,
+        team_a_id: fixture.teamAId,
+        team_b_id: fixture.teamBId,
+      });
+      preview.push({
+        round: roundLabel,
+        teamAName: teamNameById.get(fixture.teamAId) ?? "?",
+        teamBName: teamNameById.get(fixture.teamBId) ?? "?",
+      });
+    }
+  }
+
+  if (gamesToInsert.length === 0) {
+    throw new Error("Nenhum grupo tem times suficientes para gerar jogos.");
+  }
+
+  const { error } = await supabase.from("games").insert(gamesToInsert);
   if (error) throw new Error(error.message);
+
   revalidateChampionship(championshipId);
+  return preview;
 }
 
 export async function deleteGame(id: string, championshipId: string) {

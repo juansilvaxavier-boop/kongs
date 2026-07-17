@@ -6,12 +6,13 @@ const BYE = Symbol("bye");
  * Gera a tabela de jogos "todos contra todos" pelo método do círculo:
  * fixa o primeiro time e roda os demais a cada rodada. Com número ímpar
  * de times, um recebe "bye" (folga) por rodada e não entra em nenhum jogo.
+ *
+ * `rounds` define quantas vezes cada dupla de times se enfrenta: 1 = turno
+ * único, 2 = ida e volta (mandos invertidos), 3+ = turnos adicionais,
+ * alternando mando a cada turno.
  */
-export function generateRoundRobin(
-  teamIds: string[],
-  doubleRound: boolean
-): Fixture[] {
-  if (teamIds.length < 2) return [];
+export function generateRoundRobin(teamIds: string[], rounds: number = 1): Fixture[] {
+  if (teamIds.length < 2 || rounds < 1) return [];
 
   const slots: (string | typeof BYE)[] = [...teamIds];
   if (slots.length % 2 !== 0) slots.push(BYE);
@@ -19,7 +20,7 @@ export function generateRoundRobin(
   const n = slots.length;
   const half = n / 2;
   const roundsCount = n - 1;
-  const fixtures: Fixture[] = [];
+  const singleLeg: Fixture[] = [];
   let arrangement = slots.slice();
 
   for (let round = 0; round < roundsCount; round++) {
@@ -29,7 +30,7 @@ export function generateRoundRobin(
       if (home === BYE || away === BYE) continue;
 
       const [teamAId, teamBId] = round % 2 === 0 ? [home, away] : [away, home];
-      fixtures.push({ round: round + 1, teamAId, teamBId });
+      singleLeg.push({ round: round + 1, teamAId, teamBId });
     }
 
     const fixed = arrangement[0];
@@ -38,13 +39,17 @@ export function generateRoundRobin(
     arrangement = [fixed, ...rest];
   }
 
-  if (!doubleRound) return fixtures;
+  const fixtures: Fixture[] = [];
+  for (let leg = 0; leg < rounds; leg++) {
+    const swapped = leg % 2 === 1;
+    for (const f of singleLeg) {
+      fixtures.push({
+        round: leg * roundsCount + f.round,
+        teamAId: swapped ? f.teamBId : f.teamAId,
+        teamBId: swapped ? f.teamAId : f.teamBId,
+      });
+    }
+  }
 
-  const secondLeg = fixtures.map((f) => ({
-    round: roundsCount + f.round,
-    teamAId: f.teamBId,
-    teamBId: f.teamAId,
-  }));
-
-  return [...fixtures, ...secondLeg];
+  return fixtures;
 }

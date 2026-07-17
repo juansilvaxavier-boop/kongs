@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button, Card, EmptyState, Input, Label, PageHeader, Select } from "@/components/ui";
 import { naturalCompare } from "@/lib/datetime";
+import { groupTeamsByFormat } from "@/lib/groups";
 import { createGame } from "./actions";
 import { GameDateField } from "./game-date-field";
 import { GameTable } from "./game-table";
@@ -19,7 +20,7 @@ export default async function JogosPage({
     await Promise.all([
       supabase
         .from("championships")
-        .select("has_knockout_stage")
+        .select("has_knockout_stage, format")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -29,7 +30,7 @@ export default async function JogosPage({
         .order("date", { ascending: true, nullsFirst: false }),
       supabase
         .from("teams")
-        .select("id, name")
+        .select("id, name, group_name")
         .eq("championship_id", id)
         .order("name"),
       supabase
@@ -52,6 +53,8 @@ export default async function JogosPage({
 
   const createGameWithId = createGame.bind(null, id);
   const hasEnoughTeams = (teams ?? []).length >= 2;
+  const pools = groupTeamsByFormat(championship?.format ?? "liga", teams ?? []);
+  const poolSizes = pools.map((pool) => pool.teams.length);
 
   return (
     <div>
@@ -121,7 +124,7 @@ export default async function JogosPage({
       </Card>
 
       {hasEnoughTeams && (
-        <GenerateRoundsForm championshipId={id} teamCount={(teams ?? []).length} />
+        <GenerateRoundsForm championshipId={id} poolSizes={poolSizes} />
       )}
 
       {games && games.length > 0 ? (
