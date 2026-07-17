@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ShareButton } from "@/components/share-button";
 import { BrandMark } from "@/components/ui";
+import { SidebarNav } from "@/app/inicio/sidebar-nav";
+import { PublicChampionshipTabs } from "./public-tabs";
 
 export default async function PublicChampionshipLayout({
   children,
@@ -22,6 +24,10 @@ export default async function PublicChampionshipLayout({
 
   if (!championship) notFound();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   return (
     <div className="pitch-lines flex min-h-dvh flex-1 flex-col">
       <header className="border-b border-border bg-surface/70 backdrop-blur">
@@ -40,8 +46,12 @@ export default async function PublicChampionshipLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
-        {children}
+      <main className="mx-auto flex w-full max-w-5xl flex-1 gap-8 px-4 py-8 sm:px-6">
+        {user && <SidebarNav />}
+        <div className="min-w-0 flex-1">
+          <PublicChampionshipTabs id={id} />
+          {children}
+        </div>
       </main>
     </div>
   );
