@@ -3,7 +3,7 @@
 import { Fragment, useState } from "react";
 import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
-import { deleteGame, updateGame } from "./actions";
+import { deleteAllGames, deleteGame, updateGame } from "./actions";
 import { GameDateField } from "./game-date-field";
 import { SumulaPanel } from "./sumula-panel";
 
@@ -66,6 +66,28 @@ export function GameTable({
   }
 
   return (
+    <>
+    <div className="mb-3 flex justify-end">
+      <form
+        action={async () => {
+          if (
+            window.confirm(
+              `Excluir todos os ${games.length} jogos deste campeonato? Os gols e cartões lançados também serão apagados. Essa ação não pode ser desfeita.`
+            )
+          ) {
+            try {
+              await deleteAllGames(championshipId);
+            } catch (error) {
+              alert(errorMessage(error));
+            }
+          }
+        }}
+      >
+        <Button type="submit" variant="danger">
+          Excluir todos os jogos
+        </Button>
+      </form>
+    </div>
     <Card className="overflow-x-auto">
       <table className="w-full min-w-[52rem] text-sm">
         <thead>
@@ -233,5 +255,6 @@ export function GameTable({
         </tbody>
       </table>
     </Card>
+    </>
   );
 }

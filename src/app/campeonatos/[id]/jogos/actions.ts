@@ -230,3 +230,14 @@ export async function deleteGame(id: string, championshipId: string) {
   if (error) throw new Error(error.message);
   revalidateChampionship(championshipId);
 }
+
+export async function deleteAllGames(championshipId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("games")
+    .delete()
+    .eq("championship_id", championshipId);
+
+  if (error) throw new Error(error.message);
+  revalidateChampionship(championshipId);
+}
