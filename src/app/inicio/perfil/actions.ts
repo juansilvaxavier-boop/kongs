@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { fileExtension, validateImageFile } from "@/lib/uploads";
 
 const PERSONAS = ["jogador", "treinador", "torcedor"] as const;
-const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 export async function updateProfile(formData: FormData) {
   const supabase = await createClient();
@@ -26,14 +26,8 @@ export async function updateProfile(formData: FormData) {
   let avatarUrl: string | undefined;
   const avatarFile = formData.get("avatar");
   if (avatarFile instanceof File && avatarFile.size > 0) {
-    if (!avatarFile.type.startsWith("image/")) {
-      throw new Error("A foto precisa ser um arquivo de imagem.");
-    }
-    if (avatarFile.size > MAX_AVATAR_BYTES) {
-      throw new Error("A foto precisa ter no máximo 5MB.");
-    }
-    const extension = avatarFile.name.split(".").pop() || "jpg";
-    const path = `${user.id}/avatar.${extension}`;
+    validateImageFile(avatarFile);
+    const path = `${user.id}/avatar.${fileExtension(avatarFile)}`;
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(path, avatarFile, { upsert: true });

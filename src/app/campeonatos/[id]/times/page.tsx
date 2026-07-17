@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Button, Card, FileInput, Input, Label, PageHeader, Select } from "@/components/ui";
 import { generateGroupLabels } from "@/lib/groups";
 import { createTeam } from "./actions";
 import { TeamTable } from "./team-table";
@@ -79,8 +79,8 @@ export default async function TimesPage({
             </Select>
           </div>
           <div className="flex-1 basis-40">
-            <Label>Escudo (URL)</Label>
-            <Input name="crest_url" type="url" placeholder="https://..." />
+            <Label>Escudo</Label>
+            <FileInput name="crest" accept="image/*" />
           </div>
           {showGroups && (
             <div className="w-36">

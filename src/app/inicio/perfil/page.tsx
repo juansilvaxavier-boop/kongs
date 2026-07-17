@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Button, Card, FileInput, Input, Label, PageHeader, Select } from "@/components/ui";
 import { updateProfile } from "./actions";
 
 const PERSONA_LABELS: Record<string, string> = {
@@ -43,12 +43,7 @@ export default async function PerfilPage() {
             )}
             <div className="flex-1">
               <Label>Foto</Label>
-              <input
-                type="file"
-                name="avatar"
-                accept="image/*"
-                className="block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface-2 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground"
-              />
+              <FileInput name="avatar" accept="image/*" />
             </div>
           </div>
 

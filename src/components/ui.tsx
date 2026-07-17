@@ -109,6 +109,22 @@ export function Input({
   );
 }
 
+export function FileInput({
+  className,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      type="file"
+      className={cn(
+        "block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface-2 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground",
+        className
+      )}
+      {...props}
+    />
+  );
+}
+
 export function Textarea({
   className,
   ...props

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, FileInput, Input, Select } from "@/components/ui";
 import {
   cancelTeamInvite,
   deleteTeam,
@@ -100,13 +100,7 @@ export function TeamTable({
                           </option>
                         ))}
                       </Select>
-                      <Input
-                        name="crest_url"
-                        type="url"
-                        defaultValue={team.crest_url ?? ""}
-                        placeholder="URL do escudo"
-                        className="max-w-[10rem]"
-                      />
+                      <FileInput name="crest" accept="image/*" className="max-w-[12rem]" />
                       {showGroups &&
                         (groupLabels ? (
                           <Select
@@ -172,7 +166,17 @@ export function TeamTable({
                 ) : (
                   <>
                     <td className="px-4 py-3 font-medium text-foreground">
-                      {team.name}
+                      <div className="flex items-center gap-2">
+                        {team.crest_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={team.crest_url}
+                            alt=""
+                            className="h-6 w-6 rounded-full object-cover"
+                          />
+                        ) : null}
+                        {team.name}
+                      </div>
                     </td>
                     <td className="px-4 py-3 text-muted">
                       {team.group_name ?? "—"}

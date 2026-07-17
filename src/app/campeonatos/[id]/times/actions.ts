@@ -3,20 +3,40 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
 import { getSiteUrl } from "@/lib/site-url";
+import { fileExtension, validateImageFile } from "@/lib/uploads";
 
 function parseCoachId(formData: FormData) {
   const value = String(formData.get("coach_id") || "");
   return value ? value : null;
 }
 
-function parseCrestUrl(formData: FormData) {
-  const value = String(formData.get("crest_url") || "").trim();
-  return value ? value : null;
+function parseCrestFile(formData: FormData): File | null {
+  const file = formData.get("crest");
+  if (file instanceof File && file.size > 0) {
+    validateImageFile(file);
+    return file;
+  }
+  return null;
 }
 
 function parseGroupName(formData: FormData) {
   const value = String(formData.get("group_name") || "").trim();
   return value ? value : null;
+}
+
+async function uploadCrest(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  teamId: string,
+  file: File
+): Promise<string> {
+  const path = `${teamId}/crest.${fileExtension(file)}`;
+  const { error } = await supabase.storage.from("crests").upload(path, file, {
+    upsert: true,
+  });
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage.from("crests").getPublicUrl(path);
+  return `${data.publicUrl}?v=${Date.now()}`;
 }
 
 async function assertCoachBelongsToChampionship(
@@ -42,18 +62,32 @@ export async function createTeam(championshipId: string, formData: FormData) {
   if (!name) throw new Error("Informe o nome do time.");
 
   const coachId = parseCoachId(formData);
+  const crestFile = parseCrestFile(formData);
   const supabase = await createClient();
   await assertCoachBelongsToChampionship(supabase, championshipId, coachId);
 
-  const { error } = await supabase.from("teams").insert({
-    championship_id: championshipId,
-    name,
-    coach_id: coachId,
-    crest_url: parseCrestUrl(formData),
-    group_name: parseGroupName(formData),
-  });
+  const { data, error } = await supabase
+    .from("teams")
+    .insert({
+      championship_id: championshipId,
+      name,
+      coach_id: coachId,
+      group_name: parseGroupName(formData),
+    })
+    .select("id")
+    .single();
 
   if (error) throw new Error(error.message);
+
+  if (crestFile) {
+    const crestUrl = await uploadCrest(supabase, data.id, crestFile);
+    const { error: crestError } = await supabase
+      .from("teams")
+      .update({ crest_url: crestUrl })
+      .eq("id", data.id);
+    if (crestError) throw new Error(crestError.message);
+  }
+
   revalidateChampionship(championshipId);
 }
 
@@ -66,16 +100,19 @@ export async function updateTeam(
   if (!name) throw new Error("Informe o nome do time.");
 
   const coachId = parseCoachId(formData);
+  const crestFile = parseCrestFile(formData);
   const supabase = await createClient();
   await assertCoachBelongsToChampionship(supabase, championshipId, coachId);
+
+  const crestUrl = crestFile ? await uploadCrest(supabase, id, crestFile) : undefined;
 
   const { data, error } = await supabase
     .from("teams")
     .update({
       name,
       coach_id: coachId,
-      crest_url: parseCrestUrl(formData),
       group_name: parseGroupName(formData),
+      ...(crestUrl ? { crest_url: crestUrl } : {}),
     })
     .eq("id", id)
     .select("id")
