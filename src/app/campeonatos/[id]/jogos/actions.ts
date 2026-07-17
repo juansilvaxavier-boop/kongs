@@ -2,7 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
-import { generateRoundRobin } from "@/lib/round-robin";
+import { generateRoundRobinForTotalRounds } from "@/lib/round-robin";
 import { groupTeamsByFormat, shuffle } from "@/lib/groups";
 
 function parseDate(formData: FormData) {
@@ -119,11 +119,9 @@ export async function generateRounds(
   championshipId: string,
   formData: FormData
 ): Promise<GeneratedGamePreview[]> {
-  const rounds = Number(formData.get("rounds") || "1");
-  if (!Number.isFinite(rounds) || rounds < 1) {
-    throw new Error(
-      "Informe quantas vezes cada time deve enfrentar o mesmo adversário (mínimo 1)."
-    );
+  const totalRounds = Number(formData.get("rounds") || "1");
+  if (!Number.isFinite(totalRounds) || totalRounds < 1) {
+    throw new Error("Informe quantas rodadas a fase de grupos deve ter (mínimo 1).");
   }
 
   const supabase = await createClient();
@@ -160,7 +158,10 @@ export async function generateRounds(
     if (pool.teams.length < 2) continue;
 
     const shuffledTeamIds = shuffle(pool.teams.map((t) => t.id));
-    const fixtures = generateRoundRobin(shuffledTeamIds, Math.trunc(rounds));
+    const fixtures = generateRoundRobinForTotalRounds(
+      shuffledTeamIds,
+      Math.trunc(totalRounds)
+    );
 
     for (const fixture of fixtures) {
       const roundLabel = pool.groupName

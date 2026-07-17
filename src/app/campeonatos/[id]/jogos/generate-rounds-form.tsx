@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Input, Label } from "@/components/ui";
+import { generateRoundRobinForTotalRounds } from "@/lib/round-robin";
 import { generateRounds, type GeneratedGamePreview } from "./actions";
 
 function errorMessage(error: unknown) {
@@ -15,10 +16,22 @@ function sleep(ms: number) {
 
 const REVEAL_DELAY_MS = 400;
 
-function gamesForPool(poolSize: number, rounds: number) {
-  const roundsCount = poolSize % 2 === 0 ? poolSize - 1 : poolSize;
-  const gamesPerRound = Math.floor(poolSize / 2);
-  return roundsCount * gamesPerRound * rounds;
+function previewFixtures(poolSize: number, totalRounds: number) {
+  const dummyIds = Array.from({ length: poolSize }, (_, i) => String(i));
+  return generateRoundRobinForTotalRounds(dummyIds, totalRounds);
+}
+
+function gamesPerTeamRange(poolSize: number, totalRounds: number) {
+  const fixtures = previewFixtures(poolSize, totalRounds);
+  const counts = new Map<string, number>();
+  for (const f of fixtures) {
+    counts.set(f.teamAId, (counts.get(f.teamAId) ?? 0) + 1);
+    counts.set(f.teamBId, (counts.get(f.teamBId) ?? 0) + 1);
+  }
+  const values = [...counts.values()];
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  return min === max ? `${min}` : `${min}-${max}`;
 }
 
 export function GenerateRoundsForm({
@@ -29,7 +42,7 @@ export function GenerateRoundsForm({
   poolSizes: number[];
 }) {
   const router = useRouter();
-  const [rounds, setRounds] = useState(1);
+  const [totalRounds, setTotalRounds] = useState(1);
   const [pending, setPending] = useState(false);
   const [phase, setPhase] = useState<"idle" | "drawing" | "done">("idle");
   const [revealed, setRevealed] = useState<GeneratedGamePreview[]>([]);
@@ -38,20 +51,16 @@ export function GenerateRoundsForm({
 
   const eligiblePools = poolSizes.filter((size) => size >= 2);
   const totalGames = eligiblePools.reduce(
-    (sum, size) => sum + gamesForPool(size, rounds),
+    (sum, size) => sum + previewFixtures(size, totalRounds).length,
     0
   );
   const gamesPerTeamByPoolSize = [...new Set(eligiblePools)]
     .sort((a, b) => a - b)
-    .map((size) => ({ size, gamesPerTeam: (size - 1) * rounds }));
+    .map((size) => ({ size, gamesPerTeam: gamesPerTeamRange(size, totalRounds) }));
 
   async function handleGenerate() {
     if (
-      !window.confirm(
-        `Isso vai criar ${totalGames} jogos${
-          poolSizes.length > 1 ? " (considerando os grupos)" : ""
-        }. Continuar?`
-      )
+      !window.confirm(`Isso vai criar ${totalGames} jogos em ${totalRounds} rodada(s). Continuar?`)
     ) {
       return;
     }
@@ -60,7 +69,7 @@ export function GenerateRoundsForm({
     let preview: GeneratedGamePreview[];
     try {
       const formData = new FormData();
-      formData.set("rounds", String(rounds));
+      formData.set("rounds", String(totalRounds));
       preview = await generateRounds(championshipId, formData);
     } catch (error) {
       alert(errorMessage(error));
@@ -107,15 +116,19 @@ export function GenerateRoundsForm({
         </p>
         <div className="flex flex-wrap items-end gap-4">
           <div className="w-56">
-            <Label>Vezes que cada time enfrenta o mesmo adversário</Label>
+            <Label>Quantas rodadas terá a fase de grupos</Label>
             <Input
               type="number"
               min={1}
-              value={rounds}
-              onChange={(e) => setRounds(Math.max(1, Number(e.target.value) || 1))}
+              value={totalRounds}
+              onChange={(e) =>
+                setTotalRounds(Math.max(1, Number(e.target.value) || 1))
+              }
             />
             <p className="mt-1 text-xs text-muted">
-              1 = turno único, 2 = ida e volta, 3+ = turnos extras
+              Se não der para todos se enfrentarem uma vez só nessa quantidade
+              de rodadas, o sorteio completa turnos extras (ida e volta, etc.)
+              automaticamente.
             </p>
           </div>
           <Button type="button" disabled={pending} onClick={handleGenerate}>
@@ -128,7 +141,7 @@ export function GenerateRoundsForm({
               .map(({ size, gamesPerTeam }) =>
                 gamesPerTeamByPoolSize.length > 1
                   ? `grupo de ${size} times: ${gamesPerTeam} jogos por time`
-                  : `cada time terá ${gamesPerTeam} jogos`
+                  : `cada time jogará ${gamesPerTeam} jogos`
               )
               .join(" · ")}
             . O sorteio decide aleatoriamente a ordem das rodadas.

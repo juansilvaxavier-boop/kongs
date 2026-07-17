@@ -53,3 +53,31 @@ export function generateRoundRobin(teamIds: string[], rounds: number = 1): Fixtu
 
   return fixtures;
 }
+
+/**
+ * Quantas rodadas um turno único (uma volta) de todos contra todos ocupa
+ * para determinado número de times: n-1 se par, n se ímpar (por causa do
+ * bye rotativo).
+ */
+export function roundsPerCycle(teamCount: number): number {
+  return teamCount % 2 === 0 ? teamCount - 1 : teamCount;
+}
+
+/**
+ * Gera exatamente `totalRounds` rodadas de todos contra todos: repete
+ * turnos completos quantas vezes forem necessárias e corta o excedente.
+ * Quando `totalRounds` é menor que um turno completo, nem todo mundo chega
+ * a se enfrentar; quando é maior, os confrontos se repetem (mandos
+ * alternando a cada turno) até completar a quantidade pedida.
+ */
+export function generateRoundRobinForTotalRounds(
+  teamIds: string[],
+  totalRounds: number
+): Fixture[] {
+  if (teamIds.length < 2 || totalRounds < 1) return [];
+
+  const cyclesNeeded = Math.ceil(totalRounds / roundsPerCycle(teamIds.length));
+  return generateRoundRobin(teamIds, cyclesNeeded).filter(
+    (f) => f.round <= totalRounds
+  );
+}

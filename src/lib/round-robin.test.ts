@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { generateRoundRobin } from "./round-robin";
+import {
+  generateRoundRobin,
+  generateRoundRobinForTotalRounds,
+  roundsPerCycle,
+} from "./round-robin";
 
 describe("generateRoundRobin", () => {
   it("returns nothing for fewer than 2 teams", () => {
@@ -56,5 +60,46 @@ describe("generateRoundRobin", () => {
   it("never schedules a team against itself", () => {
     const fixtures = generateRoundRobin(["a", "b", "c", "d", "e"], 2);
     expect(fixtures.every((f) => f.teamAId !== f.teamBId)).toBe(true);
+  });
+});
+
+describe("roundsPerCycle", () => {
+  it("is teamCount - 1 for an even number of teams", () => {
+    expect(roundsPerCycle(4)).toBe(3);
+  });
+
+  it("is teamCount for an odd number of teams (bye rotates)", () => {
+    expect(roundsPerCycle(5)).toBe(5);
+  });
+});
+
+describe("generateRoundRobinForTotalRounds", () => {
+  it("returns nothing for fewer than 2 teams or fewer than 1 round", () => {
+    expect(generateRoundRobinForTotalRounds(["a"], 3)).toEqual([]);
+    expect(generateRoundRobinForTotalRounds(["a", "b"], 0)).toEqual([]);
+  });
+
+  it("truncates a single cycle when total rounds is less than a full turno", () => {
+    const fixtures = generateRoundRobinForTotalRounds(["a", "b", "c", "d"], 2);
+    // turno único de 4 times tem 3 rodadas; pedindo 2, corta a 3ª
+    expect(fixtures).toHaveLength(4);
+    expect(new Set(fixtures.map((f) => f.round))).toEqual(new Set([1, 2]));
+  });
+
+  it("repeats full cycles and truncates the remainder to hit an exact round count", () => {
+    // 2 times: 1 rodada por turno. Pedindo 5 rodadas, gera 5 turnos completos.
+    const fixtures = generateRoundRobinForTotalRounds(["a", "b"], 5);
+    expect(fixtures).toHaveLength(5);
+    expect(fixtures.map((f) => f.round)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it("gives every team the same number of games for an even team count", () => {
+    const fixtures = generateRoundRobinForTotalRounds(["a", "b", "c", "d"], 5);
+    const gamesPerTeam = new Map<string, number>();
+    for (const f of fixtures) {
+      gamesPerTeam.set(f.teamAId, (gamesPerTeam.get(f.teamAId) ?? 0) + 1);
+      gamesPerTeam.set(f.teamBId, (gamesPerTeam.get(f.teamBId) ?? 0) + 1);
+    }
+    expect([...gamesPerTeam.values()]).toEqual([5, 5, 5, 5]);
   });
 });
