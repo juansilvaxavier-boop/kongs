@@ -27,7 +27,13 @@ export type RosterPlayer = {
   mvpCount: number;
 };
 
-export function PlayerRosterGrid({ players }: { players: RosterPlayer[] }) {
+export function PlayerRosterGrid({
+  players,
+  crestUrl,
+}: {
+  players: RosterPlayer[];
+  crestUrl?: string | null;
+}) {
   const [openId, setOpenId] = useState<string | null>(null);
   const openPlayer = players.find((p) => p.id === openId) ?? null;
 
@@ -51,6 +57,7 @@ export function PlayerRosterGrid({ players }: { players: RosterPlayer[] }) {
               position={player.position}
               number={player.number}
               photoUrl={player.photoUrl}
+              crestUrl={crestUrl}
               attributes={player.attributes}
             />
           </button>
@@ -63,6 +70,7 @@ export function PlayerRosterGrid({ players }: { players: RosterPlayer[] }) {
           position={openPlayer.position}
           number={openPlayer.number}
           photoUrl={openPlayer.photoUrl}
+          crestUrl={crestUrl}
           attributes={openPlayer.attributes}
           history={openPlayer.history}
           mvpCount={openPlayer.mvpCount}

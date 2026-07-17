@@ -1,4 +1,4 @@
-export type Position = "Goleiro" | "Zagueiro" | "Lateral" | "Volante" | "Meia" | "Atacante";
+export type Position = "Goleiro" | "Zagueiro" | "Meia" | "Atacante";
 export type Rarity = "bronze" | "prata" | "ouro";
 
 export const OVR_WEIGHTS = {
@@ -33,9 +33,8 @@ function round2(value: number): number {
  * Gera os lançamentos de evolução de OVR de um jogador para uma partida,
  * um item por motivo (gol, vitória, cartões, impacto defensivo), seguindo
  * os pesos e fórmulas do sistema de gamificação. Zagueiros e goleiros têm
- * um termo extra ligado aos gols sofridos pelo time; os demais (incluindo
- * laterais e volantes, não mencionados nas fórmulas específicas) seguem
- * apenas a fórmula base.
+ * um termo extra ligado aos gols sofridos pelo time; atacantes e meias
+ * seguem apenas a fórmula base.
  */
 export function computeOvrLedger(stats: PlayerGameStats): OvrLedgerEntry[] {
   const entries: OvrLedgerEntry[] = [];

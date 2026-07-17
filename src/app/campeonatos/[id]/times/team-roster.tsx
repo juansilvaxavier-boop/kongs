@@ -15,6 +15,8 @@ function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
 }
 
+const DOCUMENT_LABELS: Record<string, string> = { cpf: "CPF", rg: "RG" };
+
 type Coach = { id: string; name: string };
 type Player = {
   id: string;
@@ -22,6 +24,8 @@ type Player = {
   team_id: string | null;
   number: number | null;
   position: string | null;
+  document_type: string | null;
+  document_number: string | null;
 };
 
 export function TeamRoster({
@@ -120,6 +124,18 @@ export function TeamRoster({
               ))}
             </Select>
           </div>
+          <div className="w-28">
+            <Label>Documento</Label>
+            <Select name="document_type" defaultValue="">
+              <option value="">Nenhum</option>
+              <option value="cpf">CPF</option>
+              <option value="rg">RG</option>
+            </Select>
+          </div>
+          <div className="flex-1 basis-32">
+            <Label>Nº do documento</Label>
+            <Input name="document_number" placeholder="Nº do documento" />
+          </div>
           <div className="flex-1 basis-40">
             <Label>Foto</Label>
             <FileInput name="photo" accept="image/*" />
@@ -137,6 +153,7 @@ export function TeamRoster({
                   <th className="px-3 py-2">Jogador</th>
                   <th className="px-3 py-2">Nº</th>
                   <th className="px-3 py-2">Posição</th>
+                  <th className="px-3 py-2">Documento</th>
                   <th className="w-36 px-3 py-2 text-right">Ações</th>
                 </tr>
               </thead>
@@ -144,7 +161,7 @@ export function TeamRoster({
                 {players.map((player) => (
                   <tr key={player.id} className="border-b border-border last:border-0">
                     {editingPlayerId === player.id ? (
-                      <td colSpan={4} className="px-3 py-2">
+                      <td colSpan={5} className="px-3 py-2">
                         <ActionForm
                           action={(formData) => updatePlayer(player.id, championshipId, formData)}
                           onSuccess={() => setEditingPlayerId(null)}
@@ -176,6 +193,21 @@ export function TeamRoster({
                               </option>
                             ))}
                           </Select>
+                          <Select
+                            name="document_type"
+                            defaultValue={player.document_type ?? ""}
+                            className="max-w-[7rem]"
+                          >
+                            <option value="">Nenhum</option>
+                            <option value="cpf">CPF</option>
+                            <option value="rg">RG</option>
+                          </Select>
+                          <Input
+                            name="document_number"
+                            defaultValue={player.document_number ?? ""}
+                            placeholder="Nº do documento"
+                            className="max-w-[9rem]"
+                          />
                           <FileInput name="photo" accept="image/*" className="max-w-[10rem]" />
                           <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
                           <Button
@@ -199,6 +231,11 @@ export function TeamRoster({
                           ) : (
                             <span className="text-muted">—</span>
                           )}
+                        </td>
+                        <td className="px-3 py-2 text-muted">
+                          {player.document_type
+                            ? `${DOCUMENT_LABELS[player.document_type] ?? player.document_type}: ${player.document_number}`
+                            : "—"}
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex justify-end gap-2">

@@ -147,7 +147,7 @@ export default async function PublicTeamPage({
       </div>
 
       {rosterPlayers.length > 0 ? (
-        <PlayerRosterGrid players={rosterPlayers} />
+        <PlayerRosterGrid players={rosterPlayers} crestUrl={team.crest_url} />
       ) : (
         <EmptyState>Nenhum jogador cadastrado ainda.</EmptyState>
       )}

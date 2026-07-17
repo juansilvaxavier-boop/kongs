@@ -202,6 +202,29 @@ function parsePosition(formData: FormData) {
   return value ? value : null;
 }
 
+function parseDocument(formData: FormData) {
+  const type = String(formData.get("document_type") || "").trim();
+  const rawNumber = String(formData.get("document_number") || "").trim();
+
+  if (!type && !rawNumber) {
+    return { document_type: null as string | null, document_number: null as string | null };
+  }
+  if (type !== "cpf" && type !== "rg") {
+    throw new Error("Selecione o tipo de documento (CPF ou RG).");
+  }
+  if (!rawNumber) {
+    throw new Error("Informe o número do documento.");
+  }
+  if (type === "cpf") {
+    const digits = rawNumber.replace(/\D/g, "");
+    if (digits.length !== 11) {
+      throw new Error("CPF precisa ter 11 dígitos.");
+    }
+    return { document_type: type, document_number: digits };
+  }
+  return { document_type: type, document_number: rawNumber };
+}
+
 function parsePhotoFile(formData: FormData): File | null {
   const file = formData.get("photo");
   if (file instanceof File && file.size > 0) {
@@ -235,6 +258,7 @@ export async function createPlayer(
   if (!name) throw new Error("Informe o nome do jogador.");
 
   const photoFile = parsePhotoFile(formData);
+  const document = parseDocument(formData);
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("players")
@@ -244,6 +268,8 @@ export async function createPlayer(
       team_id: teamId,
       number: parseNumber(formData),
       position: parsePosition(formData),
+      document_type: document.document_type,
+      document_number: document.document_number,
     })
     .select("id")
     .single();
@@ -271,6 +297,7 @@ export async function updatePlayer(
   if (!name) throw new Error("Informe o nome do jogador.");
 
   const photoFile = parsePhotoFile(formData);
+  const document = parseDocument(formData);
   const supabase = await createClient();
   const photoUrl = photoFile ? await uploadPlayerPhoto(supabase, id, photoFile) : undefined;
 
@@ -280,6 +307,8 @@ export async function updatePlayer(
       name,
       number: parseNumber(formData),
       position: parsePosition(formData),
+      document_type: document.document_type,
+      document_number: document.document_number,
       ...(photoUrl ? { photo_url: photoUrl } : {}),
     })
     .eq("id", id)

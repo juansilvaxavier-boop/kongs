@@ -42,7 +42,7 @@ export default async function TimesPage({
       .is("accepted_at", null),
     supabase
       .from("players")
-      .select("id, name, team_id, number, position")
+      .select("id, name, team_id, number, position, document_type, document_number")
       .eq("championship_id", id)
       .order("name"),
   ]);

@@ -36,7 +36,11 @@ export default async function EstatisticasPublicasPage({
       .from("players")
       .select("id, name, team_id, position, photo_url")
       .eq("championship_id", id),
-    supabase.from("teams").select("id, name").eq("championship_id", id).order("name"),
+    supabase
+      .from("teams")
+      .select("id, name, crest_url")
+      .eq("championship_id", id)
+      .order("name"),
     supabase.from("goal_events").select("player_id").eq("championship_id", id),
     supabase
       .from("card_events")
@@ -80,6 +84,7 @@ export default async function EstatisticasPublicasPage({
   );
 
   const teamNameById = new Map((teams ?? []).map((t) => [t.id, t.name]));
+  const teamCrestById = new Map((teams ?? []).map((t) => [t.id, t.crest_url]));
   const attributesByPlayer = new Map((attributesRows ?? []).map((a) => [a.player_id, a]));
 
   const comparablePlayers: ComparablePlayer[] = players.map((player) => {
@@ -90,6 +95,7 @@ export default async function EstatisticasPublicasPage({
       teamName: teamNameById.get(player.team_id ?? "") ?? "Sem time",
       position: player.position,
       photoUrl: player.photo_url,
+      crestUrl: teamCrestById.get(player.team_id ?? "") ?? null,
       attributes: {
         ovr: attrs?.ovr ?? 70,
         ritmo: attrs?.ritmo ?? 70,
@@ -107,6 +113,7 @@ export default async function EstatisticasPublicasPage({
     playersById[player.id] = {
       name: player.name,
       photoUrl: player.photoUrl,
+      crestUrl: player.crestUrl,
       attributes: player.attributes,
     };
   }

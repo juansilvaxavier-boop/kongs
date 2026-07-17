@@ -438,6 +438,8 @@ export type Database = {
         Row: {
           championship_id: string
           created_at: string
+          document_number: string | null
+          document_type: string | null
           id: string
           name: string
           number: number | null
@@ -448,6 +450,8 @@ export type Database = {
         Insert: {
           championship_id: string
           created_at?: string
+          document_number?: string | null
+          document_type?: string | null
           id?: string
           name: string
           number?: number | null
@@ -458,6 +462,8 @@ export type Database = {
         Update: {
           championship_id?: string
           created_at?: string
+          document_number?: string | null
+          document_type?: string | null
           id?: string
           name?: string
           number?: number | null
@@ -629,6 +635,18 @@ export type Database = {
     }
     Functions: {
       accept_team_invite: { Args: { p_invite_id: string }; Returns: undefined }
+      base_attributes_for_position: {
+        Args: { p_position: string }
+        Returns: {
+          defesa: number
+          drible: number
+          finalizacao: number
+          fisico: number
+          ovr: number
+          passe: number
+          ritmo: number
+        }[]
+      }
       get_or_create_sumula_token: {
         Args: { p_championship_id: string; p_game_id: string }
         Returns: string

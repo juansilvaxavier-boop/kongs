@@ -40,6 +40,7 @@ export function PlayerCard({
   position,
   number,
   photoUrl,
+  crestUrl,
   attributes,
   size = "md",
   className,
@@ -48,6 +49,7 @@ export function PlayerCard({
   position: string | null;
   number?: number | null;
   photoUrl?: string | null;
+  crestUrl?: string | null;
   attributes: Attributes;
   size?: "sm" | "md" | "lg";
   className?: string;
@@ -59,15 +61,26 @@ export function PlayerCard({
     lg: "w-56 p-4 text-base",
   };
   const photoSizes = { sm: "h-12 w-12", md: "h-16 w-16", lg: "h-24 w-24" };
+  const crestSizes = { sm: "h-4 w-4", md: "h-5 w-5", lg: "h-7 w-7" };
 
   return (
     <div
       className={`flex flex-col rounded-xl shadow-lg ${sizes[size]} ${RARITY_STYLES[rarity]} ${className ?? ""}`}
     >
-      <div className="flex items-center justify-between">
-        <span className="font-display text-2xl font-bold leading-none">
-          {Math.round(attributes.ovr)}
-        </span>
+      <div className="flex items-start justify-between">
+        <div className="flex flex-col items-center gap-1">
+          <span className="font-display text-2xl font-bold leading-none">
+            {Math.round(attributes.ovr)}
+          </span>
+          {crestUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={crestUrl}
+              alt=""
+              className={`${crestSizes[size]} rounded-full object-cover`}
+            />
+          )}
+        </div>
         <span className="rounded bg-black/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
           {RARITY_LABELS[rarity]}
         </span>

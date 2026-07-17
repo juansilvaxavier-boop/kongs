@@ -28,6 +28,7 @@ export function PlayerCardModal({
   position,
   number,
   photoUrl,
+  crestUrl,
   attributes,
   history,
   mvpCount,
@@ -37,6 +38,7 @@ export function PlayerCardModal({
   position: string | null;
   number: number | null;
   photoUrl: string | null;
+  crestUrl?: string | null;
   attributes: Attributes;
   history: HistoryEntry[];
   mvpCount: number;
@@ -69,6 +71,7 @@ export function PlayerCardModal({
             position={position}
             number={number}
             photoUrl={photoUrl}
+            crestUrl={crestUrl}
             attributes={attributes}
             size="lg"
           />

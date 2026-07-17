@@ -18,6 +18,7 @@ type Attributes = {
 export type RoundPlayerInfo = {
   name: string;
   photoUrl: string | null;
+  crestUrl: string | null;
   attributes: Attributes;
 };
 
@@ -63,6 +64,7 @@ export function TeamOfTheRoundSection({
                   name={player.name}
                   position={slot.position}
                   photoUrl={player.photoUrl}
+                  crestUrl={player.crestUrl}
                   attributes={player.attributes}
                   size="sm"
                 />

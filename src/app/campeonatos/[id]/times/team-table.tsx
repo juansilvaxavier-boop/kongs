@@ -32,6 +32,8 @@ type Player = {
   team_id: string | null;
   number: number | null;
   position: string | null;
+  document_type: string | null;
+  document_number: string | null;
 };
 
 export function TeamTable({
@@ -58,12 +60,14 @@ export function TeamTable({
     coaches.find((c) => c.id === coachId)?.name ?? "—";
   const pendingInvite = (teamId: string) =>
     invites.find((invite) => invite.team_id === teamId);
+  const expandedTeam = teams.find((t) => t.id === expandedId) ?? null;
 
   if (teams.length === 0) {
     return <EmptyState>Nenhum time cadastrado ainda.</EmptyState>;
   }
 
   return (
+    <>
     <Card className="overflow-hidden">
       <table className="w-full text-sm">
         <thead>
@@ -226,11 +230,9 @@ export function TeamTable({
                       <div className="flex justify-end gap-2">
                         <Button
                           variant="secondary"
-                          onClick={() =>
-                            setExpandedId(expandedId === team.id ? null : team.id)
-                          }
+                          onClick={() => setExpandedId(team.id)}
                         >
-                          {expandedId === team.id ? "Fechar elenco" : "Elenco"}
+                          Elenco
                         </Button>
                         {!team.owner_user_id && !invite && (
                           <Button
@@ -268,23 +270,39 @@ export function TeamTable({
               </tr>
             );
           })}
-          {teams.map((team) =>
-            expandedId === team.id ? (
-              <tr key={`${team.id}-roster`} className="border-b border-border last:border-0">
-                <td colSpan={5} className="p-0">
-                  <TeamRoster
-                    championshipId={championshipId}
-                    teamId={team.id}
-                    coachId={team.coach_id}
-                    coaches={coaches}
-                    players={players.filter((p) => p.team_id === team.id)}
-                  />
-                </td>
-              </tr>
-            ) : null
-          )}
         </tbody>
       </table>
     </Card>
+
+      {expandedTeam && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          onClick={() => setExpandedId(null)}
+        >
+          <div
+            className="flex max-h-[85vh] w-full max-w-2xl flex-col overflow-hidden rounded-xl bg-background shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+              <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
+                Elenco · {expandedTeam.name}
+              </h2>
+              <Button variant="secondary" onClick={() => setExpandedId(null)}>
+                Fechar
+              </Button>
+            </div>
+            <div className="overflow-y-auto">
+              <TeamRoster
+                championshipId={championshipId}
+                teamId={expandedTeam.id}
+                coachId={expandedTeam.coach_id}
+                coaches={coaches}
+                players={players.filter((p) => p.team_id === expandedTeam.id)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -20,6 +20,7 @@ export type ComparablePlayer = {
   teamName: string;
   position: string | null;
   photoUrl: string | null;
+  crestUrl: string | null;
   attributes: Attributes;
 };
 
@@ -68,6 +69,7 @@ export function PlayerComparator({ players }: { players: ComparablePlayer[] }) {
           name={playerA.name}
           position={playerA.position}
           photoUrl={playerA.photoUrl}
+          crestUrl={playerA.crestUrl}
           attributes={playerA.attributes}
           size="lg"
         />
@@ -75,6 +77,7 @@ export function PlayerComparator({ players }: { players: ComparablePlayer[] }) {
           name={playerB.name}
           position={playerB.position}
           photoUrl={playerB.photoUrl}
+          crestUrl={playerB.crestUrl}
           attributes={playerB.attributes}
           size="lg"
         />
