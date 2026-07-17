@@ -139,8 +139,9 @@ que o e-mail do convite bate com o do usuário autenticado).
   sem conta vê os comentários mas precisa entrar para escrever. Há também um
   botão "Compartilhar" (Web Share API com fallback para copiar o link).
 - **Cadastro vinculado ao time**: jogadores e técnicos não têm mais abas
-  próprias — são cadastrados dentro da aba Times, num painel "Elenco"
-  expansível por time (cria/edita/remove jogadores e técnico ali mesmo).
+  próprias — são cadastrados dentro da aba Times, num painel "Elenco" que
+  abre como modal sobreposto por time (cria/edita/remove jogadores e
+  técnico ali mesmo). Jogador pode ter um documento (CPF ou RG + número).
 - **Upload real de imagem**: escudo do time (`crests`), foto de perfil
   (`avatars`) e foto do jogador (`player-photos`) são upload de arquivo de
   verdade (Supabase Storage), não mais campos de URL.
@@ -155,10 +156,21 @@ que o e-mail do convite bate com o do usuário autenticado).
 
 ## Gamificação (cartas estilo FIFA)
 
-Cada jogador tem uma carta com OVR e 6 atributos (Ritmo, Finalização, Passe,
-Drible, Defesa, Físico), todos começando em 70 — sem autoavaliação nem input
+Cada jogador tem uma carta com OVR, escudo do time e 6 atributos (Ritmo,
+Finalização, Passe, Drible, Defesa, Físico) — sem autoavaliação nem input
 manual, a evolução vem só do desempenho em campo. Raridade da carta: Bronze
 (OVR < 70), Prata (70–79), Ouro (80+).
+
+O atributo inicial não é mais um 70 fixo para todo mundo — cada posição
+nasce com seu próprio perfil tático (função `base_attributes_for_position`,
+usada pelo trigger `handle_new_player`), com OVR = média dos 6:
+
+| Posição  | PAC | SHO | PAS | DRI | DEF | PHY |
+| -------- | --- | --- | --- | --- | --- | --- |
+| Atacante | 78  | 78  | 62  | 78  | 35  | 68  |
+| Meia     | 72  | 68  | 78  | 76  | 60  | 66  |
+| Zagueiro | 65  | 45  | 58  | 60  | 77  | 79  |
+| Goleiro  | 50  | 30  | 65  | 45  | 78  | 78  |
 
 A única fonte de dados para a evolução é a súmula do jogo (gols, cartões e
 placar, lançados na aba Jogos → "Súmula" ou pelo link público de súmula +
@@ -172,7 +184,7 @@ o link público de súmula funcionar sem login e sem precisar de uma chave de
 service role:
 
 - `Base = Gols×0.30 + Vitória×0.20 − Amarelos×0.15 − Vermelhos×0.50`
-- Atacantes/Meias/Laterais/Volantes: `ΔOVR = Base`
+- Atacantes/Meias: `ΔOVR = Base`
 - Zagueiros: `ΔOVR = Base + (3.5 − Gols sofridos)×0.15`
 - Goleiros: `ΔOVR = Base + (3.5 − Gols sofridos)×0.25`
 
