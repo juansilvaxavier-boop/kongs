@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, BrandMark, Card, EmptyState, PageHeader } from "@/components/ui";
+import { BrandMark, PageHeader } from "@/components/ui";
+import { ChampionshipsGrid } from "@/components/championships-grid";
 
 export default async function CampeonatosPublicosPage() {
   const supabase = await createClient();
@@ -23,23 +23,7 @@ export default async function CampeonatosPublicosPage() {
 
       <div className="mx-auto w-full max-w-4xl flex-1 px-4 py-8 sm:px-6">
         <PageHeader eyebrow="Todos os campeonatos" title="Campeonatos" />
-
-        {!championships || championships.length === 0 ? (
-          <EmptyState>Nenhum campeonato publicado ainda.</EmptyState>
-        ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {championships.map((championship) => (
-              <Link key={championship.id} href={`/campeonato/${championship.id}`}>
-                <Card className="flex items-center justify-between gap-3 p-4 transition hover:border-accent/50">
-                  <span className="font-medium text-foreground">
-                    {championship.name}
-                  </span>
-                  <Badge>{championship.format === "copa" ? "Copa" : "Liga"}</Badge>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
+        <ChampionshipsGrid championships={championships ?? []} />
       </div>
     </main>
   );

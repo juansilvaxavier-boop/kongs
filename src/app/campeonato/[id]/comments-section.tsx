@@ -17,7 +17,8 @@ export type CommentRow = {
 
 export type CommentProfile = {
   user_id: string;
-  display_name: string | null;
+  first_name: string | null;
+  last_name: string | null;
   avatar_url: string | null;
   persona: string | null;
 };
@@ -73,7 +74,9 @@ export function CommentsSection({
         <div className="flex flex-col gap-3">
           {comments.map((comment) => {
             const profile = profileByUserId.get(comment.user_id);
-            const name = profile?.display_name || "Usuário";
+            const name =
+              [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") ||
+              "Usuário";
             return (
               <Card key={comment.id} className="p-4">
                 <div className="mb-2 flex items-center justify-between gap-3">

@@ -5,7 +5,7 @@ import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
 const PROTECTED_PREFIXES = [
   "/campeonatos",
   "/meu-time",
-  "/meu-perfil",
+  "/inicio",
   "/redefinir-senha",
 ];
 const AUTH_PATH = "/login";

@@ -11,9 +11,13 @@ Sistema web de gestão de campeonatos de futebol, com 4 papéis de acesso:
   `/campeonato/[id]` (campeonato inteiro) e `/campeonato/[id]/time/[teamId]`
   (elenco de um time).
 - **Conta pública (qualquer pessoa que se cadastrar)**: não é dono de time
-  nem admin. Tem um espaço de perfil em `/meu-perfil` (nome, foto, e se é
-  jogador/treinador/torcedor) e pode comentar nas páginas públicas dos
-  campeonatos com essa conta — mas não pode criar/editar nada.
+  nem admin. Ao logar cai em `/inicio`, um painel com menu lateral
+  (Campeonatos / Perfil / Configurações / Sair). A aba Campeonatos lista
+  todos os campeonatos; Perfil guarda nome, sobrenome, telefone, foto
+  (upload real via Supabase Storage, bucket `avatars`) e persona
+  (jogador/treinador/torcedor); Configurações troca a senha. Essa conta pode
+  comentar nas páginas públicas dos campeonatos — mas não pode criar/editar
+  nada.
 
 Todos os dados ficam no Supabase (Postgres), protegidos por Row Level
 Security de acordo com o papel do usuário.

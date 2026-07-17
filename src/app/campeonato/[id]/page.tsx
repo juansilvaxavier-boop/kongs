@@ -52,7 +52,7 @@ export default async function PublicChampionshipPage({
     commenterIds.length > 0
       ? await supabase
           .from("profiles")
-          .select("user_id, display_name, avatar_url, persona")
+          .select("user_id, first_name, last_name, avatar_url, persona")
           .in("user_id", commenterIds)
       : { data: [] };
 
