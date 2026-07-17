@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  assignTeamsToGroups,
   gamesWithinTeams,
   generateGroupLabels,
   groupTeams,
   groupTeamsByFormat,
+  shuffle,
 } from "./groups";
 
 describe("groupTeams", () => {
@@ -67,6 +69,47 @@ describe("generateGroupLabels", () => {
     const labels = generateGroupLabels(27);
     expect(labels[25]).toBe("Grupo Z");
     expect(labels[26]).toBe("Grupo 27");
+  });
+});
+
+describe("shuffle", () => {
+  it("returns a permutation with the same elements", () => {
+    const items = ["a", "b", "c", "d", "e"];
+    const result = shuffle(items);
+    expect(result).toHaveLength(items.length);
+    expect([...result].sort()).toEqual([...items].sort());
+  });
+
+  it("does not mutate the original array", () => {
+    const items = ["a", "b", "c"];
+    shuffle(items);
+    expect(items).toEqual(["a", "b", "c"]);
+  });
+
+  it("is deterministic given a fixed rng", () => {
+    const rng = () => 0;
+    expect(shuffle(["a", "b", "c"], rng)).toEqual(["b", "c", "a"]);
+  });
+});
+
+describe("assignTeamsToGroups", () => {
+  it("distributes teams round-robin across the given group count", () => {
+    const teamIds = ["1", "2", "3", "4", "5"];
+    const assignment = assignTeamsToGroups(teamIds, 2);
+    expect(assignment.get("1")).toBe("Grupo A");
+    expect(assignment.get("2")).toBe("Grupo B");
+    expect(assignment.get("3")).toBe("Grupo A");
+    expect(assignment.get("4")).toBe("Grupo B");
+    expect(assignment.get("5")).toBe("Grupo A");
+  });
+
+  it("assigns every team a group", () => {
+    const teamIds = ["1", "2", "3", "4", "5", "6"];
+    const assignment = assignTeamsToGroups(teamIds, 3);
+    expect(assignment.size).toBe(teamIds.length);
+    for (const teamId of teamIds) {
+      expect(assignment.has(teamId)).toBe(true);
+    }
   });
 });
 

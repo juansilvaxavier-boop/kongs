@@ -65,6 +65,38 @@ export function generateGroupLabels(count: number): string[] {
 }
 
 /**
+ * Embaralha uma lista (Fisher-Yates). Aceita um gerador de números
+ * aleatórios customizado (para testes determinísticos); usa Math.random
+ * por padrão.
+ */
+export function shuffle<T>(items: T[], rng: () => number = Math.random): T[] {
+  const result = [...items];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
+ * Distribui os ids de times (já na ordem desejada, tipicamente já
+ * embaralhada por `shuffle`) em `groupCount` grupos, alternando um a um
+ * (round-robin) para manter os grupos com tamanhos o mais parecidos
+ * possível. Retorna um mapa de teamId -> rótulo do grupo.
+ */
+export function assignTeamsToGroups(
+  teamIds: string[],
+  groupCount: number
+): Map<string, string> {
+  const labels = generateGroupLabels(groupCount);
+  const assignment = new Map<string, string>();
+  teamIds.forEach((teamId, index) => {
+    assignment.set(teamId, labels[index % groupCount]);
+  });
+  return assignment;
+}
+
+/**
  * Filtra jogos para os que envolvem apenas times de um mesmo grupo
  * (usado para calcular a classificação de cada grupo isoladamente).
  */

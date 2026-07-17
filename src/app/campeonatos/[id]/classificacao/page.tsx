@@ -3,6 +3,7 @@ import { EmptyState, PageHeader } from "@/components/ui";
 import { StandingsTable } from "@/components/standings-table";
 import { computeStandings } from "@/lib/standings";
 import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
+import { SortearGruposButton } from "./sortear-grupos-button";
 
 export default async function ClassificacaoPage({
   params,
@@ -13,7 +14,11 @@ export default async function ClassificacaoPage({
   const supabase = await createClient();
 
   const [{ data: championship }, { data: teams }, { data: games }] = await Promise.all([
-    supabase.from("championships").select("format").eq("id", id).maybeSingle(),
+    supabase
+      .from("championships")
+      .select("format, group_count")
+      .eq("id", id)
+      .maybeSingle(),
     supabase
       .from("teams")
       .select("id, name, group_name")
@@ -40,7 +45,15 @@ export default async function ClassificacaoPage({
 
   return (
     <div className="space-y-10">
-      <PageHeader eyebrow="Tabela do campeonato" title="Classificação" />
+      <PageHeader
+        eyebrow="Tabela do campeonato"
+        title="Classificação"
+        action={
+          championship?.format === "copa" ? (
+            <SortearGruposButton championshipId={id} />
+          ) : undefined
+        }
+      />
 
       {groups.map((group) => (
         <div key={group.groupName ?? "geral"}>
