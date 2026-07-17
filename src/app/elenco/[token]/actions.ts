@@ -2,6 +2,31 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { fileExtension, validateImageFile } from "@/lib/uploads";
+
+function parsePhotoFile(formData: FormData): File | null {
+  const file = formData.get("photo");
+  if (file instanceof File && file.size > 0) {
+    validateImageFile(file);
+    return file;
+  }
+  return null;
+}
+
+async function uploadPlayerPhoto(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  playerId: string,
+  file: File
+): Promise<string> {
+  const path = `${playerId}/photo.${fileExtension(file)}`;
+  const { error } = await supabase.storage.from("player-photos").upload(path, file, {
+    upsert: true,
+  });
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage.from("player-photos").getPublicUrl(path);
+  return `${data.publicUrl}?v=${Date.now()}`;
+}
 
 function parseNumber(formData: FormData): number {
   const value = String(formData.get("number") || "");
@@ -24,8 +49,24 @@ function playerArgs(token: string, formData: FormData) {
 
 export async function rosterAddPlayer(token: string, formData: FormData) {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("roster_add_player", playerArgs(token, formData));
+  const photoFile = parsePhotoFile(formData);
+
+  const { data: playerId, error } = await supabase.rpc(
+    "roster_add_player",
+    playerArgs(token, formData)
+  );
   if (error) throw new Error(error.message);
+
+  if (photoFile && playerId) {
+    const photoUrl = await uploadPlayerPhoto(supabase, playerId, photoFile);
+    const { error: photoError } = await supabase.rpc("roster_set_player_photo", {
+      p_token: token,
+      p_player_id: playerId,
+      p_photo_url: photoUrl,
+    });
+    if (photoError) throw new Error(photoError.message);
+  }
+
   revalidatePath(`/elenco/${token}`);
 }
 
@@ -35,11 +76,24 @@ export async function rosterUpdatePlayer(
   formData: FormData
 ) {
   const supabase = await createClient();
+  const photoFile = parsePhotoFile(formData);
+
   const { error } = await supabase.rpc("roster_update_player", {
     ...playerArgs(token, formData),
     p_player_id: playerId,
   });
   if (error) throw new Error(error.message);
+
+  if (photoFile) {
+    const photoUrl = await uploadPlayerPhoto(supabase, playerId, photoFile);
+    const { error: photoError } = await supabase.rpc("roster_set_player_photo", {
+      p_token: token,
+      p_player_id: playerId,
+      p_photo_url: photoUrl,
+    });
+    if (photoError) throw new Error(photoError.message);
+  }
+
   revalidatePath(`/elenco/${token}`);
 }
 

@@ -723,6 +723,10 @@ export type Database = {
         }
         Returns: string
       }
+      roster_can_upload_player_photo: {
+        Args: { p_player_id: string }
+        Returns: boolean
+      }
       roster_delete_player: {
         Args: { p_player_id: string; p_token: string }
         Returns: undefined
@@ -749,11 +753,16 @@ export type Database = {
           id: string
           name: string
           number: number
+          photo_url: string
           position: string
         }[]
       }
       roster_set_coach: {
         Args: { p_coach_name: string; p_token: string }
+        Returns: undefined
+      }
+      roster_set_player_photo: {
+        Args: { p_photo_url: string; p_player_id: string; p_token: string }
         Returns: undefined
       }
       roster_submit: { Args: { p_token: string }; Returns: undefined }

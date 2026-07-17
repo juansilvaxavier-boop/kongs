@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Badge, Button, Card, EmptyState, Input, Label, Select } from "@/components/ui";
+import { Badge, Button, Card, EmptyState, FileInput, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import {
@@ -28,6 +28,7 @@ type Player = {
   document_type: string | null;
   document_number: string | null;
   birth_date: string | null;
+  photo_url: string | null;
 };
 
 function PlayerFields({ player }: { player?: Player }) {
@@ -76,6 +77,10 @@ function PlayerFields({ player }: { player?: Player }) {
           defaultValue={player?.document_number ?? ""}
           placeholder="Nº do documento"
         />
+      </div>
+      <div className="flex-1 basis-40">
+        <Label>Foto</Label>
+        <FileInput name="photo" accept="image/*" />
       </div>
     </>
   );
@@ -207,6 +212,7 @@ export function RosterPanel({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
+                  <th className="px-3 py-2">Foto</th>
                   <th className="px-3 py-2">Jogador</th>
                   <th className="px-3 py-2">Nascimento</th>
                   <th className="px-3 py-2">Nº</th>
@@ -219,7 +225,7 @@ export function RosterPanel({
                 {players.map((player) => (
                   <tr key={player.id} className="border-b border-border last:border-0">
                     {editingId === player.id ? (
-                      <td colSpan={6} className="px-3 py-2">
+                      <td colSpan={7} className="px-3 py-2">
                         <ActionForm
                           action={(formData) => rosterUpdatePlayer(token, player.id, formData)}
                           onSuccess={() => setEditingId(null)}
@@ -238,6 +244,18 @@ export function RosterPanel({
                       </td>
                     ) : (
                       <>
+                        <td className="px-3 py-2">
+                          {player.photo_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={player.photo_url}
+                              alt=""
+                              className="h-9 w-9 rounded-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-muted">—</span>
+                          )}
+                        </td>
                         <td className="px-3 py-2 font-medium text-foreground">{player.name}</td>
                         <td className="px-3 py-2 text-muted">
                           {player.birth_date
