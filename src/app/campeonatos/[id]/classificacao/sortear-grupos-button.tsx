@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@/components/ui";
-import { sortearGrupos, type SorteioReveal } from "./actions";
+import { resetSorteio, sortearGrupos, type SorteioReveal } from "./actions";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível sortear os grupos.";
@@ -20,6 +20,7 @@ export function SortearGruposButton({ championshipId }: { championshipId: string
   const [phase, setPhase] = useState<"idle" | "drawing" | "done">("idle");
   const [revealed, setRevealed] = useState<SorteioReveal[]>([]);
   const [groupOrder, setGroupOrder] = useState<string[]>([]);
+  const [resetting, setResetting] = useState(false);
 
   async function startDraw() {
     if (
@@ -59,11 +60,35 @@ export function SortearGruposButton({ championshipId }: { championshipId: string
     router.refresh();
   }
 
+  async function handleReset() {
+    if (
+      !window.confirm(
+        "Isso remove o grupo de todos os times cadastrados, voltando ao estado anterior ao sorteio. Continuar?"
+      )
+    ) {
+      return;
+    }
+    setResetting(true);
+    try {
+      await resetSorteio(championshipId);
+      router.refresh();
+    } catch (error) {
+      alert(errorMessage(error));
+    } finally {
+      setResetting(false);
+    }
+  }
+
   return (
     <>
-      <Button type="button" variant="secondary" onClick={startDraw}>
-        Sortear grupos
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" variant="secondary" onClick={startDraw}>
+          Sortear grupos
+        </Button>
+        <Button type="button" variant="danger" onClick={handleReset} disabled={resetting}>
+          {resetting ? "Resetando…" : "Resetar sorteio"}
+        </Button>
+      </div>
 
       {phase !== "idle" && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">

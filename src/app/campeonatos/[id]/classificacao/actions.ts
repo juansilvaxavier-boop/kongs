@@ -60,3 +60,26 @@ export async function sortearGrupos(
     groupName: assignment.get(teamId)!,
   }));
 }
+
+export async function resetSorteio(championshipId: string) {
+  const supabase = await createClient();
+
+  const { data: championship, error: championshipError } = await supabase
+    .from("championships")
+    .select("format")
+    .eq("id", championshipId)
+    .maybeSingle();
+  if (championshipError) throw new Error(championshipError.message);
+  if (!championship) throw new Error("Campeonato não encontrado.");
+  if (championship.format !== "copa") {
+    throw new Error("O sorteio de grupos só está disponível para o formato Copa.");
+  }
+
+  const { error } = await supabase
+    .from("teams")
+    .update({ group_name: null })
+    .eq("championship_id", championshipId);
+  if (error) throw new Error(error.message);
+
+  revalidateChampionship(championshipId);
+}
