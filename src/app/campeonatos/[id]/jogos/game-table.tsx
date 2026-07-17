@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { deleteGame, updateGame } from "./actions";
 import { GameDateField } from "./game-date-field";
 import { GameEventsPanel } from "./game-events-panel";
@@ -83,15 +84,9 @@ export function GameTable({
             <tr className="border-b border-border last:border-0">
               {editingId === game.id ? (
                 <td colSpan={6} className="px-4 py-4">
-                  <form
-                    action={async (formData) => {
-                      try {
-                        await updateGame(game.id, championshipId, formData);
-                        setEditingId(null);
-                      } catch (error) {
-                        alert(errorMessage(error));
-                      }
-                    }}
+                  <ActionForm
+                    action={(formData) => updateGame(game.id, championshipId, formData)}
+                    onSuccess={() => setEditingId(null)}
                     className="flex flex-col gap-3"
                   >
                     <div className="flex flex-wrap gap-2">
@@ -158,7 +153,7 @@ export function GameTable({
                       Jogo realizado (com placar lançado)
                     </label>
                     <div className="flex gap-2">
-                      <Button type="submit">Salvar</Button>
+                      <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
                       <Button
                         type="button"
                         variant="secondary"
@@ -167,7 +162,7 @@ export function GameTable({
                         Cancelar
                       </Button>
                     </div>
-                  </form>
+                  </ActionForm>
                 </td>
               ) : (
                 <>

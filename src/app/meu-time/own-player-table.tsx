@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import { deleteOwnPlayer, updateOwnPlayer } from "./actions";
 
@@ -39,15 +40,9 @@ export function OwnPlayerTable({ players }: { players: Player[] }) {
             <tr key={player.id} className="border-b border-border last:border-0">
               {editingId === player.id ? (
                 <td colSpan={4} className="px-4 py-3">
-                  <form
-                    action={async (formData) => {
-                      try {
-                        await updateOwnPlayer(player.id, formData);
-                        setEditingId(null);
-                      } catch (error) {
-                        alert(errorMessage(error));
-                      }
-                    }}
+                  <ActionForm
+                    action={(formData) => updateOwnPlayer(player.id, formData)}
+                    onSuccess={() => setEditingId(null)}
                     className="flex flex-wrap items-center gap-2"
                   >
                     <Input
@@ -76,7 +71,7 @@ export function OwnPlayerTable({ players }: { players: Player[] }) {
                         </option>
                       ))}
                     </Select>
-                    <Button type="submit">Salvar</Button>
+                    <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
                     <Button
                       type="button"
                       variant="secondary"
@@ -84,7 +79,7 @@ export function OwnPlayerTable({ players }: { players: Player[] }) {
                     >
                       Cancelar
                     </Button>
-                  </form>
+                  </ActionForm>
                 </td>
               ) : (
                 <>

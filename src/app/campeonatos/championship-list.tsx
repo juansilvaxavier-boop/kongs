@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Button, Card, Input } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { deleteChampionship, renameChampionship } from "./actions";
 
 type Championship = {
@@ -23,15 +24,9 @@ export function ChampionshipList({ items }: { items: Championship[] }) {
       {items.map((championship) => (
         <Card key={championship.id} className="flex flex-col gap-3 p-5">
           {editingId === championship.id ? (
-            <form
-              action={async (formData) => {
-                try {
-                  await renameChampionship(championship.id, formData);
-                  setEditingId(null);
-                } catch (error) {
-                  alert(errorMessage(error));
-                }
-              }}
+            <ActionForm
+              action={(formData) => renameChampionship(championship.id, formData)}
+              onSuccess={() => setEditingId(null)}
               className="flex flex-col gap-2"
             >
               <Input
@@ -41,9 +36,9 @@ export function ChampionshipList({ items }: { items: Championship[] }) {
                 required
               />
               <div className="flex gap-2">
-                <Button type="submit" className="flex-1">
+                <SubmitButton pendingText="Salvando…" className="flex-1">
                   Salvar
-                </Button>
+                </SubmitButton>
                 <Button
                   type="button"
                   variant="secondary"
@@ -53,7 +48,7 @@ export function ChampionshipList({ items }: { items: Championship[] }) {
                   Cancelar
                 </Button>
               </div>
-            </form>
+            </ActionForm>
           ) : (
             <>
               <div>

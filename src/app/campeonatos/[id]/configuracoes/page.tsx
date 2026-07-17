@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Card, Input, Label, PageHeader, Select } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { updateChampionshipSettings } from "./actions";
 
 export default async function ConfiguracoesPage({
@@ -26,7 +27,7 @@ export default async function ConfiguracoesPage({
       <PageHeader eyebrow="Regras e formato" title="Configurações" />
 
       <Card className="max-w-xl p-5">
-        <form action={updateSettingsWithId} className="flex flex-col gap-5">
+        <ActionForm action={updateSettingsWithId} className="flex flex-col gap-5">
           <div>
             <Label>Formato do campeonato</Label>
             <Select name="format" defaultValue={championship.format}>
@@ -91,10 +92,10 @@ export default async function ConfiguracoesPage({
             </p>
           </div>
 
-          <Button type="submit" className="self-start">
+          <SubmitButton pendingText="Salvando…" className="self-start">
             Salvar
-          </Button>
-        </form>
+          </SubmitButton>
+        </ActionForm>
       </Card>
     </div>
   );

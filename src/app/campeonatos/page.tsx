@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Button, Card, EmptyState, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Card, EmptyState, Input, Label, PageHeader, Select } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { createChampionship } from "./actions";
 import { ChampionshipList } from "./championship-list";
 
@@ -25,7 +26,7 @@ export default async function CampeonatosPage() {
       />
 
       <Card className="mb-8 p-5">
-        <form
+        <ActionForm
           action={createChampionship}
           className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
         >
@@ -60,8 +61,8 @@ export default async function CampeonatosPage() {
             />
             Com mata-mata
           </label>
-          <Button type="submit">Criar campeonato</Button>
-        </form>
+          <SubmitButton pendingText="Criando…">Criar campeonato</SubmitButton>
+        </ActionForm>
         <p className="mt-3 text-xs text-muted">
           Nº de times e nº de grupos são opcionais e podem ser alterados depois em Configurações.
         </p>

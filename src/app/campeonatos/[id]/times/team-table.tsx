@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Badge, Button, Card, EmptyState, FileInput, Input, Select } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import {
   cancelTeamInvite,
   deleteTeam,
@@ -81,15 +82,9 @@ export function TeamTable({
               <tr key={team.id} className="border-b border-border last:border-0">
                 {editingId === team.id ? (
                   <td colSpan={5} className="px-4 py-3">
-                    <form
-                      action={async (formData) => {
-                        try {
-                          await updateTeam(team.id, championshipId, formData);
-                          setEditingId(null);
-                        } catch (error) {
-                          alert(errorMessage(error));
-                        }
-                      }}
+                    <ActionForm
+                      action={(formData) => updateTeam(team.id, championshipId, formData)}
+                      onSuccess={() => setEditingId(null)}
                       className="flex flex-wrap items-center gap-2"
                     >
                       <Input
@@ -134,7 +129,7 @@ export function TeamTable({
                             className="max-w-[8rem]"
                           />
                         ))}
-                      <Button type="submit">Salvar</Button>
+                      <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
                       <Button
                         type="button"
                         variant="secondary"
@@ -142,19 +137,13 @@ export function TeamTable({
                       >
                         Cancelar
                       </Button>
-                    </form>
+                    </ActionForm>
                   </td>
                 ) : invitingId === team.id ? (
                   <td colSpan={4} className="px-4 py-3">
-                    <form
-                      action={async (formData) => {
-                        try {
-                          await inviteTeamOwner(championshipId, team.id, formData);
-                          setInvitingId(null);
-                        } catch (error) {
-                          alert(errorMessage(error));
-                        }
-                      }}
+                    <ActionForm
+                      action={(formData) => inviteTeamOwner(championshipId, team.id, formData)}
+                      onSuccess={() => setInvitingId(null)}
                       className="flex flex-wrap items-center gap-2"
                     >
                       <Input
@@ -164,7 +153,7 @@ export function TeamTable({
                         placeholder="e-mail do dono do time"
                         className="max-w-xs"
                       />
-                      <Button type="submit">Enviar convite</Button>
+                      <SubmitButton pendingText="Enviando…">Enviar convite</SubmitButton>
                       <Button
                         type="button"
                         variant="secondary"
@@ -172,7 +161,7 @@ export function TeamTable({
                       >
                         Cancelar
                       </Button>
-                    </form>
+                    </ActionForm>
                   </td>
                 ) : (
                   <>

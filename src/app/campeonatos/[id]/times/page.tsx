@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
-import { Button, Card, FileInput, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Card, FileInput, Input, Label, PageHeader, Select } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { generateGroupLabels } from "@/lib/groups";
 import { createTeam } from "./actions";
 import { TeamTable } from "./team-table";
@@ -69,7 +70,7 @@ export default async function TimesPage({
       />
 
       <Card className="mb-6 p-5">
-        <form
+        <ActionForm
           action={createTeamWithId}
           className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
         >
@@ -109,8 +110,8 @@ export default async function TimesPage({
               )}
             </div>
           )}
-          <Button type="submit">Adicionar</Button>
-        </form>
+          <SubmitButton pendingText="Adicionando…">Adicionar</SubmitButton>
+        </ActionForm>
       </Card>
 
       <TeamTable

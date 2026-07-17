@@ -1,6 +1,7 @@
 "use client";
 
-import { Badge, Button, Input, Select } from "@/components/ui";
+import { Badge, Input, Select } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import {
   createCardEvent,
   createGoalEvent,
@@ -89,14 +90,8 @@ export function GameEventsPanel({
             <li className="text-sm text-muted">Nenhum gol lançado.</li>
           )}
         </ul>
-        <form
-          action={async (formData) => {
-            try {
-              await createGoalEvent(gameId, championshipId, formData);
-            } catch (error) {
-              alert(errorMessage(error));
-            }
-          }}
+        <ActionForm
+          action={(formData) => createGoalEvent(gameId, championshipId, formData)}
           className="flex flex-wrap items-center gap-2"
         >
           <Select name="player_id" required defaultValue="" className="max-w-[10rem]">
@@ -110,10 +105,10 @@ export function GameEventsPanel({
             ))}
           </Select>
           <Input name="minute" type="number" min={0} placeholder="Min." className="max-w-[4.5rem]" />
-          <Button type="submit" variant="secondary">
+          <SubmitButton variant="secondary" pendingText="Adicionando…">
             Adicionar gol
-          </Button>
-        </form>
+          </SubmitButton>
+        </ActionForm>
       </div>
 
       <div>
@@ -152,14 +147,8 @@ export function GameEventsPanel({
             <li className="text-sm text-muted">Nenhum cartão lançado.</li>
           )}
         </ul>
-        <form
-          action={async (formData) => {
-            try {
-              await createCardEvent(gameId, championshipId, formData);
-            } catch (error) {
-              alert(errorMessage(error));
-            }
-          }}
+        <ActionForm
+          action={(formData) => createCardEvent(gameId, championshipId, formData)}
           className="flex flex-wrap items-center gap-2"
         >
           <Select name="player_id" required defaultValue="" className="max-w-[10rem]">
@@ -180,10 +169,10 @@ export function GameEventsPanel({
             <option value="red">Vermelho</option>
           </Select>
           <Input name="minute" type="number" min={0} placeholder="Min." className="max-w-[4.5rem]" />
-          <Button type="submit" variant="secondary">
+          <SubmitButton variant="secondary" pendingText="Adicionando…">
             Adicionar cartão
-          </Button>
-        </form>
+          </SubmitButton>
+        </ActionForm>
       </div>
     </div>
   );

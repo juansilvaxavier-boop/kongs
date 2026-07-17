@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Button, Card, FileInput, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Card, FileInput, Input, Label, PageHeader, Select } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { updateProfile } from "./actions";
 
 const PERSONA_LABELS: Record<string, string> = {
@@ -27,7 +28,7 @@ export default async function PerfilPage() {
       <PageHeader eyebrow="Sua conta" title="Perfil" />
 
       <Card className="p-5">
-        <form action={updateProfile} className="flex flex-col gap-4">
+        <ActionForm action={updateProfile} className="flex flex-col gap-4">
           <div className="flex items-center gap-4">
             {profile?.avatar_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -97,9 +98,9 @@ export default async function PerfilPage() {
           </div>
 
           <div>
-            <Button type="submit">Salvar</Button>
+            <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
           </div>
-        </form>
+        </ActionForm>
       </Card>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Badge, Button, Card, FileInput, Input, Label, Select } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import {
   createPlayer,
@@ -45,15 +46,9 @@ export function TeamRoster({
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
           Técnico
         </h3>
-        <form
-          action={async (formData) => {
-            try {
-              await setOrCreateTeamCoach(teamId, championshipId, formData);
-              setCreatingCoach(false);
-            } catch (error) {
-              alert(errorMessage(error));
-            }
-          }}
+        <ActionForm
+          action={(formData) => setOrCreateTeamCoach(teamId, championshipId, formData)}
+          onSuccess={() => setCreatingCoach(false)}
           className="flex flex-wrap items-center gap-2"
         >
           {creatingCoach ? (
@@ -65,7 +60,7 @@ export function TeamRoster({
                 placeholder="Nome do novo técnico"
                 className="max-w-[12rem]"
               />
-              <Button type="submit">Salvar</Button>
+              <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
               <Button
                 type="button"
                 variant="secondary"
@@ -84,7 +79,7 @@ export function TeamRoster({
                   </option>
                 ))}
               </Select>
-              <Button type="submit">Salvar</Button>
+              <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
               <Button
                 type="button"
                 variant="secondary"
@@ -94,7 +89,7 @@ export function TeamRoster({
               </Button>
             </>
           )}
-        </form>
+        </ActionForm>
       </div>
 
       <div>
@@ -102,14 +97,8 @@ export function TeamRoster({
           Jogadores
         </h3>
 
-        <form
-          action={async (formData) => {
-            try {
-              await createPlayer(championshipId, teamId, formData);
-            } catch (error) {
-              alert(errorMessage(error));
-            }
-          }}
+        <ActionForm
+          action={(formData) => createPlayer(championshipId, teamId, formData)}
           className="mb-3 flex flex-wrap items-end gap-2"
         >
           <div className="flex-1 basis-32">
@@ -135,8 +124,8 @@ export function TeamRoster({
             <Label>Foto</Label>
             <FileInput name="photo" accept="image/*" />
           </div>
-          <Button type="submit">Adicionar</Button>
-        </form>
+          <SubmitButton pendingText="Adicionando…">Adicionar</SubmitButton>
+        </ActionForm>
 
         {players.length === 0 ? (
           <p className="text-sm text-muted">Nenhum jogador cadastrado ainda.</p>
@@ -156,15 +145,9 @@ export function TeamRoster({
                   <tr key={player.id} className="border-b border-border last:border-0">
                     {editingPlayerId === player.id ? (
                       <td colSpan={4} className="px-3 py-2">
-                        <form
-                          action={async (formData) => {
-                            try {
-                              await updatePlayer(player.id, championshipId, formData);
-                              setEditingPlayerId(null);
-                            } catch (error) {
-                              alert(errorMessage(error));
-                            }
-                          }}
+                        <ActionForm
+                          action={(formData) => updatePlayer(player.id, championshipId, formData)}
+                          onSuccess={() => setEditingPlayerId(null)}
                           className="flex flex-wrap items-center gap-2"
                         >
                           <Input
@@ -194,7 +177,7 @@ export function TeamRoster({
                             ))}
                           </Select>
                           <FileInput name="photo" accept="image/*" className="max-w-[10rem]" />
-                          <Button type="submit">Salvar</Button>
+                          <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
                           <Button
                             type="button"
                             variant="secondary"
@@ -202,7 +185,7 @@ export function TeamRoster({
                           >
                             Cancelar
                           </Button>
-                        </form>
+                        </ActionForm>
                       </td>
                     ) : (
                       <>

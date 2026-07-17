@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Button, Card, EmptyState, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Card, EmptyState, Input, Label, PageHeader, Select } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { naturalCompare } from "@/lib/datetime";
 import { groupTeamsByFormat } from "@/lib/groups";
 import { createGame } from "./actions";
@@ -75,63 +76,75 @@ export default async function JogosPage({
         }
       />
 
+      {hasEnoughTeams && (
+        <GenerateRoundsForm championshipId={id} poolSizes={poolSizes} />
+      )}
+
       <Card className="mb-6 p-5">
         {hasEnoughTeams ? (
-          <form
-            action={createGameWithId}
-            className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
-          >
-            <div className="w-32">
-              <Label>Rodada</Label>
-              <Input name="round" required placeholder="Rodada 1" />
-            </div>
-            <div className="flex-1 basis-40">
-              <Label>Time A</Label>
-              <Select name="team_a_id" required defaultValue="">
-                <option value="" disabled>
-                  Selecione
-                </option>
-                {(teams ?? []).map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
+          <>
+            <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+              Ou agende um jogo manualmente
+            </h2>
+            {!hasDrawnGames && (
+              <p className="mb-3 text-sm text-muted">
+                A data só pode ser definida depois que o primeiro confronto
+                existir — sorteie as rodadas acima, ou cadastre este jogo sem
+                data e agende depois.
+              </p>
+            )}
+            <ActionForm
+              action={createGameWithId}
+              className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
+            >
+              <div className="w-32">
+                <Label>Rodada</Label>
+                <Input name="round" required placeholder="Rodada 1" />
+              </div>
+              <div className="flex-1 basis-40">
+                <Label>Time A</Label>
+                <Select name="team_a_id" required defaultValue="">
+                  <option value="" disabled>
+                    Selecione
                   </option>
-                ))}
-              </Select>
-            </div>
-            <div className="flex-1 basis-40">
-              <Label>Time B</Label>
-              <Select name="team_b_id" required defaultValue="">
-                <option value="" disabled>
-                  Selecione
-                </option>
-                {(teams ?? []).map((team) => (
-                  <option key={team.id} value={team.id}>
-                    {team.name}
+                  {(teams ?? []).map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="flex-1 basis-40">
+                <Label>Time B</Label>
+                <Select name="team_b_id" required defaultValue="">
+                  <option value="" disabled>
+                    Selecione
                   </option>
-                ))}
-              </Select>
-            </div>
-            <div className="flex-1 basis-40">
-              <Label>Data</Label>
-              <GameDateField disabled={!hasDrawnGames} />
-              {!hasDrawnGames && (
-                <p className="mt-1 text-xs text-muted">
-                  Disponível após o sorteio dos confrontos.
-                </p>
-              )}
-            </div>
-            <Button type="submit">Agendar</Button>
-          </form>
+                  {(teams ?? []).map((team) => (
+                    <option key={team.id} value={team.id}>
+                      {team.name}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div className="flex-1 basis-40">
+                <Label>Data</Label>
+                <GameDateField disabled={!hasDrawnGames} />
+                {!hasDrawnGames && (
+                  <p className="mt-1 text-xs text-muted">
+                    Disponível após o sorteio dos confrontos.
+                  </p>
+                )}
+              </div>
+              <SubmitButton pendingText="Agendando…">Agendar</SubmitButton>
+            </ActionForm>
+          </>
         ) : (
           <p className="text-sm text-muted">
             Cadastre ao menos dois times para poder agendar jogos.
           </p>
         )}
       </Card>
-
-      {hasEnoughTeams && (
-        <GenerateRoundsForm championshipId={id} poolSizes={poolSizes} />
-      )}
 
       {games && games.length > 0 ? (
         <GameTable
