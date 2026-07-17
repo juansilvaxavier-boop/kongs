@@ -30,11 +30,15 @@ export function TeamTable({
   teams,
   coaches,
   invites,
+  groupLabels,
+  showGroups,
 }: {
   championshipId: string;
   teams: Team[];
   coaches: Coach[];
   invites: Invite[];
+  groupLabels: string[] | null;
+  showGroups: boolean;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [invitingId, setInvitingId] = useState<string | null>(null);
@@ -103,12 +107,28 @@ export function TeamTable({
                         placeholder="URL do escudo"
                         className="max-w-[10rem]"
                       />
-                      <Input
-                        name="group_name"
-                        defaultValue={team.group_name ?? ""}
-                        placeholder="Grupo A"
-                        className="max-w-[8rem]"
-                      />
+                      {showGroups &&
+                        (groupLabels ? (
+                          <Select
+                            name="group_name"
+                            defaultValue={team.group_name ?? ""}
+                            className="max-w-[10rem]"
+                          >
+                            <option value="">Sem grupo</option>
+                            {groupLabels.map((label) => (
+                              <option key={label} value={label}>
+                                {label}
+                              </option>
+                            ))}
+                          </Select>
+                        ) : (
+                          <Input
+                            name="group_name"
+                            defaultValue={team.group_name ?? ""}
+                            placeholder="Grupo A"
+                            className="max-w-[8rem]"
+                          />
+                        ))}
                       <Button type="submit">Salvar</Button>
                       <Button
                         type="button"

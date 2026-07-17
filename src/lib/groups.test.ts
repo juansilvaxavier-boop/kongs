@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { gamesWithinTeams, groupTeams, groupTeamsByFormat } from "./groups";
+import {
+  gamesWithinTeams,
+  generateGroupLabels,
+  groupTeams,
+  groupTeamsByFormat,
+} from "./groups";
 
 describe("groupTeams", () => {
   it("returns a single ungrouped bucket when no team has a group", () => {
@@ -50,6 +55,18 @@ describe("groupTeamsByFormat", () => {
   it("always returns a single table for liga, ignoring group_name", () => {
     const groups = groupTeamsByFormat("liga", teams);
     expect(groups).toEqual([{ groupName: null, teams }]);
+  });
+});
+
+describe("generateGroupLabels", () => {
+  it("generates lettered group labels", () => {
+    expect(generateGroupLabels(3)).toEqual(["Grupo A", "Grupo B", "Grupo C"]);
+  });
+
+  it("falls back to numbers past the alphabet", () => {
+    const labels = generateGroupLabels(27);
+    expect(labels[25]).toBe("Grupo Z");
+    expect(labels[26]).toBe("Grupo 27");
   });
 });
 

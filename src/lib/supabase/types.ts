@@ -126,28 +126,34 @@ export type Database = {
         Row: {
           created_at: string
           format: string
+          group_count: number | null
           has_knockout_stage: boolean
           id: string
           name: string
           owner_id: string
+          team_count: number | null
           yellow_cards_for_suspension: number
         }
         Insert: {
           created_at?: string
           format?: string
+          group_count?: number | null
           has_knockout_stage?: boolean
           id?: string
           name: string
           owner_id: string
+          team_count?: number | null
           yellow_cards_for_suspension?: number
         }
         Update: {
           created_at?: string
           format?: string
+          group_count?: number | null
           has_knockout_stage?: boolean
           id?: string
           name?: string
           owner_id?: string
+          team_count?: number | null
           yellow_cards_for_suspension?: number
         }
         Relationships: []

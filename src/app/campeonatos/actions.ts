@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
 import { isAdmin } from "@/lib/auth/roles";
+import { parsePositiveIntOrNull } from "@/lib/forms";
 
 export async function createChampionship(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
@@ -15,6 +16,8 @@ export async function createChampionship(formData: FormData) {
     throw new Error("Formato inválido.");
   }
   const hasKnockoutStage = formData.get("has_knockout_stage") === "on";
+  const teamCount = parsePositiveIntOrNull(formData, "team_count", "Quantidade de times");
+  const groupCount = parsePositiveIntOrNull(formData, "group_count", "Quantidade de grupos");
 
   const supabase = await createClient();
   const {
@@ -32,6 +35,8 @@ export async function createChampionship(formData: FormData) {
       owner_id: user.id,
       format,
       has_knockout_stage: hasKnockoutStage,
+      team_count: teamCount,
+      group_count: groupCount,
     })
     .select("id")
     .single();

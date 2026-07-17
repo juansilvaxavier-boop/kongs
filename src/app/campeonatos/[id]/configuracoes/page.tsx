@@ -13,7 +13,7 @@ export default async function ConfiguracoesPage({
 
   const { data: championship } = await supabase
     .from("championships")
-    .select("format, has_knockout_stage, yellow_cards_for_suspension")
+    .select("format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count")
     .eq("id", id)
     .maybeSingle();
 
@@ -49,6 +49,33 @@ export default async function ConfiguracoesPage({
             Este campeonato tem fase de mata-mata (habilita o link de
             chaveamento)
           </label>
+
+          <div className="flex flex-wrap gap-5">
+            <div className="w-36">
+              <Label>Quantidade de times</Label>
+              <Input
+                name="team_count"
+                type="number"
+                min={1}
+                placeholder="Opcional"
+                defaultValue={championship.team_count ?? ""}
+              />
+            </div>
+            <div className="w-36">
+              <Label>Quantidade de grupos</Label>
+              <Input
+                name="group_count"
+                type="number"
+                min={1}
+                placeholder="Se for Copa"
+                defaultValue={championship.group_count ?? ""}
+              />
+            </div>
+          </div>
+          <p className="-mt-3 text-xs text-muted">
+            Definir a quantidade de grupos habilita a escolha do grupo de cada
+            time por uma lista (Grupo A, B, C...) na aba Times.
+          </p>
 
           <div className="max-w-[10rem]">
             <Label>Cartões amarelos para suspensão</Label>

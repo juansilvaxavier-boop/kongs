@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Button, Card, Input, Label, PageHeader, Select } from "@/components/ui";
+import { generateGroupLabels } from "@/lib/groups";
 import { createTeam } from "./actions";
 import { TeamTable } from "./team-table";
 
@@ -11,29 +12,51 @@ export default async function TimesPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: teams }, { data: coaches }, { data: invites }] = await Promise.all([
-    supabase
-      .from("teams")
-      .select("id, name, coach_id, crest_url, owner_user_id, group_name")
-      .eq("championship_id", id)
-      .order("name"),
-    supabase
-      .from("coaches")
-      .select("id, name")
-      .eq("championship_id", id)
-      .order("name"),
-    supabase
-      .from("team_invites")
-      .select("id, team_id, email")
-      .eq("championship_id", id)
-      .is("accepted_at", null),
-  ]);
+  const [{ data: championship }, { data: teams }, { data: coaches }, { data: invites }] =
+    await Promise.all([
+      supabase
+        .from("championships")
+        .select("format, team_count, group_count")
+        .eq("id", id)
+        .maybeSingle(),
+      supabase
+        .from("teams")
+        .select("id, name, coach_id, crest_url, owner_user_id, group_name")
+        .eq("championship_id", id)
+        .order("name"),
+      supabase
+        .from("coaches")
+        .select("id, name")
+        .eq("championship_id", id)
+        .order("name"),
+      supabase
+        .from("team_invites")
+        .select("id, team_id, email")
+        .eq("championship_id", id)
+        .is("accepted_at", null),
+    ]);
 
   const createTeamWithId = createTeam.bind(null, id);
+  const showGroups = championship?.format === "copa";
+  const groupLabels =
+    showGroups && championship?.group_count
+      ? generateGroupLabels(championship.group_count)
+      : null;
+  const teamCount = championship?.team_count ?? null;
 
   return (
     <div>
-      <PageHeader eyebrow="Elenco de clubes" title="Times" />
+      <PageHeader
+        eyebrow="Elenco de clubes"
+        title="Times"
+        action={
+          teamCount ? (
+            <span className="text-sm text-muted">
+              {(teams ?? []).length} de {teamCount} times cadastrados
+            </span>
+          ) : undefined
+        }
+      />
 
       <Card className="mb-6 p-5">
         <form
@@ -59,10 +82,23 @@ export default async function TimesPage({
             <Label>Escudo (URL)</Label>
             <Input name="crest_url" type="url" placeholder="https://..." />
           </div>
-          <div className="w-32">
-            <Label>Grupo</Label>
-            <Input name="group_name" placeholder="Grupo A" />
-          </div>
+          {showGroups && (
+            <div className="w-36">
+              <Label>Grupo</Label>
+              {groupLabels ? (
+                <Select name="group_name" defaultValue="">
+                  <option value="">Sem grupo</option>
+                  {groupLabels.map((label) => (
+                    <option key={label} value={label}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              ) : (
+                <Input name="group_name" placeholder="Grupo A" />
+              )}
+            </div>
+          )}
           <Button type="submit">Adicionar</Button>
         </form>
       </Card>
@@ -72,6 +108,8 @@ export default async function TimesPage({
         teams={teams ?? []}
         coaches={coaches ?? []}
         invites={invites ?? []}
+        groupLabels={groupLabels}
+        showGroups={showGroups}
       />
     </div>
   );

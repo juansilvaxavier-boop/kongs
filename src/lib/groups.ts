@@ -54,6 +54,17 @@ export function groupTeamsByFormat<T extends Team>(
 }
 
 /**
+ * Gera os rótulos de grupo (Grupo A, Grupo B, ...) a partir da quantidade
+ * de grupos configurada no campeonato. Acima de 26 grupos, cai para
+ * numeração (Grupo 27, Grupo 28, ...) já que o alfabeto acabou.
+ */
+export function generateGroupLabels(count: number): string[] {
+  return Array.from({ length: count }, (_, i) =>
+    i < 26 ? `Grupo ${String.fromCharCode(65 + i)}` : `Grupo ${i + 1}`
+  );
+}
+
+/**
  * Filtra jogos para os que envolvem apenas times de um mesmo grupo
  * (usado para calcular a classificação de cada grupo isoladamente).
  */

@@ -44,6 +44,14 @@ export default async function CampeonatosPage() {
               <option value="copa">Copa (fase de grupos)</option>
             </Select>
           </div>
+          <div className="w-32">
+            <Label>Nº de times</Label>
+            <Input name="team_count" type="number" min={1} placeholder="Opcional" />
+          </div>
+          <div className="w-32">
+            <Label>Nº de grupos</Label>
+            <Input name="group_count" type="number" min={1} placeholder="Se for Copa" />
+          </div>
           <label className="flex items-center gap-2 pb-2 text-sm text-muted">
             <input
               type="checkbox"
@@ -54,6 +62,9 @@ export default async function CampeonatosPage() {
           </label>
           <Button type="submit">Criar campeonato</Button>
         </form>
+        <p className="mt-3 text-xs text-muted">
+          Nº de times e nº de grupos são opcionais e podem ser alterados depois em Configurações.
+        </p>
       </Card>
 
       {championships && championships.length > 0 ? (

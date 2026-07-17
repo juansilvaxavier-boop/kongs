@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
+import { parsePositiveIntOrNull } from "@/lib/forms";
 
 export async function updateChampionshipSettings(
   championshipId: string,
@@ -19,6 +20,9 @@ export async function updateChampionshipSettings(
     throw new Error("Informe um número válido de cartões amarelos (mínimo 1).");
   }
 
+  const teamCount = parsePositiveIntOrNull(formData, "team_count", "Quantidade de times");
+  const groupCount = parsePositiveIntOrNull(formData, "group_count", "Quantidade de grupos");
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("championships")
@@ -26,6 +30,8 @@ export async function updateChampionshipSettings(
       format,
       has_knockout_stage: hasKnockoutStage,
       yellow_cards_for_suspension: Math.trunc(yellowThreshold),
+      team_count: teamCount,
+      group_count: groupCount,
     })
     .eq("id", championshipId)
     .select("id")
