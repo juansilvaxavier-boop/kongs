@@ -49,7 +49,7 @@ export default async function EstatisticasPage({
         <PageHeader eyebrow="Estatísticas do campeonato" title="Artilharia" />
         {scorers.length === 0 ? (
           <EmptyState>
-            Nenhum gol lançado ainda. Lance gols na aba Jogos, em &quot;Eventos&quot;.
+            Nenhum gol lançado ainda. Lance gols na aba Jogos, em &quot;Súmula&quot;.
           </EmptyState>
         ) : (
           <Card className="overflow-hidden">

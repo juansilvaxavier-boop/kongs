@@ -5,7 +5,7 @@ import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui"
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { deleteGame, updateGame } from "./actions";
 import { GameDateField } from "./game-date-field";
-import { GameEventsPanel } from "./game-events-panel";
+import { SumulaPanel } from "./sumula-panel";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
@@ -114,23 +114,7 @@ export function GameTable({
                           </option>
                         ))}
                       </Select>
-                      <Input
-                        name="score_a"
-                        type="number"
-                        min={0}
-                        defaultValue={game.score_a ?? ""}
-                        placeholder="Placar"
-                        className="max-w-[4.5rem] text-center"
-                      />
                       <span className="text-muted">x</span>
-                      <Input
-                        name="score_b"
-                        type="number"
-                        min={0}
-                        defaultValue={game.score_b ?? ""}
-                        placeholder="Placar"
-                        className="max-w-[4.5rem] text-center"
-                      />
                       <Select
                         name="team_b_id"
                         defaultValue={game.team_b_id}
@@ -143,15 +127,9 @@ export function GameTable({
                         ))}
                       </Select>
                     </div>
-                    <label className="flex items-center gap-2 text-sm text-muted">
-                      <input
-                        type="checkbox"
-                        name="played"
-                        defaultChecked={game.played}
-                        className="h-4 w-4 rounded border-border accent-accent"
-                      />
-                      Jogo realizado (com placar lançado)
-                    </label>
+                    <p className="text-xs text-muted">
+                      Placar e &quot;jogo realizado&quot; ficam na aba Súmula.
+                    </p>
                     <div className="flex gap-2">
                       <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
                       <Button
@@ -196,13 +174,13 @@ export function GameTable({
                           setEventingId(eventingId === game.id ? null : game.id)
                         }
                       >
-                        Eventos
+                        Súmula
                       </Button>
                       <Button
                         variant="secondary"
                         onClick={() => setEditingId(game.id)}
                       >
-                        {game.played ? "Editar" : "Lançar placar"}
+                        Editar
                       </Button>
                       <form
                         action={async () => {
@@ -233,11 +211,14 @@ export function GameTable({
             {eventingId === game.id && (
               <tr className="border-b border-border last:border-0">
                 <td colSpan={6} className="bg-surface-2/40 px-4 py-4">
-                  <GameEventsPanel
+                  <SumulaPanel
                     gameId={game.id}
                     championshipId={championshipId}
                     teamAId={game.team_a_id}
                     teamBId={game.team_b_id}
+                    scoreA={game.score_a}
+                    scoreB={game.score_b}
+                    played={game.played}
                     players={players}
                     goalEvents={goalEvents}
                     cardEvents={cardEvents}

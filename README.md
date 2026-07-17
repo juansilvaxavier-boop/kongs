@@ -103,8 +103,15 @@ que o e-mail do convite bate com o do usuário autenticado).
   e a página `/redefinir-senha` (também usada em `/meu-time/conta`).
 - **Gerador de rodadas**: na aba Jogos, cria automaticamente os confrontos
   todos-contra-todos (turno único ou ida e volta).
-- **Artilharia e cartões**: lançados por jogo (aba Jogos → "Eventos"), com
-  tabelas em Estatísticas (admin) e na página pública do campeonato.
+- **Súmula digital**: cada jogo tem um painel de Súmula (aba Jogos → "Súmula")
+  onde o admin lança placar final, gols e cartões — é a única fonte de dados
+  da gamificação. O painel também gera um link público (`/sumula/[token]`,
+  sem login) para enviar aos mesários preencherem ao vivo no dia do jogo; o
+  token fica numa tabela própria sem policy de leitura (só acessível via
+  funções `sumula_*`, SECURITY DEFINER), então não vaza pela leitura pública
+  de `games`. "Gerar novo link" invalida o anterior. Artilharia/cartões
+  aparecem em tabelas em Estatísticas (admin) e na página pública do
+  campeonato.
 - **Fase de grupos**: times podem receber um campo "Grupo" opcional; a
   classificação passa a ser calculada por grupo quando ao menos um time tiver
   grupo definido.
@@ -154,11 +161,15 @@ manual, a evolução vem só do desempenho em campo. Raridade da carta: Bronze
 (OVR < 70), Prata (70–79), Ouro (80+).
 
 A única fonte de dados para a evolução é a súmula do jogo (gols, cartões e
-placar, já lançados na aba Jogos → "Eventos" + marcar "Realizado"). Ao marcar
-um jogo como realizado (ou editar gols/cartões depois), o sistema
-(`src/app/campeonatos/[id]/jogos/ovr-processing.ts`) recalcula tudo do zero
-de forma idempotente — reverte o lançamento anterior daquele jogo e aplica de
-novo com os dados atuais — usando as fórmulas em `src/lib/gamification.ts`:
+placar, lançados na aba Jogos → "Súmula" ou pelo link público de súmula +
+marcar "Jogo realizado"). Ao salvar o placar (ou editar gols/cartões depois),
+a função SQL `process_game_ovr` (SECURITY DEFINER, porte de
+`src/lib/gamification.ts` — mesmas fórmulas, com testes em
+`gamification.test.ts`) recalcula tudo do zero de forma idempotente — reverte
+o lançamento anterior daquele jogo e aplica de novo com os dados atuais.
+Rodar como função SQL (em vez de código do servidor Next.js) é o que permite
+o link público de súmula funcionar sem login e sem precisar de uma chave de
+service role:
 
 - `Base = Gols×0.30 + Vitória×0.20 − Amarelos×0.15 − Vermelhos×0.50`
 - Atacantes/Meias/Laterais/Volantes: `ΔOVR = Base`

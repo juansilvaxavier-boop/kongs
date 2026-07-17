@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
+import { getSiteUrl } from "@/lib/site-url";
 import { generateRoundRobinForTotalRounds } from "@/lib/round-robin";
 import { groupTeamsByFormat, shuffle } from "@/lib/groups";
 import { processGameOvr } from "./ovr-processing";
@@ -85,14 +86,6 @@ export async function updateGame(
     throw new Error("Escolha dois times diferentes.");
   }
 
-  const scoreA = parseScore(formData, "score_a");
-  const scoreB = parseScore(formData, "score_b");
-  const played = formData.get("played") === "on";
-
-  if (played && (scoreA === null || scoreB === null)) {
-    throw new Error("Informe o placar dos dois times para marcar o jogo como realizado.");
-  }
-
   const supabase = await createClient();
   await assertTeamsBelongToChampionship(supabase, championshipId, teamAId, teamBId);
 
@@ -103,9 +96,6 @@ export async function updateGame(
       team_a_id: teamAId,
       team_b_id: teamBId,
       date: parseDate(formData),
-      score_a: scoreA,
-      score_b: scoreB,
-      played,
     })
     .eq("id", id)
     .select("id")
@@ -114,8 +104,57 @@ export async function updateGame(
   if (error) throw new Error(error.message);
   if (!data) throw new Error("Jogo não encontrado ou sem permissão para editar.");
 
-  await processGameOvr(supabase, championshipId, id);
   revalidateChampionship(championshipId);
+}
+
+export async function updateGameScore(
+  id: string,
+  championshipId: string,
+  formData: FormData
+) {
+  const scoreA = parseScore(formData, "score_a");
+  const scoreB = parseScore(formData, "score_b");
+  const played = formData.get("played") === "on";
+
+  if (played && (scoreA === null || scoreB === null)) {
+    throw new Error("Informe o placar dos dois times para marcar o jogo como realizado.");
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("games")
+    .update({ score_a: scoreA, score_b: scoreB, played })
+    .eq("id", id)
+    .eq("championship_id", championshipId)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Jogo não encontrado ou sem permissão para editar.");
+
+  await processGameOvr(supabase, id);
+  revalidateChampionship(championshipId);
+}
+
+export async function getSumulaLink(gameId: string, championshipId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("get_or_create_sumula_token", {
+    p_game_id: gameId,
+    p_championship_id: championshipId,
+  });
+  if (error) throw new Error(error.message);
+  return `${getSiteUrl()}/sumula/${data}`;
+}
+
+export async function regenerateSumulaLink(gameId: string, championshipId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("regenerate_sumula_token", {
+    p_game_id: gameId,
+    p_championship_id: championshipId,
+  });
+  if (error) throw new Error(error.message);
+  revalidateChampionship(championshipId);
+  return `${getSiteUrl()}/sumula/${data}`;
 }
 
 export type GeneratedGamePreview = {

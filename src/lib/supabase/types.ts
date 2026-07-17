@@ -7,6 +7,8 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -187,6 +189,29 @@ export type Database = {
           },
         ]
       }
+      game_sumula_tokens: {
+        Row: {
+          game_id: string
+          token: string
+        }
+        Insert: {
+          game_id: string
+          token?: string
+        }
+        Update: {
+          game_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_sumula_tokens_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: true
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       games: {
         Row: {
           championship_id: string
@@ -236,6 +261,13 @@ export type Database = {
             columns: ["championship_id"]
             isOneToOne: false
             referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_mvp_player_id_fkey"
+            columns: ["mvp_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
           {
@@ -597,10 +629,66 @@ export type Database = {
     }
     Functions: {
       accept_team_invite: { Args: { p_invite_id: string }; Returns: undefined }
+      get_or_create_sumula_token: {
+        Args: { p_championship_id: string; p_game_id: string }
+        Returns: string
+      }
       is_admin: { Args: never; Returns: boolean }
       is_championship_admin: {
         Args: { p_championship_id: string }
         Returns: boolean
+      }
+      process_game_ovr: { Args: { p_game_id: string }; Returns: undefined }
+      regenerate_sumula_token: {
+        Args: { p_championship_id: string; p_game_id: string }
+        Returns: string
+      }
+      round2: { Args: { x: number }; Returns: number }
+      sumula_add_card: {
+        Args: {
+          p_card_type: string
+          p_minute: number
+          p_player_id: string
+          p_token: string
+        }
+        Returns: undefined
+      }
+      sumula_add_goal: {
+        Args: { p_minute: number; p_player_id: string; p_token: string }
+        Returns: undefined
+      }
+      sumula_delete_card: {
+        Args: { p_card_id: string; p_token: string }
+        Returns: undefined
+      }
+      sumula_delete_goal: {
+        Args: { p_goal_id: string; p_token: string }
+        Returns: undefined
+      }
+      sumula_get_game: {
+        Args: { p_token: string }
+        Returns: {
+          championship_id: string
+          championship_name: string
+          game_id: string
+          played: boolean
+          round: string
+          score_a: number
+          score_b: number
+          team_a_id: string
+          team_a_name: string
+          team_b_id: string
+          team_b_name: string
+        }[]
+      }
+      sumula_update_score: {
+        Args: {
+          p_played: boolean
+          p_score_a: number
+          p_score_b: number
+          p_token: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
