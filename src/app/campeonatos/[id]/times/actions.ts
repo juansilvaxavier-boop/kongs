@@ -216,6 +216,30 @@ function parsePhotoFile(formData: FormData): File | null {
   return null;
 }
 
+async function assertCpfNotDuplicated(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  championshipId: string,
+  documentType: string | null,
+  documentNumber: string | null,
+  excludePlayerId?: string
+) {
+  if (documentType !== "cpf" || !documentNumber) return;
+
+  let query = supabase
+    .from("players")
+    .select("id")
+    .eq("championship_id", championshipId)
+    .eq("document_type", "cpf")
+    .eq("document_number", documentNumber);
+  if (excludePlayerId) query = query.neq("id", excludePlayerId);
+
+  const { data, error } = await query.limit(1);
+  if (error) throw new Error(error.message);
+  if (data && data.length > 0) {
+    throw new Error("Já existe um jogador cadastrado com este CPF neste campeonato.");
+  }
+}
+
 async function uploadPlayerPhoto(
   supabase: Awaited<ReturnType<typeof createClient>>,
   playerId: string,
@@ -243,6 +267,12 @@ export async function createPlayer(
   const document = parseDocument(formData);
   const birthDate = parseBirthDate(formData);
   const supabase = await createClient();
+  await assertCpfNotDuplicated(
+    supabase,
+    championshipId,
+    document.document_type,
+    document.document_number
+  );
   const { data, error } = await supabase
     .from("players")
     .insert({
@@ -284,6 +314,13 @@ export async function updatePlayer(
   const document = parseDocument(formData);
   const birthDate = parseBirthDate(formData);
   const supabase = await createClient();
+  await assertCpfNotDuplicated(
+    supabase,
+    championshipId,
+    document.document_type,
+    document.document_number,
+    id
+  );
   const photoUrl = photoFile ? await uploadPlayerPhoto(supabase, id, photoFile) : undefined;
 
   const { data, error } = await supabase

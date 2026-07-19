@@ -9,6 +9,7 @@ const TABS = [
   { slug: "partidas", label: "Partidas" },
   { slug: "estatisticas", label: "Estatísticas" },
   { slug: "bolao", label: "Bolão" },
+  { slug: "regulamento", label: "Regulamento" },
 ];
 
 export function PublicChampionshipTabs({ id }: { id: string }) {

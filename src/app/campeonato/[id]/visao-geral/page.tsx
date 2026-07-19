@@ -15,12 +15,7 @@ export default async function VisaoGeralPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: championship }, { data: teams }, { data: comments }] = await Promise.all([
-    supabase
-      .from("championships")
-      .select("rules_text")
-      .eq("id", id)
-      .maybeSingle(),
+  const [{ data: teams }, { data: comments }] = await Promise.all([
     supabase
       .from("teams")
       .select("id, name, crest_url")
@@ -72,17 +67,6 @@ export default async function VisaoGeralPage({
           <EmptyState>Nenhum time cadastrado ainda.</EmptyState>
         )}
       </div>
-
-      {championship?.rules_text && (
-        <details className="group rounded-xl border border-border bg-surface/80 p-4 shadow-lg shadow-black/20 backdrop-blur">
-          <summary className="cursor-pointer font-display text-lg font-bold uppercase tracking-wide text-foreground">
-            Regulamento
-          </summary>
-          <p className="mt-3 whitespace-pre-wrap text-sm text-muted">
-            {championship.rules_text}
-          </p>
-        </details>
-      )}
 
       <CommentsSection
         championshipId={id}
