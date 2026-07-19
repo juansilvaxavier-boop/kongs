@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { PushSubscribeButton } from "@/components/push-subscribe-button";
 import { ShareButton } from "@/components/share-button";
 import { SocialLinks } from "@/components/social-links";
 import { SponsorsFooter } from "@/components/sponsors-footer";
@@ -50,6 +51,7 @@ export default async function PublicChampionshipLayout({
             </span>
             <SocialLinks />
             <ThemeToggle />
+            <PushSubscribeButton championshipId={id} />
             <ShareButton title={championship.name} />
           </div>
         </div>

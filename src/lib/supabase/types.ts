@@ -699,6 +699,41 @@ export type Database = {
         }
         Relationships: []
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          championship_id: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+        }
+        Insert: {
+          auth: string
+          championship_id: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+        }
+        Update: {
+          auth?: string
+          championship_id?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "push_subscriptions_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referees: {
         Row: {
           championship_id: string

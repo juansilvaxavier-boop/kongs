@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { notifyChampionshipSubscribers } from "@/app/campeonatos/[id]/jogos/push-notify";
 
 function parseMinute(formData: FormData): number {
   const value = String(formData.get("minute") || "");
@@ -74,6 +75,30 @@ export async function sumulaSetPlayed(token: string, gameId: string, played: boo
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/sumula/${token}/${gameId}`);
+
+  if (played) {
+    const { data: game } = await supabase
+      .from("games")
+      .select("championship_id, round, team_a_id, team_b_id, score_a, score_b")
+      .eq("id", gameId)
+      .maybeSingle();
+
+    if (game) {
+      const { data: teams } = await supabase
+        .from("teams")
+        .select("id, name")
+        .in("id", [game.team_a_id, game.team_b_id]);
+      const teamName = (teamId: string) => teams?.find((t) => t.id === teamId)?.name ?? "?";
+
+      await notifyChampionshipSubscribers(
+        supabase,
+        game.championship_id,
+        "Resultado publicado!",
+        `${teamName(game.team_a_id)} ${game.score_a ?? 0} x ${game.score_b ?? 0} ${teamName(game.team_b_id)} (${game.round})`,
+        `/campeonato/${game.championship_id}/partidas`
+      );
+    }
+  }
 }
 
 export async function sumulaToggleLineup(

@@ -6,6 +6,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { generateRoundRobinForTotalRounds } from "@/lib/round-robin";
 import { groupTeamsByFormat, shuffle } from "@/lib/groups";
 import { processGameOvr } from "./ovr-processing";
+import { notifyChampionshipSubscribers } from "./push-notify";
 
 function parseDate(formData: FormData) {
   const value = String(formData.get("date") || "");
@@ -148,7 +149,7 @@ export async function setGamePlayed(
     .update({ played })
     .eq("id", id)
     .eq("championship_id", championshipId)
-    .select("id")
+    .select("id, round, team_a_id, team_b_id, score_a, score_b")
     .maybeSingle();
 
   if (error) throw new Error(error.message);
@@ -156,6 +157,22 @@ export async function setGamePlayed(
 
   await processGameOvr(supabase, id);
   revalidateChampionship(championshipId);
+
+  if (played) {
+    const { data: teams } = await supabase
+      .from("teams")
+      .select("id, name")
+      .in("id", [data.team_a_id, data.team_b_id]);
+    const teamName = (teamId: string) => teams?.find((t) => t.id === teamId)?.name ?? "?";
+
+    await notifyChampionshipSubscribers(
+      supabase,
+      championshipId,
+      "Resultado publicado!",
+      `${teamName(data.team_a_id)} ${data.score_a ?? 0} x ${data.score_b ?? 0} ${teamName(data.team_b_id)} (${data.round})`,
+      `/campeonato/${championshipId}/partidas`
+    );
+  }
 }
 
 export async function getChampionshipSumulaLink(championshipId: string) {

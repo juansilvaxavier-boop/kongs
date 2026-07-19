@@ -1,5 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Rajdhani } from "next/font/google";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import "./globals.css";
 
 const bodyFont = Inter({
@@ -16,6 +17,16 @@ const displayFont = Rajdhani({
 export const metadata: Metadata = {
   title: "Kongs | Gestão de Campeonatos",
   description: "Painel de gestão de campeonatos de futebol",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Kongs",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#10b981",
 };
 
 export default function RootLayout({
@@ -35,6 +46,7 @@ export default function RootLayout({
               "(function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark');}catch(e){}})();",
           }}
         />
+        <ServiceWorkerRegister />
         {children}
       </body>
     </html>

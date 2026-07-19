@@ -34,3 +34,18 @@ export async function deleteComment(championshipId: string, commentId: string) {
 
   revalidatePath(`/campeonato/${championshipId}`);
 }
+
+export async function subscribeToPush(
+  championshipId: string,
+  subscription: { endpoint: string; keys: { p256dh: string; auth: string } }
+) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("push_subscriptions").insert({
+    championship_id: championshipId,
+    endpoint: subscription.endpoint,
+    p256dh: subscription.keys.p256dh,
+    auth: subscription.keys.auth,
+  });
+  // 23505 = endpoint já cadastrado (usuário assinando de novo no mesmo navegador) — ok, ignora.
+  if (error && error.code !== "23505") throw new Error(error.message);
+}
