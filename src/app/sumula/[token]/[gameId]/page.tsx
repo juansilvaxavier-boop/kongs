@@ -55,6 +55,7 @@ export default async function SumulaGamePage({
         <SumulaGamePanel
           token={token}
           gameId={game.game_id}
+          round={game.round}
           teamAId={game.team_a_id}
           teamAName={game.team_a_name}
           teamBId={game.team_b_id}

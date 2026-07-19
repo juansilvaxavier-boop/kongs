@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { SumulaPdfButton } from "@/components/sumula-pdf-button";
 import {
   createCardEvent,
   createGoalEvent,
@@ -169,6 +170,7 @@ function TeamSumulaColumn({
 export function SumulaPanel({
   gameId,
   championshipId,
+  round,
   teamAId,
   teamAName,
   teamBId,
@@ -182,6 +184,7 @@ export function SumulaPanel({
 }: {
   gameId: string;
   championshipId: string;
+  round?: string;
   teamAId: string;
   teamAName: string;
   teamBId: string;
@@ -226,6 +229,17 @@ export function SumulaPanel({
           <Button type="button" variant="secondary" onClick={togglePlayed} disabled={pending}>
             {pending ? "Salvando…" : played ? "Reabrir jogo" : "Marcar como realizado"}
           </Button>
+          <SumulaPdfButton
+            round={round}
+            teamAName={teamAName}
+            teamBName={teamBName}
+            scoreA={scoreA}
+            scoreB={scoreB}
+            teamAPlayers={teamAPlayers}
+            teamBPlayers={teamBPlayers}
+            goalEvents={gameGoals}
+            cardEvents={gameCards}
+          />
         </div>
       </div>
       {error && <p className="mb-3 text-sm text-danger">{error}</p>}
