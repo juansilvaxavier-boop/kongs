@@ -17,6 +17,30 @@ function parseVenueId(formData: FormData) {
   return value ? value : null;
 }
 
+function parseRefereeId(formData: FormData) {
+  const value = String(formData.get("referee_id") || "");
+  return value ? value : null;
+}
+
+function parseRefereePaymentAmount(formData: FormData) {
+  const value = String(formData.get("referee_payment_amount") || "");
+  if (!value) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseRefereePaid(formData: FormData) {
+  return formData.get("referee_paid") === "on";
+}
+
+function parseCpf(formData: FormData): string | null {
+  const raw = String(formData.get("cpf") || "").trim();
+  if (!raw) return null;
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length !== 11) throw new Error("CPF precisa ter 11 dígitos.");
+  return digits;
+}
+
 async function assertTeamsBelongToChampionship(
   supabase: Awaited<ReturnType<typeof createClient>>,
   championshipId: string,
@@ -63,6 +87,9 @@ export async function createGame(championshipId: string, formData: FormData) {
     team_b_id: teamBId,
     date: hasDrawnGames ? parseDate(formData) : null,
     venue_id: parseVenueId(formData),
+    referee_id: parseRefereeId(formData),
+    referee_payment_amount: parseRefereePaymentAmount(formData),
+    referee_paid: parseRefereePaid(formData),
   });
 
   if (error) throw new Error(error.message);
@@ -96,6 +123,9 @@ export async function updateGame(
       team_b_id: teamBId,
       date: parseDate(formData),
       venue_id: parseVenueId(formData),
+      referee_id: parseRefereeId(formData),
+      referee_payment_amount: parseRefereePaymentAmount(formData),
+      referee_paid: parseRefereePaid(formData),
     })
     .eq("id", id)
     .select("id")
@@ -290,6 +320,76 @@ export async function updateVenue(
 export async function deleteVenue(id: string, championshipId: string) {
   const supabase = await createClient();
   const { error } = await supabase.from("venues").delete().eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidateChampionship(championshipId);
+}
+
+async function assertRefereeCpfNotDuplicated(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  championshipId: string,
+  cpf: string | null,
+  excludeRefereeId?: string
+) {
+  if (!cpf) return;
+
+  let query = supabase
+    .from("referees")
+    .select("id")
+    .eq("championship_id", championshipId)
+    .eq("cpf", cpf);
+  if (excludeRefereeId) query = query.neq("id", excludeRefereeId);
+
+  const { data, error } = await query.limit(1);
+  if (error) throw new Error(error.message);
+  if (data && data.length > 0) {
+    throw new Error("Já existe um árbitro cadastrado com este CPF neste campeonato.");
+  }
+}
+
+export async function createReferee(championshipId: string, formData: FormData) {
+  const name = String(formData.get("name") || "").trim();
+  if (!name) throw new Error("Informe o nome do árbitro.");
+  const cpf = parseCpf(formData);
+
+  const supabase = await createClient();
+  await assertRefereeCpfNotDuplicated(supabase, championshipId, cpf);
+  const { error } = await supabase.from("referees").insert({
+    championship_id: championshipId,
+    name,
+    cpf,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidateChampionship(championshipId);
+}
+
+export async function updateReferee(
+  id: string,
+  championshipId: string,
+  formData: FormData
+) {
+  const name = String(formData.get("name") || "").trim();
+  if (!name) throw new Error("Informe o nome do árbitro.");
+  const cpf = parseCpf(formData);
+
+  const supabase = await createClient();
+  await assertRefereeCpfNotDuplicated(supabase, championshipId, cpf, id);
+  const { data, error } = await supabase
+    .from("referees")
+    .update({ name, cpf })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Árbitro não encontrado ou sem permissão para editar.");
+  revalidateChampionship(championshipId);
+}
+
+export async function deleteReferee(id: string, championshipId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("referees").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
   revalidateChampionship(championshipId);

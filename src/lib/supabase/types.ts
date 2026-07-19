@@ -272,6 +272,9 @@ export type Database = {
           mvp_player_id: string | null
           ovr_processed_at: string | null
           played: boolean
+          referee_id: string | null
+          referee_paid: boolean
+          referee_payment_amount: number | null
           round: string
           score_a: number | null
           score_b: number | null
@@ -287,6 +290,9 @@ export type Database = {
           mvp_player_id?: string | null
           ovr_processed_at?: string | null
           played?: boolean
+          referee_id?: string | null
+          referee_paid?: boolean
+          referee_payment_amount?: number | null
           round: string
           score_a?: number | null
           score_b?: number | null
@@ -302,6 +308,9 @@ export type Database = {
           mvp_player_id?: string | null
           ovr_processed_at?: string | null
           played?: boolean
+          referee_id?: string | null
+          referee_paid?: boolean
+          referee_payment_amount?: number | null
           round?: string
           score_a?: number | null
           score_b?: number | null
@@ -322,6 +331,13 @@ export type Database = {
             columns: ["mvp_player_id"]
             isOneToOne: false
             referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_referee_id_fkey"
+            columns: ["referee_id"]
+            isOneToOne: false
+            referencedRelation: "referees"
             referencedColumns: ["id"]
           },
           {
@@ -682,6 +698,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      referees: {
+        Row: {
+          championship_id: string
+          cpf: string | null
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          championship_id: string
+          cpf?: string | null
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          championship_id?: string
+          cpf?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referees_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       team_invites: {
         Row: {

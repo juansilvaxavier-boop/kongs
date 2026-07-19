@@ -31,8 +31,12 @@ type Game = {
   score_b: number | null;
   played: boolean;
   venue_id: string | null;
+  referee_id: string | null;
+  referee_payment_amount: number | null;
+  referee_paid: boolean;
 };
 type Venue = { id: string; name: string };
+type Referee = { id: string; name: string; cpf: string | null };
 type Lineup = { game_id: string; player_id: string };
 type Signature = {
   game_id: string;
@@ -61,6 +65,7 @@ export function GameTable({
   venues,
   lineups,
   signatures,
+  referees,
 }: {
   championshipId: string;
   games: Game[];
@@ -71,6 +76,7 @@ export function GameTable({
   venues: Venue[];
   lineups: Lineup[];
   signatures: Signature[];
+  referees: Referee[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [eventingId, setEventingId] = useState<string | null>(null);
@@ -78,6 +84,8 @@ export function GameTable({
     teams.find((t) => t.id === teamId)?.name ?? "?";
   const venueName = (venueId: string | null) =>
     venueId ? venues.find((v) => v.id === venueId)?.name ?? null : null;
+  const refereeName = (refereeId: string | null) =>
+    refereeId ? referees.find((r) => r.id === refereeId)?.name ?? null : null;
 
   if (games.length === 0) {
     return <EmptyState>Nenhum jogo agendado ainda.</EmptyState>;
@@ -114,6 +122,7 @@ export function GameTable({
             <th className="px-4 py-3">Data</th>
             <th className="px-4 py-3">Confronto</th>
             <th className="px-4 py-3">Local</th>
+            <th className="px-4 py-3">Árbitro</th>
             <th className="px-4 py-3">Placar</th>
             <th className="px-4 py-3">Status</th>
             <th className="w-48 px-4 py-3 text-right">Ações</th>
@@ -124,7 +133,7 @@ export function GameTable({
             <Fragment key={game.id}>
             <tr className="border-b border-border last:border-0">
               {editingId === game.id ? (
-                <td colSpan={7} className="px-4 py-4">
+                <td colSpan={8} className="px-4 py-4">
                   <ActionForm
                     action={(formData) => updateGame(game.id, championshipId, formData)}
                     onSuccess={() => setEditingId(null)}
@@ -181,6 +190,39 @@ export function GameTable({
                           ))}
                         </Select>
                       )}
+                      {referees.length > 0 && (
+                        <Select
+                          name="referee_id"
+                          defaultValue={game.referee_id ?? ""}
+                          className="max-w-[10rem]"
+                        >
+                          <option value="">Sem árbitro</option>
+                          {referees.map((referee) => (
+                            <option key={referee.id} value={referee.id}>
+                              {referee.name}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        name="referee_payment_amount"
+                        type="number"
+                        step="0.01"
+                        min={0}
+                        placeholder="Valor pago ao árbitro (R$)"
+                        defaultValue={game.referee_payment_amount ?? ""}
+                        className="max-w-[12rem]"
+                      />
+                      <label className="flex items-center gap-2 text-xs text-muted">
+                        <input
+                          type="checkbox"
+                          name="referee_paid"
+                          defaultChecked={game.referee_paid}
+                        />
+                        Árbitro pago
+                      </label>
                     </div>
                     <p className="text-xs text-muted">
                       Placar e &quot;jogo realizado&quot; ficam na aba Súmula.
@@ -213,6 +255,21 @@ export function GameTable({
                   </td>
                   <td className="px-4 py-3 text-muted">
                     {venueName(game.venue_id) ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-muted">
+                    {refereeName(game.referee_id) ? (
+                      <div className="flex flex-col gap-1">
+                        <span>{refereeName(game.referee_id)}</span>
+                        {game.referee_payment_amount !== null && (
+                          <Badge tone={game.referee_paid ? "success" : "warning"}>
+                            {game.referee_paid ? "Pago" : "A pagar"} · R${" "}
+                            {game.referee_payment_amount.toFixed(2)}
+                          </Badge>
+                        )}
+                      </div>
+                    ) : (
+                      "—"
+                    )}
                   </td>
                   <td className="px-4 py-3 text-foreground">
                     {game.played
@@ -268,7 +325,7 @@ export function GameTable({
             </tr>
             {eventingId === game.id && (
               <tr className="border-b border-border last:border-0">
-                <td colSpan={7} className="bg-surface-2/40 px-4 py-4">
+                <td colSpan={8} className="bg-surface-2/40 px-4 py-4">
                   <SumulaPanel
                     gameId={game.id}
                     championshipId={championshipId}

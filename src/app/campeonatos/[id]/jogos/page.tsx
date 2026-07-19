@@ -8,6 +8,7 @@ import { createGame } from "./actions";
 import { GameDateField } from "./game-date-field";
 import { GameTable } from "./game-table";
 import { GenerateRoundsForm } from "./generate-rounds-form";
+import { RefereesSection } from "./referees-section";
 import { SumulaLinkSection } from "./sumula-link-section";
 import { VenuesSection } from "./venues-section";
 
@@ -29,6 +30,7 @@ export default async function JogosPage({
     { data: venues },
     { data: lineups },
     { data: signatures },
+    { data: referees },
   ] =
     await Promise.all([
       supabase
@@ -38,7 +40,9 @@ export default async function JogosPage({
         .maybeSingle(),
       supabase
         .from("games")
-        .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played, venue_id")
+        .select(
+          "id, round, team_a_id, team_b_id, date, score_a, score_b, played, venue_id, referee_id, referee_payment_amount, referee_paid"
+        )
         .eq("championship_id", id)
         .order("date", { ascending: true, nullsFirst: false }),
       supabase
@@ -71,6 +75,11 @@ export default async function JogosPage({
         .from("game_captain_signatures")
         .select("game_id, team_id, captain_name, signature_data_url, signed_at")
         .eq("championship_id", id),
+      supabase
+        .from("referees")
+        .select("id, name, cpf")
+        .eq("championship_id", id)
+        .order("name"),
     ]);
 
   const games = gamesData
@@ -104,6 +113,8 @@ export default async function JogosPage({
       <SumulaLinkSection championshipId={id} />
 
       <VenuesSection championshipId={id} venues={venues ?? []} />
+
+      <RefereesSection championshipId={id} referees={referees ?? []} />
 
       {hasEnoughTeams && (
         <GenerateRoundsForm championshipId={id} poolSizes={poolSizes} />
@@ -178,6 +189,19 @@ export default async function JogosPage({
                   </Select>
                 </div>
               )}
+              {(referees ?? []).length > 0 && (
+                <div className="flex-1 basis-40">
+                  <Label>Árbitro</Label>
+                  <Select name="referee_id" defaultValue="">
+                    <option value="">Sem árbitro definido</option>
+                    {(referees ?? []).map((referee) => (
+                      <option key={referee.id} value={referee.id}>
+                        {referee.name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
               <SubmitButton pendingText="Agendando…">Agendar</SubmitButton>
             </ActionForm>
           </>
@@ -199,6 +223,7 @@ export default async function JogosPage({
           venues={venues ?? []}
           lineups={lineups ?? []}
           signatures={signatures ?? []}
+          referees={referees ?? []}
         />
       ) : (
         <EmptyState>Nenhum jogo agendado ainda.</EmptyState>
