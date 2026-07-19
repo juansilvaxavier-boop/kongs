@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui";
+import { ExportPdfButton } from "@/components/export-pdf-button";
 import { computeSuspensions } from "@/lib/discipline";
 import { isBirthdayToday } from "@/lib/datetime";
 import { PlayerRosterGrid, type RosterPlayer } from "./player-roster-grid";
@@ -123,30 +124,46 @@ export default async function PublicTeamPage({
 
   return (
     <div>
-      <div className="mb-6 flex items-center gap-4">
-        {team.crest_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={team.crest_url}
-            alt=""
-            className="h-16 w-16 rounded-full object-cover"
-          />
-        ) : (
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2 text-lg font-bold text-muted">
-            {team.name.slice(0, 2).toUpperCase()}
-          </span>
-        )}
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-            Elenco
-          </p>
-          <h1 className="font-display text-3xl font-bold uppercase tracking-wide text-foreground">
-            {team.name}
-          </h1>
-          {coachRow?.name && (
-            <p className="text-sm text-muted">Técnico: {coachRow.name}</p>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          {team.crest_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={team.crest_url}
+              alt=""
+              className="h-16 w-16 rounded-full object-cover"
+            />
+          ) : (
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2 text-lg font-bold text-muted">
+              {team.name.slice(0, 2).toUpperCase()}
+            </span>
           )}
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+              Elenco
+            </p>
+            <h1 className="font-display text-3xl font-bold uppercase tracking-wide text-foreground">
+              {team.name}
+            </h1>
+            {coachRow?.name && (
+              <p className="text-sm text-muted">Técnico: {coachRow.name}</p>
+            )}
+          </div>
         </div>
+
+        {rosterPlayers.length > 0 && (
+          <ExportPdfButton
+            fileName={`elenco-${team.name}`}
+            title={`Elenco — ${team.name}`}
+            columns={["Nº", "Nome", "Posição", "Overall"]}
+            rows={rosterPlayers.map((player) => [
+              player.number ?? "—",
+              player.name,
+              player.position ?? "—",
+              Math.round(player.attributes.ovr),
+            ])}
+          />
+        )}
       </div>
 
       {rosterPlayers.length > 0 ? (
