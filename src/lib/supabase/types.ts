@@ -156,6 +156,7 @@ export type Database = {
           id: string
           name: string
           owner_id: string
+          rules_text: string | null
           team_count: number | null
           yellow_cards_for_suspension: number
         }
@@ -167,6 +168,7 @@ export type Database = {
           id?: string
           name: string
           owner_id: string
+          rules_text?: string | null
           team_count?: number | null
           yellow_cards_for_suspension?: number
         }
@@ -178,6 +180,7 @@ export type Database = {
           id?: string
           name?: string
           owner_id?: string
+          rules_text?: string | null
           team_count?: number | null
           yellow_cards_for_suspension?: number
         }
@@ -226,6 +229,7 @@ export type Database = {
           score_b: number | null
           team_a_id: string
           team_b_id: string
+          venue_id: string | null
         }
         Insert: {
           championship_id: string
@@ -240,6 +244,7 @@ export type Database = {
           score_b?: number | null
           team_a_id: string
           team_b_id: string
+          venue_id?: string | null
         }
         Update: {
           championship_id?: string
@@ -254,6 +259,7 @@ export type Database = {
           score_b?: number | null
           team_a_id?: string
           team_b_id?: string
+          venue_id?: string | null
         }
         Relationships: [
           {
@@ -282,6 +288,13 @@ export type Database = {
             columns: ["team_b_id"]
             isOneToOne: false
             referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_venue_id_fkey"
+            columns: ["venue_id"]
+            isOneToOne: false
+            referencedRelation: "venues"
             referencedColumns: ["id"]
           },
         ]
@@ -670,6 +683,38 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      venues: {
+        Row: {
+          address: string | null
+          championship_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          address?: string | null
+          championship_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          address?: string | null
+          championship_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "venues_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

@@ -9,6 +9,7 @@ import { GameDateField } from "./game-date-field";
 import { GameTable } from "./game-table";
 import { GenerateRoundsForm } from "./generate-rounds-form";
 import { SumulaLinkSection } from "./sumula-link-section";
+import { VenuesSection } from "./venues-section";
 
 export default async function JogosPage({
   params,
@@ -18,7 +19,7 @@ export default async function JogosPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: championship }, { data: gamesData }, { data: teams }, { data: players }, { data: goalEvents }, { data: cardEvents }] =
+  const [{ data: championship }, { data: gamesData }, { data: teams }, { data: players }, { data: goalEvents }, { data: cardEvents }, { data: venues }] =
     await Promise.all([
       supabase
         .from("championships")
@@ -27,7 +28,7 @@ export default async function JogosPage({
         .maybeSingle(),
       supabase
         .from("games")
-        .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played")
+        .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played, venue_id")
         .eq("championship_id", id)
         .order("date", { ascending: true, nullsFirst: false }),
       supabase
@@ -47,6 +48,11 @@ export default async function JogosPage({
         .from("card_events")
         .select("id, player_id, card_type, minute, game_id")
         .eq("championship_id", id),
+      supabase
+        .from("venues")
+        .select("id, name, address")
+        .eq("championship_id", id)
+        .order("name"),
     ]);
 
   const games = gamesData
@@ -78,6 +84,8 @@ export default async function JogosPage({
       />
 
       <SumulaLinkSection championshipId={id} />
+
+      <VenuesSection championshipId={id} venues={venues ?? []} />
 
       {hasEnoughTeams && (
         <GenerateRoundsForm championshipId={id} poolSizes={poolSizes} />
@@ -139,6 +147,19 @@ export default async function JogosPage({
                   </p>
                 )}
               </div>
+              {(venues ?? []).length > 0 && (
+                <div className="flex-1 basis-40">
+                  <Label>Local</Label>
+                  <Select name="venue_id" defaultValue="">
+                    <option value="">Sem local definido</option>
+                    {(venues ?? []).map((venue) => (
+                      <option key={venue.id} value={venue.id}>
+                        {venue.name}
+                      </option>
+                    ))}
+                  </Select>
+                </div>
+              )}
               <SubmitButton pendingText="Agendando…">Agendar</SubmitButton>
             </ActionForm>
           </>
@@ -157,6 +178,7 @@ export default async function JogosPage({
           players={players ?? []}
           goalEvents={goalEvents ?? []}
           cardEvents={cardEvents ?? []}
+          venues={venues ?? []}
         />
       ) : (
         <EmptyState>Nenhum jogo agendado ainda.</EmptyState>

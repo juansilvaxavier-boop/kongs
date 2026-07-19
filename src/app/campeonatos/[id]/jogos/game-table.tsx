@@ -30,7 +30,9 @@ type Game = {
   score_a: number | null;
   score_b: number | null;
   played: boolean;
+  venue_id: string | null;
 };
+type Venue = { id: string; name: string };
 
 function toDatetimeLocal(iso: string | null) {
   if (!iso) return "";
@@ -48,6 +50,7 @@ export function GameTable({
   players,
   goalEvents,
   cardEvents,
+  venues,
 }: {
   championshipId: string;
   games: Game[];
@@ -55,11 +58,14 @@ export function GameTable({
   players: Player[];
   goalEvents: GoalEvent[];
   cardEvents: CardEvent[];
+  venues: Venue[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [eventingId, setEventingId] = useState<string | null>(null);
   const teamName = (teamId: string) =>
     teams.find((t) => t.id === teamId)?.name ?? "?";
+  const venueName = (venueId: string | null) =>
+    venueId ? venues.find((v) => v.id === venueId)?.name ?? null : null;
 
   if (games.length === 0) {
     return <EmptyState>Nenhum jogo agendado ainda.</EmptyState>;
@@ -95,6 +101,7 @@ export function GameTable({
             <th className="px-4 py-3">Rodada</th>
             <th className="px-4 py-3">Data</th>
             <th className="px-4 py-3">Confronto</th>
+            <th className="px-4 py-3">Local</th>
             <th className="px-4 py-3">Placar</th>
             <th className="px-4 py-3">Status</th>
             <th className="w-48 px-4 py-3 text-right">Ações</th>
@@ -105,7 +112,7 @@ export function GameTable({
             <Fragment key={game.id}>
             <tr className="border-b border-border last:border-0">
               {editingId === game.id ? (
-                <td colSpan={6} className="px-4 py-4">
+                <td colSpan={7} className="px-4 py-4">
                   <ActionForm
                     action={(formData) => updateGame(game.id, championshipId, formData)}
                     onSuccess={() => setEditingId(null)}
@@ -148,6 +155,20 @@ export function GameTable({
                           </option>
                         ))}
                       </Select>
+                      {venues.length > 0 && (
+                        <Select
+                          name="venue_id"
+                          defaultValue={game.venue_id ?? ""}
+                          className="max-w-[10rem]"
+                        >
+                          <option value="">Sem local</option>
+                          {venues.map((venue) => (
+                            <option key={venue.id} value={venue.id}>
+                              {venue.name}
+                            </option>
+                          ))}
+                        </Select>
+                      )}
                     </div>
                     <p className="text-xs text-muted">
                       Placar e &quot;jogo realizado&quot; ficam na aba Súmula.
@@ -177,6 +198,9 @@ export function GameTable({
                   </td>
                   <td className="px-4 py-3 font-medium text-foreground">
                     {teamName(game.team_a_id)} x {teamName(game.team_b_id)}
+                  </td>
+                  <td className="px-4 py-3 text-muted">
+                    {venueName(game.venue_id) ?? "—"}
                   </td>
                   <td className="px-4 py-3 text-foreground">
                     {game.played
@@ -232,7 +256,7 @@ export function GameTable({
             </tr>
             {eventingId === game.id && (
               <tr className="border-b border-border last:border-0">
-                <td colSpan={6} className="bg-surface-2/40 px-4 py-4">
+                <td colSpan={7} className="bg-surface-2/40 px-4 py-4">
                   <SumulaPanel
                     gameId={game.id}
                     championshipId={championshipId}

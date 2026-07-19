@@ -12,6 +12,11 @@ function parseDate(formData: FormData) {
   return value ? value : null;
 }
 
+function parseVenueId(formData: FormData) {
+  const value = String(formData.get("venue_id") || "");
+  return value ? value : null;
+}
+
 async function assertTeamsBelongToChampionship(
   supabase: Awaited<ReturnType<typeof createClient>>,
   championshipId: string,
@@ -57,6 +62,7 @@ export async function createGame(championshipId: string, formData: FormData) {
     team_a_id: teamAId,
     team_b_id: teamBId,
     date: hasDrawnGames ? parseDate(formData) : null,
+    venue_id: parseVenueId(formData),
   });
 
   if (error) throw new Error(error.message);
@@ -89,6 +95,7 @@ export async function updateGame(
       team_a_id: teamAId,
       team_b_id: teamBId,
       date: parseDate(formData),
+      venue_id: parseVenueId(formData),
     })
     .eq("id", id)
     .select("id")
@@ -237,6 +244,52 @@ export async function deleteAllGames(championshipId: string) {
     .from("games")
     .delete()
     .eq("championship_id", championshipId);
+
+  if (error) throw new Error(error.message);
+  revalidateChampionship(championshipId);
+}
+
+export async function createVenue(championshipId: string, formData: FormData) {
+  const name = String(formData.get("name") || "").trim();
+  if (!name) throw new Error("Informe o nome do local.");
+  const address = String(formData.get("address") || "").trim();
+
+  const supabase = await createClient();
+  const { error } = await supabase.from("venues").insert({
+    championship_id: championshipId,
+    name,
+    address: address ? address : null,
+  });
+
+  if (error) throw new Error(error.message);
+  revalidateChampionship(championshipId);
+}
+
+export async function updateVenue(
+  id: string,
+  championshipId: string,
+  formData: FormData
+) {
+  const name = String(formData.get("name") || "").trim();
+  if (!name) throw new Error("Informe o nome do local.");
+  const address = String(formData.get("address") || "").trim();
+
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("venues")
+    .update({ name, address: address ? address : null })
+    .eq("id", id)
+    .select("id")
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Local não encontrado ou sem permissão para editar.");
+  revalidateChampionship(championshipId);
+}
+
+export async function deleteVenue(id: string, championshipId: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("venues").delete().eq("id", id);
 
   if (error) throw new Error(error.message);
   revalidateChampionship(championshipId);

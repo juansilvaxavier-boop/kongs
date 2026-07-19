@@ -22,6 +22,7 @@ export async function updateChampionshipSettings(
 
   const teamCount = parsePositiveIntOrNull(formData, "team_count", "Quantidade de times");
   const groupCount = parsePositiveIntOrNull(formData, "group_count", "Quantidade de grupos");
+  const rulesText = String(formData.get("rules_text") || "").trim();
 
   const supabase = await createClient();
   const { data, error } = await supabase
@@ -32,6 +33,7 @@ export async function updateChampionshipSettings(
       yellow_cards_for_suspension: Math.trunc(yellowThreshold),
       team_count: teamCount,
       group_count: groupCount,
+      rules_text: rulesText ? rulesText : null,
     })
     .eq("id", championshipId)
     .select("id")

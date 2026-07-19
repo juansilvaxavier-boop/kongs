@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Card, Input, Label, PageHeader, Select, Textarea } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { updateChampionshipSettings } from "./actions";
 
@@ -14,7 +14,7 @@ export default async function ConfiguracoesPage({
 
   const { data: championship } = await supabase
     .from("championships")
-    .select("format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count")
+    .select("format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text")
     .eq("id", id)
     .maybeSingle();
 
@@ -89,6 +89,20 @@ export default async function ConfiguracoesPage({
             />
             <p className="mt-1 text-xs text-muted">
               Cartão vermelho sempre suspende para o próximo jogo.
+            </p>
+          </div>
+
+          <div>
+            <Label>Regulamento do campeonato</Label>
+            <Textarea
+              name="rules_text"
+              rows={8}
+              placeholder="Regras, critérios de desempate, punições, etc. Visível na página pública."
+              defaultValue={championship.rules_text ?? ""}
+            />
+            <p className="mt-1 text-xs text-muted">
+              Aparece na Visão Geral da página pública do campeonato. Deixe em
+              branco para não exibir nada.
             </p>
           </div>
 

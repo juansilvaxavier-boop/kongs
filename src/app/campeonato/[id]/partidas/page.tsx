@@ -16,23 +16,28 @@ export default async function PartidasPage({
   const { time: teamFilter } = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: championship }, { data: teams }, { data: gamesData }] = await Promise.all([
-    supabase
-      .from("championships")
-      .select("has_knockout_stage")
-      .eq("id", id)
-      .maybeSingle(),
-    supabase
-      .from("teams")
-      .select("id, name, crest_url")
-      .eq("championship_id", id)
-      .order("name"),
-    supabase
-      .from("games")
-      .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played")
-      .eq("championship_id", id)
-      .order("date", { ascending: true, nullsFirst: false }),
-  ]);
+  const [{ data: championship }, { data: teams }, { data: gamesData }, { data: venues }] =
+    await Promise.all([
+      supabase
+        .from("championships")
+        .select("has_knockout_stage")
+        .eq("id", id)
+        .maybeSingle(),
+      supabase
+        .from("teams")
+        .select("id, name, crest_url")
+        .eq("championship_id", id)
+        .order("name"),
+      supabase
+        .from("games")
+        .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played, venue_id")
+        .eq("championship_id", id)
+        .order("date", { ascending: true, nullsFirst: false }),
+      supabase
+        .from("venues")
+        .select("id, name")
+        .eq("championship_id", id),
+    ]);
 
   const allGames = gamesData
     ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
@@ -43,6 +48,8 @@ export default async function PartidasPage({
 
   const teamName = (teamId: string) => teams?.find((t) => t.id === teamId)?.name ?? "?";
   const teamCrest = (teamId: string) => teams?.find((t) => t.id === teamId)?.crest_url ?? null;
+  const venueName = (venueId: string | null) =>
+    venueId ? venues?.find((v) => v.id === venueId)?.name ?? null : null;
 
   return (
     <div>
@@ -71,12 +78,13 @@ export default async function PartidasPage({
         <EmptyState>Nenhum jogo agendado ainda.</EmptyState>
       ) : (
         <Card className="overflow-x-auto">
-          <table className="w-full min-w-[36rem] text-sm">
+          <table className="w-full min-w-[42rem] text-sm">
             <thead>
               <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
                 <th className="px-4 py-3">Rodada</th>
                 <th className="px-4 py-3">Data</th>
                 <th className="px-4 py-3">Confronto</th>
+                <th className="px-4 py-3">Local</th>
                 <th className="px-4 py-3">Placar</th>
                 <th className="px-4 py-3">Status</th>
               </tr>
@@ -100,6 +108,7 @@ export default async function PartidasPage({
                       <TeamCell name={teamName(game.team_b_id)} crestUrl={teamCrest(game.team_b_id)} />
                     </div>
                   </td>
+                  <td className="px-4 py-3 text-muted">{venueName(game.venue_id) ?? "—"}</td>
                   <td className="px-4 py-3 text-foreground">
                     {game.played ? `${game.score_a} - ${game.score_b}` : "—"}
                   </td>
