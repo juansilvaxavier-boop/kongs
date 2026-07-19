@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, Input, Label, PageHeader, Select, Textarea } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { updateChampionshipSettings } from "./actions";
+import { SponsorsSection } from "./sponsors-section";
 
 export default async function ConfiguracoesPage({
   params,
@@ -12,11 +13,18 @@ export default async function ConfiguracoesPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: championship } = await supabase
-    .from("championships")
-    .select("format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text")
-    .eq("id", id)
-    .maybeSingle();
+  const [{ data: championship }, { data: sponsors }] = await Promise.all([
+    supabase
+      .from("championships")
+      .select("format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("sponsors")
+      .select("id, name, logo_url, link_url")
+      .eq("championship_id", id)
+      .order("created_at"),
+  ]);
 
   if (!championship) notFound();
 
@@ -111,6 +119,10 @@ export default async function ConfiguracoesPage({
           </SubmitButton>
         </ActionForm>
       </Card>
+
+      <div className="mt-6">
+        <SponsorsSection championshipId={id} sponsors={sponsors ?? []} />
+      </div>
     </div>
   );
 }

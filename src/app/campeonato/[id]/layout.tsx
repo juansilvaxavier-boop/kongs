@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ShareButton } from "@/components/share-button";
 import { SocialLinks } from "@/components/social-links";
+import { SponsorsFooter } from "@/components/sponsors-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandMark } from "@/components/ui";
 import { SidebarNav } from "@/app/inicio/sidebar-nav";
@@ -18,11 +19,14 @@ export default async function PublicChampionshipLayout({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: championship } = await supabase
-    .from("championships")
-    .select("id, name")
-    .eq("id", id)
-    .maybeSingle();
+  const [{ data: championship }, { data: sponsors }] = await Promise.all([
+    supabase.from("championships").select("id, name").eq("id", id).maybeSingle(),
+    supabase
+      .from("sponsors")
+      .select("id, name, logo_url, link_url")
+      .eq("championship_id", id)
+      .order("created_at"),
+  ]);
 
   if (!championship) notFound();
 
@@ -57,6 +61,7 @@ export default async function PublicChampionshipLayout({
           {children}
         </div>
       </main>
+      <SponsorsFooter sponsors={sponsors ?? []} />
     </div>
   );
 }

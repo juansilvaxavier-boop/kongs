@@ -731,6 +731,41 @@ export type Database = {
           },
         ]
       }
+      sponsors: {
+        Row: {
+          championship_id: string
+          created_at: string
+          id: string
+          link_url: string | null
+          logo_url: string | null
+          name: string
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          logo_url?: string | null
+          name: string
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          id?: string
+          link_url?: string | null
+          logo_url?: string | null
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsors_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       team_invites: {
         Row: {
           accepted_at: string | null
