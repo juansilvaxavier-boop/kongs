@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      bolao_predictions: {
+        Row: {
+          championship_id: string
+          created_at: string
+          game_id: string
+          id: string
+          predicted_score_a: number
+          predicted_score_b: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          game_id: string
+          id?: string
+          predicted_score_a: number
+          predicted_score_b: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          game_id?: string
+          id?: string
+          predicted_score_a?: number
+          predicted_score_b?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolao_predictions_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolao_predictions_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       card_events: {
         Row: {
           card_type: string
