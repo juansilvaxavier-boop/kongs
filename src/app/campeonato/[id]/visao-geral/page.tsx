@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, EmptyState, PageHeader } from "@/components/ui";
+import { computeTopScorers } from "@/lib/stats";
+import { PLAYER_POSITIONS } from "@/lib/positions";
 import { CommentsSection } from "../comments-section";
+import { OverviewHighlights, type PositionHighlight } from "../overview-highlights";
 
 export default async function VisaoGeralPage({
   params,
@@ -15,7 +18,14 @@ export default async function VisaoGeralPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: teams }, { data: comments }] = await Promise.all([
+  const [
+    { data: teams },
+    { data: comments },
+    { data: games },
+    { data: cards },
+    { data: players },
+    { data: goals },
+  ] = await Promise.all([
     supabase
       .from("teams")
       .select("id, name, crest_url")
@@ -26,6 +36,16 @@ export default async function VisaoGeralPage({
       .select("id, user_id, body, created_at")
       .eq("championship_id", id)
       .order("created_at", { ascending: false }),
+    supabase
+      .from("games")
+      .select("id, played, score_a, score_b")
+      .eq("championship_id", id),
+    supabase.from("card_events").select("game_id").eq("championship_id", id),
+    supabase
+      .from("players")
+      .select("id, name, team_id, position")
+      .eq("championship_id", id),
+    supabase.from("goal_events").select("player_id").eq("championship_id", id),
   ]);
 
   const commenterIds = [...new Set((comments ?? []).map((c) => c.user_id))];
@@ -37,8 +57,61 @@ export default async function VisaoGeralPage({
           .in("user_id", commenterIds)
       : { data: [] };
 
+  const allPlayers = players ?? [];
+  const playerIds = allPlayers.map((p) => p.id);
+  const { data: attributesRows } =
+    playerIds.length > 0
+      ? await supabase.from("player_attributes").select("player_id, ovr").in("player_id", playerIds)
+      : { data: [] };
+
+  const playedGames = (games ?? []).filter((g) => g.played);
+  const totalGoals = playedGames.reduce(
+    (sum, g) => sum + (g.score_a ?? 0) + (g.score_b ?? 0),
+    0
+  );
+  const playedGameIds = new Set(playedGames.map((g) => g.id));
+  const totalCards = (cards ?? []).filter((c) => playedGameIds.has(c.game_id)).length;
+
+  const avgGoalsPerGame = playedGames.length > 0 ? totalGoals / playedGames.length : null;
+  const avgCardsPerGame = playedGames.length > 0 ? totalCards / playedGames.length : null;
+
+  const teamNameById = new Map((teams ?? []).map((t) => [t.id, t.name]));
+  const teamCrestById = new Map((teams ?? []).map((t) => [t.id, t.crest_url]));
+  const ovrByPlayer = new Map((attributesRows ?? []).map((a) => [a.player_id, a.ovr]));
+
+  const topScorers = computeTopScorers(allPlayers, goals ?? [], teams ?? []).slice(0, 3);
+
+  const positionHighlights: PositionHighlight[] = PLAYER_POSITIONS.map((position) => {
+    const best = allPlayers
+      .filter((p) => p.position === position && ovrByPlayer.has(p.id))
+      .sort((a, b) => (ovrByPlayer.get(b.id) ?? 0) - (ovrByPlayer.get(a.id) ?? 0))[0];
+
+    return {
+      position,
+      player: best
+        ? {
+            id: best.id,
+            name: best.name,
+            teamName: teamNameById.get(best.team_id ?? "") ?? "Sem time",
+            teamCrestUrl: teamCrestById.get(best.team_id ?? "") ?? null,
+            ovr: ovrByPlayer.get(best.id) ?? 0,
+          }
+        : null,
+    };
+  });
+
   return (
     <div className="space-y-10">
+      <div>
+        <PageHeader eyebrow="Destaques" title="Visão geral do campeonato" />
+        <OverviewHighlights
+          avgGoalsPerGame={avgGoalsPerGame}
+          avgCardsPerGame={avgCardsPerGame}
+          topScorers={topScorers}
+          positionHighlights={positionHighlights}
+        />
+      </div>
+
       <div>
         <PageHeader eyebrow="Clubes" title="Times" />
         {teams && teams.length > 0 ? (
