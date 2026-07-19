@@ -63,6 +63,18 @@ export default async function PartidasPage({
         }
       />
 
+      {allGames.length > 0 && (
+        <p className="-mt-4 mb-4">
+          <Link
+            href={`/telao/${id}`}
+            target="_blank"
+            className="text-sm text-accent hover:underline"
+          >
+            Abrir modo telão (placar ao vivo) →
+          </Link>
+        </p>
+      )}
+
       {teams && teams.length > 0 && (
         <div className="mb-4">
           <TeamFilter teams={teams} />
