@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Badge, Card } from "@/components/ui";
 import { PlayerCard } from "@/components/player-card";
 import { ExportImageButton } from "@/components/export-image-button";
+import { computeOvrEvolution } from "@/lib/ovr-evolution";
+import { OvrEvolutionChart } from "./ovr-chart";
 
 type Attributes = {
   ovr: number;
@@ -45,6 +47,7 @@ export function PlayerCardModal({
   onClose: () => void;
 }) {
   const [revealed, setRevealed] = useState(false);
+  const evolutionPoints = computeOvrEvolution(history, attributes.ovr);
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 550);
@@ -95,6 +98,8 @@ export function PlayerCardModal({
                 />
               </div>
             </div>
+
+            {history.length > 0 && <OvrEvolutionChart points={evolutionPoints} />}
 
             {history.length === 0 ? (
               <p className="text-sm text-muted">
