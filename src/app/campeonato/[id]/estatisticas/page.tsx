@@ -136,6 +136,10 @@ export default async function EstatisticasPublicasPage({
   }
   const rounds = Object.keys(entriesByRound).sort(naturalCompare);
 
+  const topPlayersByOvr = [...comparablePlayers]
+    .sort((a, b) => b.attributes.ovr - a.attributes.ovr)
+    .slice(0, 10);
+
   const comparableTeams = computeStandings(teams ?? [], games ?? []).map((row) => ({
     teamId: row.teamId,
     teamName: row.teamName,
@@ -231,6 +235,44 @@ export default async function EstatisticasPublicasPage({
                     </tr>
                   );
                 })}
+              </tbody>
+            </table>
+          </Card>
+        )}
+      </div>
+
+      <div>
+        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+          Melhores jogadores (overall)
+        </h2>
+        {topPlayersByOvr.length === 0 ? (
+          <EmptyState>Nenhum jogador cadastrado ainda.</EmptyState>
+        ) : (
+          <Card className="overflow-x-auto">
+            <table className="w-full min-w-[28rem] text-sm">
+              <thead>
+                <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
+                  <th className="w-10 px-4 py-3">#</th>
+                  <th className="px-4 py-3">Jogador</th>
+                  <th className="px-4 py-3">Time</th>
+                  <th className="px-4 py-3">Posição</th>
+                  <th className="px-4 py-3 text-center">Overall</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topPlayersByOvr.map((player, index) => (
+                  <tr key={player.id} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 text-muted">{index + 1}</td>
+                    <td className="px-4 py-3 font-medium text-foreground">{player.name}</td>
+                    <td className="px-4 py-3 text-muted">
+                      <TeamCell name={player.teamName} crestUrl={player.crestUrl} />
+                    </td>
+                    <td className="px-4 py-3 text-muted">{player.position ?? "—"}</td>
+                    <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
+                      {Math.round(player.attributes.ovr)}
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </Card>
