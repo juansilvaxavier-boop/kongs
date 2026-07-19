@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
-import { TeamCell } from "@/components/team-cell";
+import { EmptyState, PageHeader } from "@/components/ui";
 import { naturalCompare } from "@/lib/datetime";
 import { TeamFilter } from "../team-filter";
+import { PartidasTable } from "./partidas-table";
 
 export default async function PartidasPage({
   params,
@@ -46,11 +46,6 @@ export default async function PartidasPage({
     ? allGames.filter((g) => g.team_a_id === teamFilter || g.team_b_id === teamFilter)
     : allGames;
 
-  const teamName = (teamId: string) => teams?.find((t) => t.id === teamId)?.name ?? "?";
-  const teamCrest = (teamId: string) => teams?.find((t) => t.id === teamId)?.crest_url ?? null;
-  const venueName = (venueId: string | null) =>
-    venueId ? venues?.find((v) => v.id === venueId)?.name ?? null : null;
-
   return (
     <div>
       <PageHeader
@@ -77,51 +72,17 @@ export default async function PartidasPage({
       {games.length === 0 ? (
         <EmptyState>Nenhum jogo agendado ainda.</EmptyState>
       ) : (
-        <Card className="overflow-x-auto">
-          <table className="w-full min-w-[42rem] text-sm">
-            <thead>
-              <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
-                <th className="px-4 py-3">Rodada</th>
-                <th className="px-4 py-3">Data</th>
-                <th className="px-4 py-3">Confronto</th>
-                <th className="px-4 py-3">Local</th>
-                <th className="px-4 py-3">Placar</th>
-                <th className="px-4 py-3">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {games.map((game) => (
-                <tr key={game.id} className="border-b border-border last:border-0">
-                  <td className="px-4 py-3 text-foreground">{game.round}</td>
-                  <td className="px-4 py-3 text-muted">
-                    {game.date
-                      ? new Date(game.date).toLocaleString("pt-BR", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })
-                      : "—"}
-                  </td>
-                  <td className="px-4 py-3 font-medium text-foreground">
-                    <div className="flex items-center gap-2">
-                      <TeamCell name={teamName(game.team_a_id)} crestUrl={teamCrest(game.team_a_id)} />
-                      <span className="text-muted">x</span>
-                      <TeamCell name={teamName(game.team_b_id)} crestUrl={teamCrest(game.team_b_id)} />
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted">{venueName(game.venue_id) ?? "—"}</td>
-                  <td className="px-4 py-3 text-foreground">
-                    {game.played ? `${game.score_a} - ${game.score_b}` : "—"}
-                  </td>
-                  <td className="px-4 py-3">
-                    <Badge tone={game.played ? "success" : "warning"}>
-                      {game.played ? "Realizado" : "Agendado"}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </Card>
+        <>
+          <p className="mb-3 text-xs text-muted">
+            Clique em um jogo para ver o retrospecto entre os dois times.
+          </p>
+          <PartidasTable
+            games={games}
+            allGames={allGames}
+            teams={teams ?? []}
+            venues={venues ?? []}
+          />
+        </>
       )}
     </div>
   );

@@ -3,9 +3,11 @@ import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { TeamCell } from "@/components/team-cell";
 import { computeDiscipline, computeTopScorers } from "@/lib/stats";
 import { computeSuspensions } from "@/lib/discipline";
+import { computeStandings } from "@/lib/standings";
 import { naturalCompare } from "@/lib/datetime";
 import { TeamFilter } from "../team-filter";
 import { PlayerComparator, type ComparablePlayer } from "./player-comparator";
+import { TeamComparator } from "./team-comparator";
 import { TeamOfTheRoundSection, type RoundPlayerInfo } from "./team-of-the-round-section";
 import type { RoundOvrEntry } from "@/lib/team-of-the-round";
 
@@ -49,7 +51,7 @@ export default async function EstatisticasPublicasPage({
       .eq("championship_id", id),
     supabase
       .from("games")
-      .select("id, team_a_id, team_b_id, date, round, played")
+      .select("id, team_a_id, team_b_id, date, round, played, score_a, score_b")
       .eq("championship_id", id),
   ]);
 
@@ -133,6 +135,20 @@ export default async function EstatisticasPublicasPage({
     });
   }
   const rounds = Object.keys(entriesByRound).sort(naturalCompare);
+
+  const comparableTeams = computeStandings(teams ?? [], games ?? []).map((row) => ({
+    teamId: row.teamId,
+    teamName: row.teamName,
+    teamCrestUrl: row.teamCrestUrl,
+    pts: row.pts,
+    j: row.j,
+    v: row.v,
+    e: row.e,
+    d: row.d,
+    gp: row.gp,
+    gc: row.gc,
+    sg: row.sg,
+  }));
 
   return (
     <div className="space-y-10">
@@ -237,6 +253,13 @@ export default async function EstatisticasPublicasPage({
           Comparador de jogadores
         </h2>
         <PlayerComparator players={comparablePlayers} />
+      </div>
+
+      <div>
+        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+          Comparador de times
+        </h2>
+        <TeamComparator teams={comparableTeams} />
       </div>
     </div>
   );
