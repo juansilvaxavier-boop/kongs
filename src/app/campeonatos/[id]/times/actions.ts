@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
 import { getSiteUrl } from "@/lib/site-url";
-import { fileExtension, validateImageFile } from "@/lib/uploads";
+import { fileExtension, imageContentType, validateImageFile } from "@/lib/uploads";
 
 function parseCoachId(formData: FormData) {
   const value = String(formData.get("coach_id") || "");
@@ -32,6 +32,7 @@ async function uploadCrest(
   const path = `${teamId}/crest.${fileExtension(file)}`;
   const { error } = await supabase.storage.from("crests").upload(path, file, {
     upsert: true,
+    contentType: imageContentType(file),
   });
   if (error) throw new Error(error.message);
 
@@ -248,6 +249,7 @@ async function uploadPlayerPhoto(
   const path = `${playerId}/photo.${fileExtension(file)}`;
   const { error } = await supabase.storage.from("player-photos").upload(path, file, {
     upsert: true,
+    contentType: imageContentType(file),
   });
   if (error) throw new Error(error.message);
 

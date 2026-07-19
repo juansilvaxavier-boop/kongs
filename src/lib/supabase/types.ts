@@ -868,6 +868,7 @@ export type Database = {
     }
     Functions: {
       accept_team_invite: { Args: { p_invite_id: string }; Returns: undefined }
+      admin_process_game_ovr: { Args: { p_game_id: string }; Returns: undefined }
       base_attributes_for_position: {
         Args: { p_position: string }
         Returns: {
@@ -893,7 +894,6 @@ export type Database = {
         Args: { p_championship_id: string }
         Returns: boolean
       }
-      process_game_ovr: { Args: { p_game_id: string }; Returns: undefined }
       regenerate_championship_sumula_token: {
         Args: { p_championship_id: string }
         Returns: string
@@ -915,7 +915,7 @@ export type Database = {
         Returns: string
       }
       roster_can_upload_player_photo: {
-        Args: { p_player_id: string }
+        Args: { p_player_id: string; p_token: string }
         Returns: boolean
       }
       roster_delete_player: {

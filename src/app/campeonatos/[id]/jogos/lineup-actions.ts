@@ -63,6 +63,25 @@ export async function toggleLineupPlayer(
   revalidateChampionship(championshipId);
 }
 
+async function assertTeamBelongsToGame(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  championshipId: string,
+  gameId: string,
+  teamId: string
+) {
+  const { data: game, error } = await supabase
+    .from("games")
+    .select("team_a_id, team_b_id")
+    .eq("id", gameId)
+    .eq("championship_id", championshipId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!game || (teamId !== game.team_a_id && teamId !== game.team_b_id)) {
+    throw new Error("Time inválido para este jogo.");
+  }
+}
+
 export async function signCaptain(
   gameId: string,
   championshipId: string,
@@ -74,6 +93,7 @@ export async function signCaptain(
   if (!signatureDataUrl) throw new Error("Assinatura inválida.");
 
   const supabase = await createClient();
+  await assertTeamBelongsToGame(supabase, championshipId, gameId, teamId);
   const { error } = await supabase.from("game_captain_signatures").upsert(
     {
       championship_id: championshipId,

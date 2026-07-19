@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { fileExtension, validateImageFile } from "@/lib/uploads";
+import { fileExtension, imageContentType, validateImageFile } from "@/lib/uploads";
 
 const PERSONAS = ["jogador", "treinador", "torcedor"] as const;
 
@@ -30,7 +30,7 @@ export async function updateProfile(formData: FormData) {
     const path = `${user.id}/avatar.${fileExtension(avatarFile)}`;
     const { error: uploadError } = await supabase.storage
       .from("avatars")
-      .upload(path, avatarFile, { upsert: true });
+      .upload(path, avatarFile, { upsert: true, contentType: imageContentType(avatarFile) });
     if (uploadError) throw new Error(uploadError.message);
 
     const { data: publicUrlData } = supabase.storage

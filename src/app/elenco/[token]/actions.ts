@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { fileExtension, validateImageFile } from "@/lib/uploads";
+import { fileExtension, imageContentType, validateImageFile } from "@/lib/uploads";
 
 function parsePhotoFile(formData: FormData): File | null {
   const file = formData.get("photo");
@@ -15,12 +15,18 @@ function parsePhotoFile(formData: FormData): File | null {
 
 async function uploadPlayerPhoto(
   supabase: Awaited<ReturnType<typeof createClient>>,
+  token: string,
   playerId: string,
   file: File
 ): Promise<string> {
-  const path = `${playerId}/photo.${fileExtension(file)}`;
+  // O token faz parte do caminho para que a policy de storage
+  // (roster_can_upload_player_photo) consiga exigir posse do token do
+  // time, e não só o player_id (que é público) — ver migração
+  // 20260719150000_security_hardening.sql.
+  const path = `${token}/${playerId}/photo.${fileExtension(file)}`;
   const { error } = await supabase.storage.from("player-photos").upload(path, file, {
     upsert: true,
+    contentType: imageContentType(file),
   });
   if (error) throw new Error(error.message);
 
@@ -58,7 +64,7 @@ export async function rosterAddPlayer(token: string, formData: FormData) {
   if (error) throw new Error(error.message);
 
   if (photoFile && playerId) {
-    const photoUrl = await uploadPlayerPhoto(supabase, playerId, photoFile);
+    const photoUrl = await uploadPlayerPhoto(supabase, token, playerId, photoFile);
     const { error: photoError } = await supabase.rpc("roster_set_player_photo", {
       p_token: token,
       p_player_id: playerId,
@@ -85,7 +91,7 @@ export async function rosterUpdatePlayer(
   if (error) throw new Error(error.message);
 
   if (photoFile) {
-    const photoUrl = await uploadPlayerPhoto(supabase, playerId, photoFile);
+    const photoUrl = await uploadPlayerPhoto(supabase, token, playerId, photoFile);
     const { error: photoError } = await supabase.rpc("roster_set_player_photo", {
       p_token: token,
       p_player_id: playerId,
