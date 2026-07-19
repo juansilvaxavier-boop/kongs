@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BrandMark } from "@/components/ui";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { SidebarNav } from "./sidebar-nav";
 
 export default async function InicioLayout({
@@ -24,9 +25,12 @@ export default async function InicioLayout({
               Kongs Campeonatos
             </span>
           </span>
-          <span className="hidden text-sm text-muted sm:inline">
-            {user.email}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="hidden text-sm text-muted sm:inline">
+              {user.email}
+            </span>
+            <ThemeToggle />
+          </div>
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:gap-8">

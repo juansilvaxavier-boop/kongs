@@ -5,6 +5,7 @@ import { signOut } from "@/app/login/actions";
 import { isAdmin } from "@/lib/auth/roles";
 import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
 import { BrandMark, Button } from "@/components/ui";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function CampeonatosLayout({
   children,
@@ -35,6 +36,7 @@ export default async function CampeonatosLayout({
             <span className="hidden text-sm text-muted sm:inline">
               {user.email}
             </span>
+            <ThemeToggle />
             <form action={signOut}>
               <Button type="submit" variant="secondary">
                 Sair

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { ShareButton } from "@/components/share-button";
+import { SocialLinks } from "@/components/social-links";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { BrandMark } from "@/components/ui";
 import { SidebarNav } from "@/app/inicio/sidebar-nav";
 import { PublicChampionshipTabs } from "./public-tabs";
@@ -42,6 +44,8 @@ export default async function PublicChampionshipLayout({
             <span className="hidden text-xs uppercase tracking-wide text-muted sm:inline">
               Página pública
             </span>
+            <SocialLinks />
+            <ThemeToggle />
             <ShareButton title={championship.name} />
           </div>
         </div>

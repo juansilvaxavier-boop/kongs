@@ -5,6 +5,7 @@ import { getOwnedTeam } from "@/lib/auth/roles";
 import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
 import { signOut } from "@/app/login/actions";
 import { BrandMark, Button } from "@/components/ui";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function MeuTimeLayout({
   children,
@@ -40,6 +41,7 @@ export default async function MeuTimeLayout({
             <Link href="/meu-time/conta" className="text-sm text-muted hover:text-accent">
               Minha conta
             </Link>
+            <ThemeToggle />
             <form action={signOut}>
               <Button type="submit" variant="secondary">
                 Sair
