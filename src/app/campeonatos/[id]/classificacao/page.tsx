@@ -3,6 +3,7 @@ import { EmptyState, PageHeader } from "@/components/ui";
 import { StandingsTable } from "@/components/standings-table";
 import { computeStandings } from "@/lib/standings";
 import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
+import { ExportTableButtons } from "@/components/export-table-buttons";
 import { SortearGruposButton } from "./sortear-grupos-button";
 
 export default async function ClassificacaoPage({
@@ -42,6 +43,35 @@ export default async function ClassificacaoPage({
   }
 
   const groups = groupTeamsByFormat(championship?.format ?? "liga", teams);
+  const hasMultipleGroups = groups.length > 1;
+  const standingsColumns = [
+    ...(hasMultipleGroups ? ["Grupo"] : []),
+    "Pos",
+    "Time",
+    "Pts",
+    "J",
+    "V",
+    "E",
+    "D",
+    "GP",
+    "GC",
+    "SG",
+  ];
+  const standingsRows = groups.flatMap((group) =>
+    computeStandings(group.teams, gamesWithinTeams(games ?? [], group.teams)).map((row) => [
+      ...(hasMultipleGroups ? [group.groupName ?? "Geral"] : []),
+      row.pos,
+      row.teamName,
+      row.pts,
+      row.j,
+      row.v,
+      row.e,
+      row.d,
+      row.gp,
+      row.gc,
+      row.sg,
+    ])
+  );
 
   return (
     <div className="space-y-10">
@@ -53,6 +83,13 @@ export default async function ClassificacaoPage({
             <SortearGruposButton championshipId={id} />
           ) : undefined
         }
+      />
+
+      <ExportTableButtons
+        fileName={`classificacao-${id}`}
+        title="Classificação"
+        columns={standingsColumns}
+        rows={standingsRows}
       />
 
       {groups.map((group) => (

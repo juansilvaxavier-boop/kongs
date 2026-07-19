@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { TeamCell } from "@/components/team-cell";
+import { ExportTableButtons } from "@/components/export-table-buttons";
 import { computeDiscipline, computeTopScorers } from "@/lib/stats";
 import { computeSuspensions } from "@/lib/discipline";
 import { computeStandings } from "@/lib/standings";
@@ -165,9 +166,19 @@ export default async function EstatisticasPublicasPage({
       )}
 
       <div>
-        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
-          Artilharia
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-foreground">
+            Artilharia
+          </h2>
+          {scorers.length > 0 && (
+            <ExportTableButtons
+              fileName={`artilharia-${id}`}
+              title="Artilharia"
+              columns={["Jogador", "Time", "Gols"]}
+              rows={scorers.map((row) => [row.playerName, row.teamName, row.goals])}
+            />
+          )}
+        </div>
         {scorers.length === 0 ? (
           <EmptyState>Nenhum gol lançado ainda.</EmptyState>
         ) : (
@@ -197,9 +208,27 @@ export default async function EstatisticasPublicasPage({
       </div>
 
       <div>
-        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
-          Cartões
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-foreground">
+            Cartões
+          </h2>
+          {discipline.length > 0 && (
+            <ExportTableButtons
+              fileName={`cartoes-${id}`}
+              title="Cartões"
+              columns={["Jogador", "Time", "Amarelos", "Vermelhos", "Situação"]}
+              rows={discipline.map((row) => {
+                const status = suspensions.get(row.playerId);
+                const situacao = status?.suspended
+                  ? "Suspenso"
+                  : status?.pendingSuspension
+                    ? "Pendurado"
+                    : "—";
+                return [row.playerName, row.teamName, row.yellow, row.red, situacao];
+              })}
+            />
+          )}
+        </div>
         {discipline.length === 0 ? (
           <EmptyState>Nenhum cartão lançado ainda.</EmptyState>
         ) : (
@@ -242,9 +271,25 @@ export default async function EstatisticasPublicasPage({
       </div>
 
       <div>
-        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
-          Melhores jogadores (overall)
-        </h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-foreground">
+            Melhores jogadores (overall)
+          </h2>
+          {topPlayersByOvr.length > 0 && (
+            <ExportTableButtons
+              fileName={`melhores-jogadores-${id}`}
+              title="Melhores jogadores (overall)"
+              columns={["#", "Jogador", "Time", "Posição", "Overall"]}
+              rows={topPlayersByOvr.map((player, index) => [
+                index + 1,
+                player.name,
+                player.teamName,
+                player.position ?? "—",
+                Math.round(player.attributes.ovr),
+              ])}
+            />
+          )}
+        </div>
         {topPlayersByOvr.length === 0 ? (
           <EmptyState>Nenhum jogador cadastrado ainda.</EmptyState>
         ) : (

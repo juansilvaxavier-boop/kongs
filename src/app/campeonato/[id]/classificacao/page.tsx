@@ -5,6 +5,7 @@ import { computeStandings } from "@/lib/standings";
 import { naturalCompare } from "@/lib/datetime";
 import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
 import { ExportImageButton } from "@/components/export-image-button";
+import { ExportTableButtons } from "@/components/export-table-buttons";
 
 export default async function ClassificacaoPublicaPage({
   params,
@@ -37,6 +38,36 @@ export default async function ClassificacaoPublicaPage({
     : [];
   const groups = groupTeamsByFormat(championship?.format ?? "liga", teams ?? []);
 
+  const hasMultipleGroups = groups.length > 1;
+  const standingsColumns = [
+    ...(hasMultipleGroups ? ["Grupo"] : []),
+    "Pos",
+    "Time",
+    "Pts",
+    "J",
+    "V",
+    "E",
+    "D",
+    "GP",
+    "GC",
+    "SG",
+  ];
+  const standingsRows = groups.flatMap((group) =>
+    computeStandings(group.teams, gamesWithinTeams(games, group.teams)).map((row) => [
+      ...(hasMultipleGroups ? [group.groupName ?? "Geral"] : []),
+      row.pos,
+      row.teamName,
+      row.pts,
+      row.j,
+      row.v,
+      row.e,
+      row.d,
+      row.gp,
+      row.gc,
+      row.sg,
+    ])
+  );
+
   return (
     <div>
       <PageHeader
@@ -44,10 +75,18 @@ export default async function ClassificacaoPublicaPage({
         title="Classificação"
         action={
           teams && teams.length > 0 ? (
-            <ExportImageButton
-              targetId="classificacao-export"
-              fileName={`classificacao-${id}`}
-            />
+            <div className="flex flex-wrap items-center gap-2">
+              <ExportImageButton
+                targetId="classificacao-export"
+                fileName={`classificacao-${id}`}
+              />
+              <ExportTableButtons
+                fileName={`classificacao-${id}`}
+                title="Classificação"
+                columns={standingsColumns}
+                rows={standingsRows}
+              />
+            </div>
           ) : undefined
         }
       />

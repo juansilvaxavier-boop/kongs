@@ -3,6 +3,7 @@ import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { TeamCell } from "@/components/team-cell";
 import { computeDiscipline, computeTopScorers } from "@/lib/stats";
 import { computeSuspensions } from "@/lib/discipline";
+import { ExportTableButtons } from "@/components/export-table-buttons";
 
 export default async function EstatisticasPage({
   params,
@@ -47,7 +48,20 @@ export default async function EstatisticasPage({
   return (
     <div className="space-y-10">
       <div>
-        <PageHeader eyebrow="Estatísticas do campeonato" title="Artilharia" />
+        <PageHeader
+          eyebrow="Estatísticas do campeonato"
+          title="Artilharia"
+          action={
+            scorers.length > 0 ? (
+              <ExportTableButtons
+                fileName={`artilharia-${id}`}
+                title="Artilharia"
+                columns={["Jogador", "Time", "Gols"]}
+                rows={scorers.map((row) => [row.playerName, row.teamName, row.goals])}
+              />
+            ) : undefined
+          }
+        />
         {scorers.length === 0 ? (
           <EmptyState>
             Nenhum gol lançado ainda. Lance gols na aba Jogos, em &quot;Súmula&quot;.
@@ -81,7 +95,30 @@ export default async function EstatisticasPage({
       </div>
 
       <div>
-        <PageHeader eyebrow="Estatísticas do campeonato" title="Cartões" />
+        <PageHeader
+          eyebrow="Estatísticas do campeonato"
+          title="Cartões"
+          action={
+            discipline.length > 0 ? (
+              <ExportTableButtons
+                fileName={`cartoes-${id}`}
+                title="Cartões"
+                columns={["Jogador", "Time", "Amarelos", "Vermelhos", "Situação"]}
+                rows={discipline.map((row) => {
+                  const status = suspensions.get(row.playerId);
+                  const situacao = status?.suspended
+                    ? status.reason === "red"
+                      ? "Suspenso (vermelho)"
+                      : "Suspenso (amarelos)"
+                    : status?.pendingSuspension
+                      ? "Pendurado"
+                      : "—";
+                  return [row.playerName, row.teamName, row.yellow, row.red, situacao];
+                })}
+              />
+            ) : undefined
+          }
+        />
         <p className="mb-4 text-sm text-muted">
           Suspende automaticamente ao acumular{" "}
           {championship?.yellow_cards_for_suspension ?? 3} cartões amarelos, ou
