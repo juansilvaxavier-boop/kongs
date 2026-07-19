@@ -75,3 +75,39 @@ export async function sumulaSetPlayed(token: string, gameId: string, played: boo
   if (error) throw new Error(error.message);
   revalidatePath(`/sumula/${token}/${gameId}`);
 }
+
+export async function sumulaToggleLineup(
+  token: string,
+  gameId: string,
+  playerId: string,
+  confirmed: boolean
+) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("sumula_toggle_lineup", {
+    p_token: token,
+    p_game_id: gameId,
+    p_player_id: playerId,
+    p_confirmed: confirmed,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/sumula/${token}/${gameId}`);
+}
+
+export async function sumulaSignCaptain(
+  token: string,
+  gameId: string,
+  teamId: string,
+  captainName: string,
+  signatureDataUrl: string
+) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("sumula_sign_captain", {
+    p_token: token,
+    p_game_id: gameId,
+    p_team_id: teamId,
+    p_captain_name: captainName,
+    p_signature_data_url: signatureDataUrl,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/sumula/${token}/${gameId}`);
+}

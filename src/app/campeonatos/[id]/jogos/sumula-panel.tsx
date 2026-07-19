@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { SumulaPdfButton } from "@/components/sumula-pdf-button";
+import { PreSumulaPanel, type CaptainSignature } from "@/components/pre-sumula-panel";
 import {
   createCardEvent,
   createGoalEvent,
@@ -11,6 +12,7 @@ import {
   deleteGoalEvent,
 } from "./events-actions";
 import { setGamePlayed } from "./actions";
+import { signCaptain, toggleLineupPlayer } from "./lineup-actions";
 
 function errorMessage(error: unknown) {
   return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
@@ -181,6 +183,8 @@ export function SumulaPanel({
   players,
   goalEvents,
   cardEvents,
+  confirmedPlayerIds,
+  signatures,
 }: {
   gameId: string;
   championshipId: string;
@@ -195,6 +199,8 @@ export function SumulaPanel({
   players: Player[];
   goalEvents: GoalEvent[];
   cardEvents: CardEvent[];
+  confirmedPlayerIds: Set<string>;
+  signatures: Record<string, CaptainSignature>;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -217,6 +223,22 @@ export function SumulaPanel({
 
   return (
     <div>
+      <PreSumulaPanel
+        teamAId={teamAId}
+        teamAName={teamAName}
+        teamBId={teamBId}
+        teamBName={teamBName}
+        players={players}
+        confirmedPlayerIds={confirmedPlayerIds}
+        signatures={signatures}
+        onToggleLineup={(playerId, confirmed) =>
+          toggleLineupPlayer(gameId, championshipId, playerId, confirmed)
+        }
+        onSignCaptain={(teamId, captainName, signatureDataUrl) =>
+          signCaptain(gameId, championshipId, teamId, captainName, signatureDataUrl)
+        }
+      />
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 p-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-muted">Placar (gerado pelos gols lançados)</p>

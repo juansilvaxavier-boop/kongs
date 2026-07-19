@@ -21,7 +21,13 @@ export default async function SumulaGamePage({
   const game = gameRows[0];
   const championshipName = championshipRows?.[0]?.championship_name ?? "";
 
-  const [{ data: players }, { data: goalEvents }, { data: cardEvents }] = await Promise.all([
+  const [
+    { data: players },
+    { data: goalEvents },
+    { data: cardEvents },
+    { data: lineups },
+    { data: signatures },
+  ] = await Promise.all([
     supabase
       .from("players")
       .select("id, name, team_id, number")
@@ -33,6 +39,14 @@ export default async function SumulaGamePage({
     supabase
       .from("card_events")
       .select("id, player_id, card_type, minute, game_id")
+      .eq("game_id", game.game_id),
+    supabase
+      .from("game_lineups")
+      .select("player_id")
+      .eq("game_id", game.game_id),
+    supabase
+      .from("game_captain_signatures")
+      .select("team_id, captain_name, signature_data_url, signed_at")
       .eq("game_id", game.game_id),
   ]);
 
@@ -66,6 +80,17 @@ export default async function SumulaGamePage({
           players={players ?? []}
           goalEvents={goalEvents ?? []}
           cardEvents={cardEvents ?? []}
+          confirmedPlayerIds={new Set((lineups ?? []).map((l) => l.player_id))}
+          signatures={Object.fromEntries(
+            (signatures ?? []).map((s) => [
+              s.team_id,
+              {
+                captainName: s.captain_name,
+                signatureDataUrl: s.signature_data_url,
+                signedAt: s.signed_at,
+              },
+            ])
+          )}
         />
       </Card>
     </div>

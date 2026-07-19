@@ -19,7 +19,17 @@ export default async function JogosPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: championship }, { data: gamesData }, { data: teams }, { data: players }, { data: goalEvents }, { data: cardEvents }, { data: venues }] =
+  const [
+    { data: championship },
+    { data: gamesData },
+    { data: teams },
+    { data: players },
+    { data: goalEvents },
+    { data: cardEvents },
+    { data: venues },
+    { data: lineups },
+    { data: signatures },
+  ] =
     await Promise.all([
       supabase
         .from("championships")
@@ -53,6 +63,14 @@ export default async function JogosPage({
         .select("id, name, address")
         .eq("championship_id", id)
         .order("name"),
+      supabase
+        .from("game_lineups")
+        .select("game_id, player_id")
+        .eq("championship_id", id),
+      supabase
+        .from("game_captain_signatures")
+        .select("game_id, team_id, captain_name, signature_data_url, signed_at")
+        .eq("championship_id", id),
     ]);
 
   const games = gamesData
@@ -179,6 +197,8 @@ export default async function JogosPage({
           goalEvents={goalEvents ?? []}
           cardEvents={cardEvents ?? []}
           venues={venues ?? []}
+          lineups={lineups ?? []}
+          signatures={signatures ?? []}
         />
       ) : (
         <EmptyState>Nenhum jogo agendado ainda.</EmptyState>

@@ -299,6 +299,104 @@ export type Database = {
           },
         ]
       }
+      game_captain_signatures: {
+        Row: {
+          captain_name: string
+          championship_id: string
+          game_id: string
+          id: string
+          signature_data_url: string
+          signed_at: string
+          team_id: string
+        }
+        Insert: {
+          captain_name: string
+          championship_id: string
+          game_id: string
+          id?: string
+          signature_data_url: string
+          signed_at?: string
+          team_id: string
+        }
+        Update: {
+          captain_name?: string
+          championship_id?: string
+          game_id?: string
+          id?: string
+          signature_data_url?: string
+          signed_at?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_captain_signatures_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_captain_signatures_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_captain_signatures_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_lineups: {
+        Row: {
+          championship_id: string
+          created_at: string
+          game_id: string
+          id: string
+          player_id: string
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          game_id: string
+          id?: string
+          player_id: string
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          game_id?: string
+          id?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_lineups_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_lineups_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_lineups_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       goal_events: {
         Row: {
           championship_id: string
@@ -902,6 +1000,25 @@ export type Database = {
       }
       sumula_set_played: {
         Args: { p_game_id: string; p_played: boolean; p_token: string }
+        Returns: undefined
+      }
+      sumula_sign_captain: {
+        Args: {
+          p_captain_name: string
+          p_game_id: string
+          p_signature_data_url: string
+          p_team_id: string
+          p_token: string
+        }
+        Returns: undefined
+      }
+      sumula_toggle_lineup: {
+        Args: {
+          p_confirmed: boolean
+          p_game_id: string
+          p_player_id: string
+          p_token: string
+        }
         Returns: undefined
       }
     }

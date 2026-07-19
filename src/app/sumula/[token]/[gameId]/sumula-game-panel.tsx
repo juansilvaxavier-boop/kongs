@@ -4,12 +4,15 @@ import { useState } from "react";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { SumulaPdfButton } from "@/components/sumula-pdf-button";
+import { PreSumulaPanel, type CaptainSignature } from "@/components/pre-sumula-panel";
 import {
   sumulaAddCard,
   sumulaAddGoal,
   sumulaDeleteCard,
   sumulaDeleteGoal,
   sumulaSetPlayed,
+  sumulaSignCaptain,
+  sumulaToggleLineup,
 } from "../actions";
 
 function errorMessage(error: unknown) {
@@ -181,6 +184,8 @@ export function SumulaGamePanel({
   players,
   goalEvents,
   cardEvents,
+  confirmedPlayerIds,
+  signatures,
 }: {
   token: string;
   gameId: string;
@@ -195,6 +200,8 @@ export function SumulaGamePanel({
   players: Player[];
   goalEvents: GoalEvent[];
   cardEvents: CardEvent[];
+  confirmedPlayerIds: Set<string>;
+  signatures: Record<string, CaptainSignature>;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -215,6 +222,22 @@ export function SumulaGamePanel({
 
   return (
     <div>
+      <PreSumulaPanel
+        teamAId={teamAId}
+        teamAName={teamAName}
+        teamBId={teamBId}
+        teamBName={teamBName}
+        players={players}
+        confirmedPlayerIds={confirmedPlayerIds}
+        signatures={signatures}
+        onToggleLineup={(playerId, confirmed) =>
+          sumulaToggleLineup(token, gameId, playerId, confirmed)
+        }
+        onSignCaptain={(teamId, captainName, signatureDataUrl) =>
+          sumulaSignCaptain(token, gameId, teamId, captainName, signatureDataUrl)
+        }
+      />
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 p-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-muted">

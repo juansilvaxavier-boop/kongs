@@ -33,6 +33,14 @@ type Game = {
   venue_id: string | null;
 };
 type Venue = { id: string; name: string };
+type Lineup = { game_id: string; player_id: string };
+type Signature = {
+  game_id: string;
+  team_id: string;
+  captain_name: string;
+  signature_data_url: string;
+  signed_at: string;
+};
 
 function toDatetimeLocal(iso: string | null) {
   if (!iso) return "";
@@ -51,6 +59,8 @@ export function GameTable({
   goalEvents,
   cardEvents,
   venues,
+  lineups,
+  signatures,
 }: {
   championshipId: string;
   games: Game[];
@@ -59,6 +69,8 @@ export function GameTable({
   goalEvents: GoalEvent[];
   cardEvents: CardEvent[];
   venues: Venue[];
+  lineups: Lineup[];
+  signatures: Signature[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [eventingId, setEventingId] = useState<string | null>(null);
@@ -271,6 +283,23 @@ export function GameTable({
                     players={players}
                     goalEvents={goalEvents}
                     cardEvents={cardEvents}
+                    confirmedPlayerIds={
+                      new Set(
+                        lineups.filter((l) => l.game_id === game.id).map((l) => l.player_id)
+                      )
+                    }
+                    signatures={Object.fromEntries(
+                      signatures
+                        .filter((s) => s.game_id === game.id)
+                        .map((s) => [
+                          s.team_id,
+                          {
+                            captainName: s.captain_name,
+                            signatureDataUrl: s.signature_data_url,
+                            signedAt: s.signed_at,
+                          },
+                        ])
+                    )}
                   />
                 </td>
               </tr>
