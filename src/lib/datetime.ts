@@ -8,6 +8,12 @@ export function localInputToIso(local: string): string {
   return new Date(year, month - 1, day, hour, minute).toISOString();
 }
 
+export function isBirthdayToday(birthDate: string | null, today: Date = new Date()): boolean {
+  if (!birthDate) return false;
+  const [, month, day] = birthDate.split("-").map(Number);
+  return month === today.getMonth() + 1 && day === today.getDate();
+}
+
 export function naturalCompare(a: string, b: string): number {
   const chunks = (s: string) => s.match(/\d+|\D+/g) ?? [];
   const chunksA = chunks(a);

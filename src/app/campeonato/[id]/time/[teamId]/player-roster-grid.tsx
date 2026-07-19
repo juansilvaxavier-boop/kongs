@@ -23,6 +23,8 @@ export type RosterPlayer = {
   position: string | null;
   photoUrl: string | null;
   suspended: boolean;
+  pendingSuspension: boolean;
+  isBirthday: boolean;
   attributes: Attributes;
   history: HistoryEntry[];
   mvpCount: number;
@@ -63,13 +65,16 @@ export function PlayerRosterGrid({
                     onClick={() => setOpenId(player.id)}
                     className="relative text-left transition hover:-translate-y-1"
                   >
-                    {player.suspended && (
-                      <Badge
-                        tone="warning"
-                        className="absolute -top-2 left-1/2 z-10 -translate-x-1/2"
-                      >
-                        Suspenso
-                      </Badge>
+                    {(player.suspended || player.pendingSuspension || player.isBirthday) && (
+                      <div className="absolute -top-2 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1">
+                        {player.isBirthday && (
+                          <Badge tone="success">🎂 Aniversário</Badge>
+                        )}
+                        {player.suspended && <Badge tone="warning">Suspenso</Badge>}
+                        {!player.suspended && player.pendingSuspension && (
+                          <Badge tone="default">Pendurado</Badge>
+                        )}
+                      </div>
                     )}
                     <PlayerCard
                       name={player.name}

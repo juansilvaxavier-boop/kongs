@@ -14,6 +14,7 @@ type Player = { id: string; team_id: string | null };
 export type SuspensionStatus = {
   suspended: boolean;
   reason: "yellow" | "red" | null;
+  pendingSuspension: boolean;
 };
 
 function sortGamesChronologically(games: Game[]): Game[] {
@@ -31,7 +32,8 @@ function sortGamesChronologically(games: Game[]): Game[] {
  * amarelos suspendem quando o total acumulado cruza um múltiplo do
  * limiar (yellowThreshold) exatamente no último jogo disputado. Como não
  * há controle de escalação, a suspensão é apenas informativa e "expira"
- * sozinha assim que o time disputa o jogo seguinte.
+ * sozinha assim que o time disputa o jogo seguinte. Também marca quem
+ * está "pendurado" (a um cartão amarelo da suspensão).
  */
 export function computeSuspensions(
   players: Player[],
@@ -54,7 +56,7 @@ export function computeSuspensions(
   }
 
   for (const player of players) {
-    result.set(player.id, { suspended: false, reason: null });
+    result.set(player.id, { suspended: false, reason: null, pendingSuspension: false });
     if (!player.team_id) continue;
 
     const teamGames = gamesByTeam.get(player.team_id);
@@ -75,16 +77,20 @@ export function computeSuspensions(
     );
 
     if (hasRedInLastGame) {
-      result.set(player.id, { suspended: true, reason: "red" });
+      result.set(player.id, { suspended: true, reason: "red", pendingSuspension: false });
       continue;
     }
 
+    const totalYellows = yellowsBefore + yellowsInLastGame;
     const crossedThreshold =
-      Math.floor((yellowsBefore + yellowsInLastGame) / yellowThreshold) >
-      Math.floor(yellowsBefore / yellowThreshold);
+      Math.floor(totalYellows / yellowThreshold) > Math.floor(yellowsBefore / yellowThreshold);
 
     if (crossedThreshold) {
-      result.set(player.id, { suspended: true, reason: "yellow" });
+      result.set(player.id, { suspended: true, reason: "yellow", pendingSuspension: false });
+    } else if (yellowThreshold > 1 && totalYellows % yellowThreshold === yellowThreshold - 1) {
+      // "Pendurado": mais um cartão amarelo e o jogador é suspenso no
+      // próximo jogo do time.
+      result.set(player.id, { suspended: false, reason: null, pendingSuspension: true });
     }
   }
 

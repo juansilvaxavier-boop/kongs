@@ -206,6 +206,8 @@ export default async function EstatisticasPublicasPage({
                       <td className="px-4 py-3">
                         {status?.suspended ? (
                           <Badge tone="warning">Suspenso</Badge>
+                        ) : status?.pendingSuspension ? (
+                          <Badge tone="default">Pendurado</Badge>
                         ) : (
                           <span className="text-muted">—</span>
                         )}

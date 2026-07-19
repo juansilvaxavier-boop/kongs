@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { localInputToIso, naturalCompare } from "./datetime";
+import { isBirthdayToday, localInputToIso, naturalCompare } from "./datetime";
 
 describe("localInputToIso", () => {
   it("returns an empty string for empty input", () => {
@@ -21,6 +21,27 @@ describe("localInputToIso", () => {
     expect(parsed.getDate()).toBe(16);
     expect(parsed.getHours()).toBe(15);
     expect(parsed.getMinutes()).toBe(30);
+  });
+});
+
+describe("isBirthdayToday", () => {
+  it("returns false when there is no birth date", () => {
+    expect(isBirthdayToday(null)).toBe(false);
+  });
+
+  it("returns true when month and day match today, regardless of year", () => {
+    const today = new Date(2026, 6, 16); // 16 de julho de 2026
+    expect(isBirthdayToday("2000-07-16", today)).toBe(true);
+  });
+
+  it("returns false when the day doesn't match", () => {
+    const today = new Date(2026, 6, 16);
+    expect(isBirthdayToday("2000-07-17", today)).toBe(false);
+  });
+
+  it("returns false when the month doesn't match", () => {
+    const today = new Date(2026, 6, 16);
+    expect(isBirthdayToday("2000-08-16", today)).toBe(false);
   });
 });
 

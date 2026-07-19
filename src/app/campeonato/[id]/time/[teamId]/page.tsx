@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui";
 import { computeSuspensions } from "@/lib/discipline";
+import { isBirthdayToday } from "@/lib/datetime";
 import { PlayerRosterGrid, type RosterPlayer } from "./player-roster-grid";
 
 export default async function PublicTeamPage({
@@ -32,7 +33,7 @@ export default async function PublicTeamPage({
       .maybeSingle(),
     supabase
       .from("players")
-      .select("id, name, number, position, team_id, photo_url")
+      .select("id, name, number, position, team_id, photo_url, birth_date")
       .eq("team_id", teamId)
       .order("number", { ascending: true, nullsFirst: false }),
     supabase
@@ -96,6 +97,8 @@ export default async function PublicTeamPage({
       position: player.position,
       photoUrl: player.photo_url,
       suspended: suspensions.get(player.id)?.suspended ?? false,
+      pendingSuspension: suspensions.get(player.id)?.pendingSuspension ?? false,
+      isBirthday: isBirthdayToday(player.birth_date),
       attributes: {
         ovr: attrs?.ovr ?? 70,
         ritmo: attrs?.ritmo ?? 70,

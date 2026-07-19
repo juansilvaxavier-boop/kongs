@@ -120,6 +120,8 @@ export default async function EstatisticasPage({
                               ? "Suspenso (vermelho)"
                               : "Suspenso (amarelos)"}
                           </Badge>
+                        ) : status?.pendingSuspension ? (
+                          <Badge tone="default">Pendurado</Badge>
                         ) : (
                           <span className="text-muted">—</span>
                         )}
