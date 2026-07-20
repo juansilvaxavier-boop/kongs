@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState } from "@/components/ui";
 import { ExportPdfButton } from "@/components/export-pdf-button";
+import { FavoriteButton } from "@/components/favorite-button";
 import { computeSuspensions } from "@/lib/discipline";
 import { isBirthdayToday } from "@/lib/datetime";
 import { PlayerRosterGrid, type RosterPlayer } from "./player-roster-grid";
@@ -20,6 +21,9 @@ export default async function PublicTeamPage({
     { data: players },
     { data: cardEvents },
     { data: games },
+    {
+      data: { user },
+    },
   ] = await Promise.all([
     supabase
       .from("championships")
@@ -45,11 +49,25 @@ export default async function PublicTeamPage({
       .from("games")
       .select("id, team_a_id, team_b_id, date, round, played")
       .eq("championship_id", id),
+    supabase.auth.getUser(),
   ]);
 
   if (!team) notFound();
 
   const playerIds = (players ?? []).map((p) => p.id);
+
+  const { data: favoriteRows } = user
+    ? await supabase
+        .from("favorites")
+        .select("kind, entity_id")
+        .in("kind", ["team", "player"])
+    : { data: [] };
+  const teamFavorited = (favoriteRows ?? []).some(
+    (f) => f.kind === "team" && f.entity_id === teamId
+  );
+  const favoritedPlayerIds = (favoriteRows ?? [])
+    .filter((f) => f.kind === "player")
+    .map((f) => f.entity_id);
 
   const [{ data: attributesRows }, { data: historyRows }, { data: mvpGames }] =
     await Promise.all([
@@ -142,9 +160,14 @@ export default async function PublicTeamPage({
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
               Elenco
             </p>
-            <h1 className="font-display text-3xl font-bold uppercase tracking-wide text-foreground">
-              {team.name}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-3xl font-bold uppercase tracking-wide text-foreground">
+                {team.name}
+              </h1>
+              {user && (
+                <FavoriteButton kind="team" entityId={team.id} initialFavorited={teamFavorited} />
+              )}
+            </div>
             {coachRow?.name && (
               <p className="text-sm text-muted">Técnico: {coachRow.name}</p>
             )}
@@ -167,7 +190,11 @@ export default async function PublicTeamPage({
       </div>
 
       {rosterPlayers.length > 0 ? (
-        <PlayerRosterGrid players={rosterPlayers} crestUrl={team.crest_url} />
+        <PlayerRosterGrid
+          players={rosterPlayers}
+          crestUrl={team.crest_url}
+          favoritedPlayerIds={user ? favoritedPlayerIds : null}
+        />
       ) : (
         <EmptyState>Nenhum jogador cadastrado ainda.</EmptyState>
       )}

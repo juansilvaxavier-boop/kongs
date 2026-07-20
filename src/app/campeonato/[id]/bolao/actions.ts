@@ -36,5 +36,6 @@ export async function upsertPrediction(
     if (error) throw new Error(error.message);
 
     revalidatePath(`/campeonato/${championshipId}/bolao`);
+    revalidatePath(`/campeonato/${championshipId}/partidas/${gameId}`);
   });
 }

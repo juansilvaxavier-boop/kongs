@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { Badge, Card, EmptyState } from "@/components/ui";
+import { Badge, BrandMark, Card, EmptyState } from "@/components/ui";
 
 type Championship = {
   id: string;
   name: string;
   format: string;
+  logo_url?: string | null;
 };
 
 export function ChampionshipsGrid({
@@ -21,9 +22,21 @@ export function ChampionshipsGrid({
       {championships.map((championship) => (
         <Link key={championship.id} href={`/campeonato/${championship.id}`}>
           <Card className="flex items-center justify-between gap-3 p-4 transition hover:border-accent/50">
-            <span className="font-medium text-foreground">
-              {championship.name}
-            </span>
+            <div className="flex items-center gap-3">
+              {championship.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={championship.logo_url}
+                  alt=""
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+              ) : (
+                <BrandMark />
+              )}
+              <span className="font-medium text-foreground">
+                {championship.name}
+              </span>
+            </div>
             <Badge>{championship.format === "copa" ? "Copa" : "Liga"}</Badge>
           </Card>
         </Link>

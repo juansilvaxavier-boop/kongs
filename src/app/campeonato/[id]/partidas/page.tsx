@@ -16,28 +16,38 @@ export default async function PartidasPage({
   const { time: teamFilter } = await searchParams;
   const supabase = await createClient();
 
-  const [{ data: championship }, { data: teams }, { data: gamesData }, { data: venues }] =
-    await Promise.all([
-      supabase
-        .from("championships")
-        .select("has_knockout_stage")
-        .eq("id", id)
-        .maybeSingle(),
-      supabase
-        .from("teams")
-        .select("id, name, crest_url")
-        .eq("championship_id", id)
-        .order("name"),
-      supabase
-        .from("games")
-        .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played, venue_id")
-        .eq("championship_id", id)
-        .order("date", { ascending: true, nullsFirst: false }),
-      supabase
-        .from("venues")
-        .select("id, name")
-        .eq("championship_id", id),
-    ]);
+  const [
+    { data: championship },
+    { data: teams },
+    { data: gamesData },
+    { data: venues },
+    {
+      data: { user },
+    },
+  ] = await Promise.all([
+    supabase
+      .from("championships")
+      .select("has_knockout_stage")
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("teams")
+      .select("id, name, crest_url")
+      .eq("championship_id", id)
+      .order("name"),
+    supabase
+      .from("games")
+      .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played, venue_id")
+      .eq("championship_id", id)
+      .order("date", { ascending: true, nullsFirst: false }),
+    supabase.from("venues").select("id, name").eq("championship_id", id),
+    supabase.auth.getUser(),
+  ]);
+
+  const { data: favoriteRows } = user
+    ? await supabase.from("favorites").select("entity_id").eq("kind", "game")
+    : { data: [] };
+  const favoritedGameIds = (favoriteRows ?? []).map((f) => f.entity_id);
 
   const allGames = gamesData
     ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
@@ -89,10 +99,12 @@ export default async function PartidasPage({
             Clique em um jogo para ver o retrospecto entre os dois times.
           </p>
           <PartidasTable
+            championshipId={id}
             games={games}
             allGames={allGames}
             teams={teams ?? []}
             venues={venues ?? []}
+            favoritedGameIds={favoritedGameIds}
           />
         </>
       )}

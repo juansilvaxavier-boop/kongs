@@ -6,7 +6,7 @@ import { ShareButton } from "@/components/share-button";
 import { SocialLinks } from "@/components/social-links";
 import { SponsorsFooter } from "@/components/sponsors-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { BrandMark } from "@/components/ui";
+import { BrandMark, Button } from "@/components/ui";
 import { SidebarNav } from "@/app/inicio/sidebar-nav";
 import { PublicChampionshipTabs } from "./public-tabs";
 
@@ -60,6 +60,13 @@ export default async function PublicChampionshipLayout({
             </span>
             <SocialLinks />
             <ThemeToggle />
+            {user && (
+              <Link href="/favoritos">
+                <Button type="button" variant="secondary" title="Meus favoritos">
+                  ★ Favoritos
+                </Button>
+              </Link>
+            )}
             <PushSubscribeButton championshipId={id} />
             <ShareButton title={championship.name} />
           </div>

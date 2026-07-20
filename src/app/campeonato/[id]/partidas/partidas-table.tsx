@@ -1,8 +1,10 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import Link from "next/link";
 import { Badge, Card } from "@/components/ui";
 import { TeamCell } from "@/components/team-cell";
+import { FavoriteButton } from "@/components/favorite-button";
 
 type Team = { id: string; name: string; crest_url: string | null };
 type Game = {
@@ -100,16 +102,21 @@ function H2HPanel({
 }
 
 export function PartidasTable({
+  championshipId,
   games,
   allGames,
   teams,
   venues,
+  favoritedGameIds,
 }: {
+  championshipId: string;
   games: Game[];
   allGames: Game[];
   teams: Team[];
   venues: Venue[];
+  favoritedGameIds: string[];
 }) {
+  const favoritedGameIdSet = new Set(favoritedGameIds);
   const [openId, setOpenId] = useState<string | null>(null);
   const teamName = (teamId: string) => teams.find((t) => t.id === teamId)?.name ?? "?";
   const teamCrest = (teamId: string) => teams.find((t) => t.id === teamId)?.crest_url ?? null;
@@ -127,6 +134,7 @@ export function PartidasTable({
             <th className="px-4 py-3">Local</th>
             <th className="px-4 py-3">Placar</th>
             <th className="px-4 py-3">Status</th>
+            <th className="px-4 py-3 text-right">Ações</th>
           </tr>
         </thead>
         <tbody>
@@ -161,10 +169,27 @@ export function PartidasTable({
                     {game.played ? "Realizado" : "Agendado"}
                   </Badge>
                 </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center justify-end gap-2">
+                    <Link
+                      href={`/campeonato/${championshipId}/partidas/${game.id}`}
+                      onClick={(event) => event.stopPropagation()}
+                      className="text-xs text-accent hover:underline"
+                    >
+                      Ver jogo →
+                    </Link>
+                    <FavoriteButton
+                      kind="game"
+                      entityId={game.id}
+                      initialFavorited={favoritedGameIdSet.has(game.id)}
+                      size="sm"
+                    />
+                  </div>
+                </td>
               </tr>
               {openId === game.id && (
                 <tr className="border-b border-border last:border-0">
-                  <td colSpan={6} className="bg-surface-2/40 px-4 py-4">
+                  <td colSpan={7} className="bg-surface-2/40 px-4 py-4">
                     <h3 className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-muted">
                       Retrospecto
                     </h3>

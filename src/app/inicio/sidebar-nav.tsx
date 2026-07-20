@@ -7,6 +7,7 @@ import { Button } from "@/components/ui";
 
 const TABS = [
   { href: "/inicio", label: "Campeonatos" },
+  { href: "/favoritos", label: "Favoritos" },
   { href: "/inicio/perfil", label: "Perfil" },
   { href: "/inicio/configuracoes", label: "Configurações" },
 ];

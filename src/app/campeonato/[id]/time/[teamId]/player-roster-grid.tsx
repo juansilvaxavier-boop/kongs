@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Badge } from "@/components/ui";
 import { PlayerCard } from "@/components/player-card";
+import { FavoriteButton } from "@/components/favorite-button";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import { PlayerCardModal, type HistoryEntry } from "./player-card-modal";
 
@@ -33,11 +34,14 @@ export type RosterPlayer = {
 export function PlayerRosterGrid({
   players,
   crestUrl,
+  favoritedPlayerIds,
 }: {
   players: RosterPlayer[];
   crestUrl?: string | null;
+  favoritedPlayerIds?: string[] | null;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
+  const favoritedSet = new Set(favoritedPlayerIds ?? []);
   const openPlayer = players.find((p) => p.id === openId) ?? null;
 
   const groups = [...PLAYER_POSITIONS, "Sem posição"].map((position) => ({
@@ -59,12 +63,7 @@ export function PlayerRosterGrid({
               </h3>
               <div className="flex flex-wrap gap-4">
                 {group.players.map((player) => (
-                  <button
-                    key={player.id}
-                    type="button"
-                    onClick={() => setOpenId(player.id)}
-                    className="relative text-left transition hover:-translate-y-1"
-                  >
+                  <div key={player.id} className="relative">
                     {(player.suspended || player.pendingSuspension || player.isBirthday) && (
                       <div className="absolute -top-2 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-1">
                         {player.isBirthday && (
@@ -76,15 +75,31 @@ export function PlayerRosterGrid({
                         )}
                       </div>
                     )}
-                    <PlayerCard
-                      name={player.name}
-                      position={player.position}
-                      number={player.number}
-                      photoUrl={player.photoUrl}
-                      crestUrl={crestUrl}
-                      attributes={player.attributes}
-                    />
-                  </button>
+                    {favoritedPlayerIds !== null && favoritedPlayerIds !== undefined && (
+                      <div className="absolute -right-2 -top-2 z-10">
+                        <FavoriteButton
+                          kind="player"
+                          entityId={player.id}
+                          initialFavorited={favoritedSet.has(player.id)}
+                          size="sm"
+                        />
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setOpenId(player.id)}
+                      className="text-left transition hover:-translate-y-1"
+                    >
+                      <PlayerCard
+                        name={player.name}
+                        position={player.position}
+                        number={player.number}
+                        photoUrl={player.photoUrl}
+                        crestUrl={crestUrl}
+                        attributes={player.attributes}
+                      />
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
