@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_log: {
+        Row: {
+          action: string
+          actor_user_id: string | null
+          championship_id: string | null
+          created_at: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          record_id: string | null
+          table_name: string
+        }
+        Insert: {
+          action: string
+          actor_user_id?: string | null
+          championship_id?: string | null
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name: string
+        }
+        Update: {
+          action?: string
+          actor_user_id?: string | null
+          championship_id?: string | null
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          record_id?: string | null
+          table_name?: string
+        }
+        Relationships: []
+      }
       bolao_predictions: {
         Row: {
           championship_id: string
@@ -344,6 +380,104 @@ export type Database = {
           },
         ]
       }
+      game_captain_signatures: {
+        Row: {
+          captain_name: string
+          championship_id: string
+          game_id: string
+          id: string
+          signature_data_url: string
+          signed_at: string
+          team_id: string
+        }
+        Insert: {
+          captain_name: string
+          championship_id: string
+          game_id: string
+          id?: string
+          signature_data_url: string
+          signed_at?: string
+          team_id: string
+        }
+        Update: {
+          captain_name?: string
+          championship_id?: string
+          game_id?: string
+          id?: string
+          signature_data_url?: string
+          signed_at?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_captain_signatures_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_captain_signatures_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_captain_signatures_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_lineups: {
+        Row: {
+          championship_id: string
+          created_at: string
+          game_id: string
+          id: string
+          player_id: string
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          game_id: string
+          id?: string
+          player_id: string
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          game_id?: string
+          id?: string
+          player_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_lineups_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_lineups_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "game_lineups_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       games: {
         Row: {
           championship_id: string
@@ -440,104 +574,6 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      game_captain_signatures: {
-        Row: {
-          captain_name: string
-          championship_id: string
-          game_id: string
-          id: string
-          signature_data_url: string
-          signed_at: string
-          team_id: string
-        }
-        Insert: {
-          captain_name: string
-          championship_id: string
-          game_id: string
-          id?: string
-          signature_data_url: string
-          signed_at?: string
-          team_id: string
-        }
-        Update: {
-          captain_name?: string
-          championship_id?: string
-          game_id?: string
-          id?: string
-          signature_data_url?: string
-          signed_at?: string
-          team_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "game_captain_signatures_championship_id_fkey"
-            columns: ["championship_id"]
-            isOneToOne: false
-            referencedRelation: "championships"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "game_captain_signatures_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: false
-            referencedRelation: "games"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "game_captain_signatures_team_id_fkey"
-            columns: ["team_id"]
-            isOneToOne: false
-            referencedRelation: "teams"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      game_lineups: {
-        Row: {
-          championship_id: string
-          created_at: string
-          game_id: string
-          id: string
-          player_id: string
-        }
-        Insert: {
-          championship_id: string
-          created_at?: string
-          game_id: string
-          id?: string
-          player_id: string
-        }
-        Update: {
-          championship_id?: string
-          created_at?: string
-          game_id?: string
-          id?: string
-          player_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "game_lineups_championship_id_fkey"
-            columns: ["championship_id"]
-            isOneToOne: false
-            referencedRelation: "championships"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "game_lineups_game_id_fkey"
-            columns: ["game_id"]
-            isOneToOne: false
-            referencedRelation: "games"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "game_lineups_player_id_fkey"
-            columns: ["player_id"]
-            isOneToOne: false
-            referencedRelation: "players"
             referencedColumns: ["id"]
           },
         ]
@@ -1176,23 +1212,50 @@ export type Database = {
     }
     Functions: {
       accept_team_invite: { Args: { p_invite_id: string }; Returns: undefined }
+      admin_list_audit_log: {
+        Args: {
+          p_action?: string
+          p_championship_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_table_name?: string
+        }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_name: string
+          actor_user_id: string
+          championship_id: string
+          championship_name: string
+          created_at: string
+          id: string
+          new_data: Json
+          old_data: Json
+          record_id: string
+          table_name: string
+          total_count: number
+        }[]
+      }
       admin_list_users: {
         Args: never
         Returns: {
-          avatar_url: string | null
+          avatar_url: string
           created_at: string
-          email: string | null
-          first_name: string | null
-          last_name: string | null
-          last_sign_in_at: string | null
-          permissions: string[] | null
-          persona: string | null
-          phone: string | null
-          role: string | null
+          email: string
+          first_name: string
+          last_name: string
+          last_sign_in_at: string
+          permissions: string[]
+          persona: string
+          phone: string
+          role: string
           user_id: string
         }[]
       }
-      admin_process_game_ovr: { Args: { p_game_id: string }; Returns: undefined }
+      admin_process_game_ovr: {
+        Args: { p_game_id: string }
+        Returns: undefined
+      }
       admin_set_user_admin: {
         Args: { p_is_admin: boolean; p_user_id: string }
         Returns: undefined
@@ -1243,6 +1306,7 @@ export type Database = {
         Args: { p_championship_id: string }
         Returns: boolean
       }
+      process_game_ovr: { Args: { p_game_id: string }; Returns: undefined }
       regenerate_championship_sumula_token: {
         Args: { p_championship_id: string }
         Returns: string

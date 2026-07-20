@@ -11,6 +11,7 @@ export function AdminSidebarNav({ isAdmin }: { isAdmin: boolean }) {
   const tabs = [
     { href: "/campeonatos", label: "Campeonatos" },
     ...(isAdmin ? [{ href: "/campeonatos/usuarios", label: "Usuários" }] : []),
+    ...(isAdmin ? [{ href: "/campeonatos/auditoria", label: "Auditoria" }] : []),
     { href: "/campeonatos/configuracoes", label: "Configurações" },
   ];
 
