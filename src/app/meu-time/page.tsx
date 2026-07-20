@@ -24,7 +24,7 @@ export default async function MeuTimePage() {
         .from("teams")
         .select("id, name, crest_url, coach_id")
         .eq("id", team.id)
-        .single(),
+        .maybeSingle(),
       supabase
         .from("coaches")
         .select("id, name")
