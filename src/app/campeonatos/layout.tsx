@@ -2,9 +2,10 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUserPermissions, isAdmin } from "@/lib/auth/roles";
-import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
+import { resolveAuthenticatedDestination, resolveRegularDestination } from "@/lib/auth/destination";
 import { BrandMark } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SwitchProfileLink } from "@/components/switch-profile-link";
 import { AdminSidebarNav } from "./sidebar-nav";
 
 export default async function CampeonatosLayout({
@@ -23,6 +24,7 @@ export default async function CampeonatosLayout({
   if (!admin && permissions.length === 0) {
     redirect(await resolveAuthenticatedDestination(supabase));
   }
+  const regularDestination = await resolveRegularDestination(supabase);
 
   return (
     <div className="pitch-lines flex min-h-dvh flex-1 flex-col">
@@ -38,6 +40,7 @@ export default async function CampeonatosLayout({
             <span className="hidden text-sm text-muted sm:inline">
               {user.email}
             </span>
+            <SwitchProfileLink href={regularDestination} label="Entrar como usuário" />
             <ThemeToggle />
           </div>
         </div>

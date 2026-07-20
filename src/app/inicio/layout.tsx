@@ -2,6 +2,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { BrandMark } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SwitchProfileLink } from "@/components/switch-profile-link";
+import { getUserPermissions, isAdmin } from "@/lib/auth/roles";
 import { SidebarNav } from "./sidebar-nav";
 
 export default async function InicioLayout({
@@ -14,6 +16,10 @@ export default async function InicioLayout({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const admin = await isAdmin(supabase);
+  const permissions = admin ? [] : await getUserPermissions(supabase);
+  const canManage = admin || permissions.length > 0;
 
   return (
     <div className="pitch-lines flex min-h-dvh flex-1 flex-col">
@@ -29,6 +35,7 @@ export default async function InicioLayout({
             <span className="hidden text-sm text-muted sm:inline">
               {user.email}
             </span>
+            {canManage && <SwitchProfileLink href="/campeonatos" label="Entrar como gestor" />}
             <ThemeToggle />
           </div>
         </div>

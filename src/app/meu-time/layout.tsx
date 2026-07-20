@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getOwnedTeam } from "@/lib/auth/roles";
+import { getOwnedTeam, getUserPermissions, isAdmin } from "@/lib/auth/roles";
 import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
 import { signOut } from "@/app/login/actions";
 import { BrandMark, Button } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SwitchProfileLink } from "@/components/switch-profile-link";
 
 export default async function MeuTimeLayout({
   children,
@@ -24,6 +25,10 @@ export default async function MeuTimeLayout({
     redirect(await resolveAuthenticatedDestination(supabase));
   }
 
+  const admin = await isAdmin(supabase);
+  const permissions = admin ? [] : await getUserPermissions(supabase);
+  const canManage = admin || permissions.length > 0;
+
   return (
     <div className="pitch-lines flex min-h-dvh flex-1 flex-col">
       <header className="border-b border-border bg-surface/70 backdrop-blur">
@@ -41,6 +46,7 @@ export default async function MeuTimeLayout({
             <Link href="/meu-time/conta" className="text-sm text-muted hover:text-accent">
               Minha conta
             </Link>
+            {canManage && <SwitchProfileLink href="/campeonatos" label="Entrar como gestor" />}
             <ThemeToggle />
             <form action={signOut}>
               <Button type="submit" variant="secondary">
