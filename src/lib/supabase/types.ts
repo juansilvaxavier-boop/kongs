@@ -50,6 +50,54 @@ export type Database = {
         }
         Relationships: []
       }
+      bolao_group_predictions: {
+        Row: {
+          championship_id: string
+          created_at: string
+          group_name: string | null
+          id: string
+          position: number
+          team_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          group_name?: string | null
+          id?: string
+          position: number
+          team_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          group_name?: string | null
+          id?: string
+          position?: number
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolao_group_predictions_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolao_group_predictions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bolao_predictions: {
         Row: {
           championship_id: string

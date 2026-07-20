@@ -1,11 +1,18 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { Badge, Card, EmptyState, Input, Label } from "@/components/ui";
+import { Badge, Card, EmptyState, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { TeamCell } from "@/components/team-cell";
 import { naturalCompare } from "@/lib/datetime";
-import { computeBolaoStandings } from "@/lib/bolao";
-import { upsertPrediction } from "./actions";
+import {
+  computeBolaoStandings,
+  computeGroupPredictionPoints,
+  type FinishedGroupStanding,
+} from "@/lib/bolao";
+import { computeStandings } from "@/lib/standings";
+import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
+import { upsertGroupPrediction, upsertPrediction } from "./actions";
 
 export default async function BolaoPage({
   params,
@@ -19,10 +26,17 @@ export default async function BolaoPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  const [{ data: teams }, { data: gamesData }, { data: predictions }] = await Promise.all([
+  const [
+    { data: championship },
+    { data: teams },
+    { data: gamesData },
+    { data: predictions },
+    { data: groupPredictions },
+  ] = await Promise.all([
+    supabase.from("championships").select("format").eq("id", id).maybeSingle(),
     supabase
       .from("teams")
-      .select("id, name, crest_url")
+      .select("id, name, crest_url, group_name")
       .eq("championship_id", id)
       .order("name"),
     supabase
@@ -33,13 +47,22 @@ export default async function BolaoPage({
       .from("bolao_predictions")
       .select("id, game_id, user_id, predicted_score_a, predicted_score_b")
       .eq("championship_id", id),
+    supabase
+      .from("bolao_group_predictions")
+      .select("id, group_name, position, team_id, user_id")
+      .eq("championship_id", id),
   ]);
 
   const games = (gamesData ?? []).slice().sort((a, b) => naturalCompare(a.round, b.round));
   const teamName = (teamId: string) => teams?.find((t) => t.id === teamId)?.name ?? "?";
   const teamCrest = (teamId: string) => teams?.find((t) => t.id === teamId)?.crest_url ?? null;
 
-  const userIds = [...new Set((predictions ?? []).map((p) => p.user_id))];
+  const userIds = [
+    ...new Set([
+      ...(predictions ?? []).map((p) => p.user_id),
+      ...(groupPredictions ?? []).map((p) => p.user_id),
+    ]),
+  ];
   const { data: profiles } =
     userIds.length > 0
       ? await supabase
@@ -59,7 +82,7 @@ export default async function BolaoPage({
   );
 
   const playedGames = games.filter((g) => g.played && g.score_a !== null && g.score_b !== null);
-  const standings = computeBolaoStandings(
+  const scoreStandings = computeBolaoStandings(
     (predictions ?? []).map((p) => ({
       userId: p.user_id,
       gameId: p.game_id,
@@ -68,6 +91,67 @@ export default async function BolaoPage({
     })),
     playedGames.map((g) => ({ id: g.id, scoreA: g.score_a!, scoreB: g.score_b! }))
   );
+
+  const groups = groupTeamsByFormat(championship?.format ?? "liga", teams ?? []);
+  const groupInfos = groups.map((group) => {
+    const groupGames = gamesWithinTeams(games, group.teams);
+    const hasGames = groupGames.length > 0;
+    const allPlayed = hasGames && groupGames.every((g) => g.played);
+    const anyPlayed = groupGames.some((g) => g.played);
+    const finalOrder = allPlayed
+      ? computeStandings(group.teams, groupGames).map((row) => row.teamId)
+      : null;
+    return { ...group, hasGames, allPlayed, anyPlayed, finalOrder };
+  });
+
+  const finishedGroups: FinishedGroupStanding[] = groupInfos
+    .filter((g) => g.finalOrder)
+    .map((g) => ({ groupName: g.groupName, order: g.finalOrder! }));
+
+  const groupStandings = computeGroupPredictionPoints(
+    (groupPredictions ?? []).map((p) => ({
+      userId: p.user_id,
+      groupName: p.group_name,
+      position: p.position,
+      teamId: p.team_id,
+    })),
+    finishedGroups
+  );
+
+  const merged = new Map<
+    string,
+    { points: number; exactCount: number; correctCount: number; groupExactCount: number }
+  >();
+  for (const row of scoreStandings) {
+    merged.set(row.userId, {
+      points: row.points,
+      exactCount: row.exactCount,
+      correctCount: row.correctCount,
+      groupExactCount: 0,
+    });
+  }
+  for (const row of groupStandings) {
+    const entry = merged.get(row.userId) ?? {
+      points: 0,
+      exactCount: 0,
+      correctCount: 0,
+      groupExactCount: 0,
+    };
+    entry.points += row.points;
+    entry.groupExactCount += row.exactCount;
+    merged.set(row.userId, entry);
+  }
+  const standings = [...merged.entries()]
+    .map(([userId, v]) => ({ userId, ...v }))
+    .sort((a, b) => b.points - a.points || b.exactCount - a.exactCount);
+
+  const myGroupPicks = new Map<string, Map<number, string>>();
+  for (const p of groupPredictions ?? []) {
+    if (p.user_id !== user?.id) continue;
+    const key = p.group_name ?? "";
+    if (!myGroupPicks.has(key)) myGroupPicks.set(key, new Map());
+    myGroupPicks.get(key)!.set(p.position, p.team_id);
+  }
 
   return (
     <div className="space-y-8">
@@ -176,6 +260,88 @@ export default async function BolaoPage({
         )}
       </div>
 
+      {teams && teams.length > 1 && (
+        <div>
+          <h2 className="mb-1 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+            Palpite de classificação
+          </h2>
+          <p className="mb-3 text-sm text-muted">
+            Palpite quem termina em cada posição {groups.length > 1 ? "de cada grupo" : "da tabela"}
+            . Cada posição certeira vale 5 pontos no ranking geral do bolão.
+          </p>
+          <div className="flex flex-col gap-4">
+            {groupInfos.map((group) => {
+              const key = group.groupName ?? "";
+              const myPicks = myGroupPicks.get(key) ?? new Map<number, string>();
+              const positions = Array.from({ length: group.teams.length }, (_, i) => i + 1);
+
+              return (
+                <Card key={key || "geral"} className="p-4">
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <h3 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
+                      {group.groupName ?? "Tabela geral"}
+                    </h3>
+                    <Badge tone={group.allPlayed ? "success" : group.anyPlayed ? "warning" : "default"}>
+                      {group.allPlayed ? "Encerrado" : group.anyPlayed ? "Em andamento" : "Aguardando início"}
+                    </Badge>
+                  </div>
+
+                  {!user ? (
+                    <p className="text-sm text-muted">Entre na sua conta para dar seu palpite.</p>
+                  ) : group.anyPlayed ? (
+                    <ul className="space-y-1 text-sm">
+                      {positions.map((pos) => {
+                        const teamId = myPicks.get(pos);
+                        const actualTeamId = group.finalOrder?.[pos - 1];
+                        const scored = group.allPlayed && Boolean(teamId);
+                        const hit = scored && actualTeamId === teamId;
+                        return (
+                          <li key={pos} className="flex items-center gap-2">
+                            <span className="w-6 text-muted">{pos}º</span>
+                            <span className="flex-1 text-foreground">
+                              {teamId ? teamName(teamId) : "— (sem palpite)"}
+                            </span>
+                            {scored && (
+                              <Badge tone={hit ? "success" : "warning"}>
+                                {hit ? "Acertou" : "Errou"}
+                              </Badge>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <ActionForm
+                      action={(formData) => upsertGroupPrediction(id, group.groupName, formData)}
+                      successMessage="Palpite salvo."
+                    >
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                        {positions.map((pos) => (
+                          <div key={pos}>
+                            <Label>{pos}º lugar</Label>
+                            <Select name={`position_${pos}`} defaultValue={myPicks.get(pos) ?? ""}>
+                              <option value="">—</option>
+                              {group.teams.map((t) => (
+                                <option key={t.id} value={t.id}>
+                                  {t.name}
+                                </option>
+                              ))}
+                            </Select>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3">
+                        <SubmitButton pendingText="Salvando…">Salvar palpite do grupo</SubmitButton>
+                      </div>
+                    </ActionForm>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div>
         <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
           Ranking do bolão
@@ -184,13 +350,14 @@ export default async function BolaoPage({
           <EmptyState>Ninguém pontuou ainda — os pontos aparecem conforme os jogos acontecem.</EmptyState>
         ) : (
           <Card className="overflow-x-auto">
-            <table className="w-full min-w-[24rem] text-sm">
+            <table className="w-full min-w-[28rem] text-sm">
               <thead>
                 <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
                   <th className="w-10 px-4 py-3">#</th>
                   <th className="px-4 py-3">Torcedor</th>
                   <th className="px-4 py-3 text-center">Cravadas</th>
                   <th className="px-4 py-3 text-center">Acertos</th>
+                  <th className="px-4 py-3 text-center">Posições</th>
                   <th className="px-4 py-3 text-center">Pontos</th>
                 </tr>
               </thead>
@@ -203,12 +370,16 @@ export default async function BolaoPage({
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           {profile?.avatar_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={profile.avatar_url}
-                              alt=""
-                              className="h-7 w-7 rounded-full object-cover"
-                            />
+                            <span className="relative h-7 w-7 shrink-0">
+                              <Image
+                                src={profile.avatar_url}
+                                alt=""
+                                fill
+                                loading="eager"
+                                sizes="28px"
+                                className="rounded-full object-cover"
+                              />
+                            </span>
                           ) : (
                             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-muted">
                               {profileName(row.userId).slice(0, 2).toUpperCase()}
@@ -222,6 +393,7 @@ export default async function BolaoPage({
                       </td>
                       <td className="px-4 py-3 text-center text-foreground">{row.exactCount}</td>
                       <td className="px-4 py-3 text-center text-foreground">{row.correctCount}</td>
+                      <td className="px-4 py-3 text-center text-foreground">{row.groupExactCount}</td>
                       <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
                         {row.points}
                       </td>

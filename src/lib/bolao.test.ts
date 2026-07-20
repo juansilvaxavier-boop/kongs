@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeBolaoStandings } from "./bolao";
+import { computeBolaoStandings, computeGroupPredictionPoints } from "./bolao";
 
 describe("computeBolaoStandings", () => {
   it("awards 3 points for an exact score prediction", () => {
@@ -57,6 +57,61 @@ describe("computeBolaoStandings", () => {
     expect(rows).toEqual([
       { userId: "u1", points: 4, exactCount: 1, correctCount: 1 },
       { userId: "u2", points: 1, exactCount: 0, correctCount: 1 },
+    ]);
+  });
+});
+
+describe("computeGroupPredictionPoints", () => {
+  it("awards 5 points for each correctly predicted position in a finished group", () => {
+    const rows = computeGroupPredictionPoints(
+      [
+        { userId: "u1", groupName: "Grupo A", position: 1, teamId: "t1" },
+        { userId: "u1", groupName: "Grupo A", position: 2, teamId: "t2" },
+      ],
+      [{ groupName: "Grupo A", order: ["t1", "t2", "t3"] }]
+    );
+    expect(rows).toEqual([{ userId: "u1", points: 10, exactCount: 2 }]);
+  });
+
+  it("gives 0 points for a wrong position guess", () => {
+    const rows = computeGroupPredictionPoints(
+      [{ userId: "u1", groupName: "Grupo A", position: 1, teamId: "t2" }],
+      [{ groupName: "Grupo A", order: ["t1", "t2", "t3"] }]
+    );
+    expect(rows).toEqual([{ userId: "u1", points: 0, exactCount: 0 }]);
+  });
+
+  it("ignores predictions for groups that are not yet finished", () => {
+    const rows = computeGroupPredictionPoints(
+      [{ userId: "u1", groupName: "Grupo B", position: 1, teamId: "t1" }],
+      [{ groupName: "Grupo A", order: ["t1", "t2"] }]
+    );
+    expect(rows).toEqual([]);
+  });
+
+  it("treats a null groupName (tabela única, sem grupos) as its own group", () => {
+    const rows = computeGroupPredictionPoints(
+      [{ userId: "u1", groupName: null, position: 1, teamId: "t1" }],
+      [{ groupName: null, order: ["t1", "t2"] }]
+    );
+    expect(rows).toEqual([{ userId: "u1", points: 5, exactCount: 1 }]);
+  });
+
+  it("accumulates points across multiple groups and sorts by points", () => {
+    const rows = computeGroupPredictionPoints(
+      [
+        { userId: "u1", groupName: "Grupo A", position: 1, teamId: "t1" },
+        { userId: "u1", groupName: "Grupo B", position: 1, teamId: "t3" },
+        { userId: "u2", groupName: "Grupo A", position: 1, teamId: "t2" },
+      ],
+      [
+        { groupName: "Grupo A", order: ["t1", "t2"] },
+        { groupName: "Grupo B", order: ["t3", "t4"] },
+      ]
+    );
+    expect(rows).toEqual([
+      { userId: "u1", points: 10, exactCount: 2 },
+      { userId: "u2", points: 0, exactCount: 0 },
     ]);
   });
 });

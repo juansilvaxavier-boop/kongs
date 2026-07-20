@@ -54,3 +54,53 @@ export function computeBolaoStandings(
     }))
     .sort((a, b) => b.points - a.points || b.exactCount - a.exactCount);
 }
+
+const GROUP_POSITION_POINTS = 5;
+
+export type BolaoGroupPrediction = {
+  userId: string;
+  groupName: string | null;
+  position: number;
+  teamId: string;
+};
+
+/** Classificação final de um grupo já encerrado (todos os jogos entre os
+ * times do grupo já foram realizados): `order` traz os ids dos times na
+ * ordem final, do 1º colocado ao último. */
+export type FinishedGroupStanding = {
+  groupName: string | null;
+  order: string[];
+};
+
+export type BolaoGroupStandingRow = {
+  userId: string;
+  points: number;
+  exactCount: number;
+};
+
+export function computeGroupPredictionPoints(
+  predictions: BolaoGroupPrediction[],
+  finishedGroups: FinishedGroupStanding[]
+): BolaoGroupStandingRow[] {
+  const orderByGroup = new Map(finishedGroups.map((g) => [g.groupName ?? "", g.order]));
+  const totals = new Map<string, { points: number; exact: number }>();
+
+  for (const prediction of predictions) {
+    const order = orderByGroup.get(prediction.groupName ?? "");
+    if (!order) continue;
+
+    const actualTeamId = order[prediction.position - 1];
+    if (actualTeamId === undefined) continue;
+
+    const entry = totals.get(prediction.userId) ?? { points: 0, exact: 0 };
+    if (actualTeamId === prediction.teamId) {
+      entry.points += GROUP_POSITION_POINTS;
+      entry.exact += 1;
+    }
+    totals.set(prediction.userId, entry);
+  }
+
+  return [...totals.entries()]
+    .map(([userId, t]) => ({ userId, points: t.points, exactCount: t.exact }))
+    .sort((a, b) => b.points - a.points);
+}
