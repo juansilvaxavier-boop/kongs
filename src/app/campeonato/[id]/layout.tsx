@@ -35,6 +35,8 @@ export default async function PublicChampionshipLayout({
     data: { user },
   } = await supabase.auth.getUser();
 
+  const hasSponsors = (sponsors ?? []).some((s) => s.logo_url);
+
   return (
     <div className="pitch-lines flex min-h-dvh flex-1 flex-col">
       <header className="border-b border-border bg-surface/70 backdrop-blur">
@@ -72,7 +74,11 @@ export default async function PublicChampionshipLayout({
           </div>
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:gap-8">
+      <main
+        className={`mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:gap-8 ${
+          hasSponsors ? "pb-24" : ""
+        }`}
+      >
         {user && <SidebarNav />}
         <div className="min-w-0 flex-1">
           <PublicChampionshipTabs id={id} />

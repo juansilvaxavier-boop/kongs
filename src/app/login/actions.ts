@@ -17,6 +17,13 @@ function readCredentials(formData: FormData) {
   };
 }
 
+function readSignUpCredentials(formData: FormData) {
+  return {
+    ...readCredentials(formData),
+    phone: String(formData.get("phone") || "").trim(),
+  };
+}
+
 export async function signInWithPassword(
   _prevState: AuthState,
   formData: FormData
@@ -40,9 +47,9 @@ export async function signUpWithPassword(
   _prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const { email, password } = readCredentials(formData);
-  if (!email || !password) {
-    return { error: "Informe e-mail e senha.", info: null };
+  const { email, password, phone } = readSignUpCredentials(formData);
+  if (!email || !password || !phone) {
+    return { error: "Informe e-mail, telefone e senha.", info: null };
   }
   if (password.length < 6) {
     return { error: "A senha deve ter ao menos 6 caracteres.", info: null };
@@ -52,7 +59,10 @@ export async function signUpWithPassword(
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { emailRedirectTo: `${getSiteUrl()}/auth/callback` },
+    options: {
+      emailRedirectTo: `${getSiteUrl()}/auth/callback`,
+      data: { phone },
+    },
   });
 
   if (error) {

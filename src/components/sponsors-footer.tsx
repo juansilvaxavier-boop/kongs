@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { trackSponsorEvent } from "./sponsor-tracking-actions";
 
@@ -21,17 +22,21 @@ export function SponsorsFooter({ sponsors }: { sponsors: Sponsor[] }) {
   if (withLogo.length === 0) return null;
 
   return (
-    <footer className="border-t border-border bg-surface/70 py-6">
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-center gap-6 px-4 sm:px-6">
+    <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/90 backdrop-blur">
+      <div className="mx-auto flex max-w-5xl items-center gap-6 overflow-x-auto px-4 py-3 sm:px-6">
         {withLogo.map((sponsor) => {
           const logo = (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={sponsor.logo_url!}
-              alt={sponsor.name}
-              title={sponsor.name}
-              className="h-10 w-auto object-contain opacity-80 grayscale transition hover:opacity-100 hover:grayscale-0"
-            />
+            <span className="relative h-10 w-20 shrink-0">
+              <Image
+                src={sponsor.logo_url!}
+                alt={sponsor.name}
+                title={sponsor.name}
+                fill
+                loading="eager"
+                sizes="80px"
+                className="object-contain opacity-80 grayscale transition hover:opacity-100 hover:grayscale-0"
+              />
+            </span>
           );
           return sponsor.link_url ? (
             <a
@@ -40,11 +45,14 @@ export function SponsorsFooter({ sponsors }: { sponsors: Sponsor[] }) {
               target="_blank"
               rel="noopener noreferrer nofollow"
               onClick={() => void trackSponsorEvent(sponsor.id, "click")}
+              className="shrink-0"
             >
               {logo}
             </a>
           ) : (
-            <span key={sponsor.id}>{logo}</span>
+            <span key={sponsor.id} className="shrink-0">
+              {logo}
+            </span>
           );
         })}
       </div>

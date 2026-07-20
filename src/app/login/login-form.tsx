@@ -122,6 +122,10 @@ export function LoginForm({ initialError = null }: { initialError?: string | nul
             <Input type="email" name="email" required placeholder="voce@email.com" />
           </div>
           <div>
+            <Label>Telefone</Label>
+            <Input type="tel" name="phone" required placeholder="(00) 00000-0000" />
+          </div>
+          <div>
             <Label>Senha</Label>
             <PasswordInput
               name="password"
