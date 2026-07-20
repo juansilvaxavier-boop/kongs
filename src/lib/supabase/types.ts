@@ -290,6 +290,60 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_entries: {
+        Row: {
+          amount: number
+          category: string
+          championship_id: string
+          created_at: string
+          description: string | null
+          entry_date: string
+          id: string
+          paid: boolean
+          team_id: string | null
+          type: string
+        }
+        Insert: {
+          amount: number
+          category: string
+          championship_id: string
+          created_at?: string
+          description?: string | null
+          entry_date?: string
+          id?: string
+          paid?: boolean
+          team_id?: string | null
+          type: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          championship_id?: string
+          created_at?: string
+          description?: string | null
+          entry_date?: string
+          id?: string
+          paid?: boolean
+          team_id?: string | null
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_entries_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       games: {
         Row: {
           championship_id: string
@@ -761,6 +815,68 @@ export type Database = {
           },
         ]
       }
+      referee_ratings: {
+        Row: {
+          championship_id: string
+          comment: string | null
+          created_at: string
+          game_id: string
+          id: string
+          rating: number
+          referee_id: string
+          team_id: string
+        }
+        Insert: {
+          championship_id: string
+          comment?: string | null
+          created_at?: string
+          game_id: string
+          id?: string
+          rating: number
+          referee_id: string
+          team_id: string
+        }
+        Update: {
+          championship_id?: string
+          comment?: string | null
+          created_at?: string
+          game_id?: string
+          id?: string
+          rating?: number
+          referee_id?: string
+          team_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referee_ratings_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referee_ratings_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referee_ratings_referee_id_fkey"
+            columns: ["referee_id"]
+            isOneToOne: false
+            referencedRelation: "referees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referee_ratings_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referees: {
         Row: {
           championship_id: string
@@ -789,6 +905,35 @@ export type Database = {
             columns: ["championship_id"]
             isOneToOne: false
             referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sponsor_events: {
+        Row: {
+          created_at: string
+          event_type: string
+          id: string
+          sponsor_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          id?: string
+          sponsor_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          id?: string
+          sponsor_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sponsor_events_sponsor_id_fkey"
+            columns: ["sponsor_id"]
+            isOneToOne: false
+            referencedRelation: "sponsors"
             referencedColumns: ["id"]
           },
         ]
@@ -1144,6 +1289,14 @@ export type Database = {
         }[]
       }
       round2: { Args: { x: number }; Returns: number }
+      sponsor_metrics: {
+        Args: { p_championship_id: string }
+        Returns: {
+          clicks: number
+          sponsor_id: string
+          views: number
+        }[]
+      }
       sumula_add_card: {
         Args: {
           p_card_type: string
@@ -1227,6 +1380,10 @@ export type Database = {
           p_player_id: string
           p_token: string
         }
+        Returns: undefined
+      }
+      track_sponsor_event: {
+        Args: { p_event_type: string; p_sponsor_id: string }
         Returns: undefined
       }
     }

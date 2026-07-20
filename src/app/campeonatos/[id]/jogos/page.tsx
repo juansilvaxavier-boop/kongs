@@ -31,6 +31,7 @@ export default async function JogosPage({
     { data: lineups },
     { data: signatures },
     { data: referees },
+    { data: refereeRatings },
   ] =
     await Promise.all([
       supabase
@@ -80,7 +81,25 @@ export default async function JogosPage({
         .select("id, name, cpf")
         .eq("championship_id", id)
         .order("name"),
+      supabase
+        .from("referee_ratings")
+        .select("referee_id, rating")
+        .eq("championship_id", id),
     ]);
+
+  const ratingTotalsByReferee = new Map<string, { sum: number; count: number }>();
+  for (const row of refereeRatings ?? []) {
+    const entry = ratingTotalsByReferee.get(row.referee_id) ?? { sum: 0, count: 0 };
+    entry.sum += row.rating;
+    entry.count += 1;
+    ratingTotalsByReferee.set(row.referee_id, entry);
+  }
+  const averageRatingByReferee = new Map(
+    [...ratingTotalsByReferee.entries()].map(([refereeId, entry]) => [
+      refereeId,
+      { average: entry.sum / entry.count, count: entry.count },
+    ])
+  );
 
   const games = gamesData
     ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
@@ -114,7 +133,11 @@ export default async function JogosPage({
 
       <VenuesSection championshipId={id} venues={venues ?? []} />
 
-      <RefereesSection championshipId={id} referees={referees ?? []} />
+      <RefereesSection
+        championshipId={id}
+        referees={referees ?? []}
+        averageRatingByReferee={Object.fromEntries(averageRatingByReferee)}
+      />
 
       {hasEnoughTeams && (
         <GenerateRoundsForm championshipId={id} poolSizes={poolSizes} />

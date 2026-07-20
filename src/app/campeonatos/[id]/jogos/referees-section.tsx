@@ -6,13 +6,16 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { createReferee, deleteReferee, updateReferee } from "./actions";
 
 type Referee = { id: string; name: string; cpf: string | null };
+type RatingSummary = { average: number; count: number };
 
 export function RefereesSection({
   championshipId,
   referees,
+  averageRatingByReferee,
 }: {
   championshipId: string;
   referees: Referee[];
+  averageRatingByReferee?: Record<string, RatingSummary>;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -69,6 +72,16 @@ export function RefereesSection({
                     <div>
                       <p className="font-medium text-foreground">{referee.name}</p>
                       {referee.cpf && <p className="text-xs text-muted">CPF: {referee.cpf}</p>}
+                      {averageRatingByReferee?.[referee.id] && (
+                        <p className="text-xs text-muted">
+                          ⭐ {averageRatingByReferee[referee.id].average.toFixed(1)} (
+                          {averageRatingByReferee[referee.id].count}{" "}
+                          {averageRatingByReferee[referee.id].count === 1
+                            ? "avaliação"
+                            : "avaliações"}
+                          )
+                        </p>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <Button variant="secondary" onClick={() => setEditingId(referee.id)}>

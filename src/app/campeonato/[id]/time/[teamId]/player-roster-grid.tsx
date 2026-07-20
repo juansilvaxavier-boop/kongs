@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui";
 import { PlayerCard } from "@/components/player-card";
 import { FavoriteButton } from "@/components/favorite-button";
 import { PLAYER_POSITIONS } from "@/lib/positions";
+import type { Achievement } from "@/lib/achievements";
 import { PlayerCardModal, type HistoryEntry } from "./player-card-modal";
 
 type Attributes = {
@@ -29,6 +30,7 @@ export type RosterPlayer = {
   attributes: Attributes;
   history: HistoryEntry[];
   mvpCount: number;
+  achievements: Achievement[];
 };
 
 export function PlayerRosterGrid({
@@ -117,6 +119,7 @@ export function PlayerRosterGrid({
           attributes={openPlayer.attributes}
           history={openPlayer.history}
           mvpCount={openPlayer.mvpCount}
+          achievements={openPlayer.achievements}
           onClose={() => setOpenId(null)}
         />
       )}

@@ -5,6 +5,8 @@ import { ExportPdfButton } from "@/components/export-pdf-button";
 import { FavoriteButton } from "@/components/favorite-button";
 import { computeSuspensions } from "@/lib/discipline";
 import { isBirthdayToday } from "@/lib/datetime";
+import { computeAchievements } from "@/lib/achievements";
+import { computeRarity } from "@/lib/gamification";
 import { PlayerRosterGrid, type RosterPlayer } from "./player-roster-grid";
 
 export default async function PublicTeamPage({
@@ -51,6 +53,11 @@ export default async function PublicTeamPage({
       .eq("championship_id", id),
     supabase.auth.getUser(),
   ]);
+
+  const { data: goalEvents } = await supabase
+    .from("goal_events")
+    .select("player_id, game_id")
+    .eq("championship_id", id);
 
   if (!team) notFound();
 
@@ -107,8 +114,31 @@ export default async function PublicTeamPage({
     mvpCounts.set(game.mvp_player_id, (mvpCounts.get(game.mvp_player_id) ?? 0) + 1);
   }
 
+  const goalsTotalByPlayer = new Map<string, number>();
+  const goalsByPlayerGame = new Map<string, number>();
+  for (const goal of goalEvents ?? []) {
+    goalsTotalByPlayer.set(goal.player_id, (goalsTotalByPlayer.get(goal.player_id) ?? 0) + 1);
+    const key = `${goal.player_id}|${goal.game_id}`;
+    goalsByPlayerGame.set(key, (goalsByPlayerGame.get(key) ?? 0) + 1);
+  }
+  const maxGoalsSingleGameByPlayer = new Map<string, number>();
+  for (const [key, count] of goalsByPlayerGame) {
+    const playerId = key.split("|")[0];
+    maxGoalsSingleGameByPlayer.set(
+      playerId,
+      Math.max(maxGoalsSingleGameByPlayer.get(playerId) ?? 0, count)
+    );
+  }
+  const championshipMaxGoals = Math.max(0, ...goalsTotalByPlayer.values());
+  const cardsTotalByPlayer = new Map<string, number>();
+  for (const card of cardEvents ?? []) {
+    cardsTotalByPlayer.set(card.player_id, (cardsTotalByPlayer.get(card.player_id) ?? 0) + 1);
+  }
+
   const rosterPlayers: RosterPlayer[] = (players ?? []).map((player) => {
     const attrs = attributesByPlayer.get(player.id);
+    const ovr = attrs?.ovr ?? 70;
+    const goalsTotal = goalsTotalByPlayer.get(player.id) ?? 0;
     return {
       id: player.id,
       name: player.name,
@@ -137,6 +167,16 @@ export default async function PublicTeamPage({
           created_at: h.created_at,
         })),
       mvpCount: mvpCounts.get(player.id) ?? 0,
+      achievements: computeAchievements({
+        goalsTotal,
+        maxGoalsSingleGame: maxGoalsSingleGameByPlayer.get(player.id) ?? 0,
+        isTopScorer: goalsTotal > 0 && goalsTotal === championshipMaxGoals,
+        cardsTotal: cardsTotalByPlayer.get(player.id) ?? 0,
+        wasMvp: (mvpCounts.get(player.id) ?? 0) > 0,
+        position: player.position,
+        ovr,
+        rarity: computeRarity(ovr),
+      }),
     };
   });
 

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { Card, EmptyState, PageHeader } from "@/components/ui";
 import { computeTopScorers } from "@/lib/stats";
 import { computeStandings } from "@/lib/standings";
+import { computeStreaks } from "@/lib/streaks";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import { CommentsSection } from "../comments-section";
 import {
@@ -43,7 +44,7 @@ export default async function VisaoGeralPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("games")
-      .select("id, team_a_id, team_b_id, played, score_a, score_b")
+      .select("id, team_a_id, team_b_id, played, score_a, score_b, date, created_at")
       .eq("championship_id", id),
     supabase.from("card_events").select("game_id").eq("championship_id", id),
     supabase
@@ -87,6 +88,18 @@ export default async function VisaoGeralPage({
   const topScorers = computeTopScorers(allPlayers, goals ?? [], teams ?? []).slice(0, 3);
 
   const standings = computeStandings(teams ?? [], games ?? []).filter((row) => row.j > 0);
+
+  const streaks = computeStreaks(
+    teams ?? [],
+    (games ?? []).map((g) => ({
+      team_a_id: g.team_a_id,
+      team_b_id: g.team_b_id,
+      score_a: g.score_a,
+      score_b: g.score_b,
+      played: g.played,
+      orderKey: g.date ?? g.created_at,
+    }))
+  );
 
   const bestAttacks: TeamGoalsRow[] = [...standings]
     .sort((a, b) => b.gp - a.gp || a.teamName.localeCompare(b.teamName, "pt-BR"))
@@ -138,6 +151,7 @@ export default async function VisaoGeralPage({
           positionHighlights={positionHighlights}
           bestAttacks={bestAttacks}
           bestDefenses={bestDefenses}
+          streaks={streaks}
         />
       </div>
 

@@ -5,6 +5,7 @@ import { Badge, Card } from "@/components/ui";
 import { PlayerCard } from "@/components/player-card";
 import { ExportImageButton } from "@/components/export-image-button";
 import { computeOvrEvolution } from "@/lib/ovr-evolution";
+import type { Achievement } from "@/lib/achievements";
 import { OvrEvolutionChart } from "./ovr-chart";
 
 type Attributes = {
@@ -34,6 +35,7 @@ export function PlayerCardModal({
   attributes,
   history,
   mvpCount,
+  achievements,
   onClose,
 }: {
   name: string;
@@ -44,6 +46,7 @@ export function PlayerCardModal({
   attributes: Attributes;
   history: HistoryEntry[];
   mvpCount: number;
+  achievements: Achievement[];
   onClose: () => void;
 }) {
   const [revealed, setRevealed] = useState(false);
@@ -98,6 +101,21 @@ export function PlayerCardModal({
                 />
               </div>
             </div>
+
+            {achievements.length > 0 && (
+              <div className="mb-4 flex flex-wrap gap-2">
+                {achievements.map((achievement) => (
+                  <span
+                    key={achievement.id}
+                    title={achievement.description}
+                    className="flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-xs font-semibold text-foreground"
+                  >
+                    <span>{achievement.icon}</span>
+                    {achievement.label}
+                  </span>
+                ))}
+              </div>
+            )}
 
             {history.length > 0 && <OvrEvolutionChart points={evolutionPoints} />}
 

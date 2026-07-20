@@ -6,13 +6,16 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { createSponsor, deleteSponsor, updateSponsor } from "./sponsors-actions";
 
 type Sponsor = { id: string; name: string; logo_url: string | null; link_url: string | null };
+type Metrics = { views: number; clicks: number };
 
 export function SponsorsSection({
   championshipId,
   sponsors,
+  metricsBySponsor,
 }: {
   championshipId: string;
   sponsors: Sponsor[];
+  metricsBySponsor?: Record<string, Metrics>;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -91,6 +94,12 @@ export function SponsorsSection({
                       <p className="font-medium text-foreground">{sponsor.name}</p>
                       {sponsor.link_url && (
                         <p className="text-xs text-muted">{sponsor.link_url}</p>
+                      )}
+                      {metricsBySponsor?.[sponsor.id] && (
+                        <p className="text-xs text-muted">
+                          👁 {metricsBySponsor[sponsor.id].views} visualizações · 🖱{" "}
+                          {metricsBySponsor[sponsor.id].clicks} cliques
+                        </p>
                       )}
                     </div>
                   </div>

@@ -13,20 +13,26 @@ export default async function ConfiguracoesPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: championship }, { data: sponsors }] = await Promise.all([
-    supabase
-      .from("championships")
-      .select(
-        "format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text, logo_url"
-      )
-      .eq("id", id)
-      .maybeSingle(),
-    supabase
-      .from("sponsors")
-      .select("id, name, logo_url, link_url")
-      .eq("championship_id", id)
-      .order("created_at"),
-  ]);
+  const [{ data: championship }, { data: sponsors }, { data: sponsorMetrics }] =
+    await Promise.all([
+      supabase
+        .from("championships")
+        .select(
+          "format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text, logo_url"
+        )
+        .eq("id", id)
+        .maybeSingle(),
+      supabase
+        .from("sponsors")
+        .select("id, name, logo_url, link_url")
+        .eq("championship_id", id)
+        .order("created_at"),
+      supabase.rpc("sponsor_metrics", { p_championship_id: id }),
+    ]);
+
+  const metricsBySponsor = Object.fromEntries(
+    (sponsorMetrics ?? []).map((row) => [row.sponsor_id, { views: row.views, clicks: row.clicks }])
+  );
 
   if (!championship) notFound();
 
@@ -142,7 +148,11 @@ export default async function ConfiguracoesPage({
       </Card>
 
       <div className="mt-6">
-        <SponsorsSection championshipId={id} sponsors={sponsors ?? []} />
+        <SponsorsSection
+          championshipId={id}
+          sponsors={sponsors ?? []}
+          metricsBySponsor={metricsBySponsor}
+        />
       </div>
     </div>
   );

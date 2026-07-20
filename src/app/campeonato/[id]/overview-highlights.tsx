@@ -1,6 +1,7 @@
 import { Card, EmptyState } from "@/components/ui";
 import { TeamCell } from "@/components/team-cell";
 import type { ScorerRow } from "@/lib/stats";
+import type { TeamStreaks } from "@/lib/streaks";
 
 export type PositionHighlight = {
   position: string;
@@ -49,6 +50,69 @@ function TeamGoalsTable({
   );
 }
 
+const STREAK_DEFINITIONS: {
+  key: keyof Pick<TeamStreaks, "winStreak" | "unbeatenStreak" | "scoringDroughtStreak">;
+  icon: string;
+  label: string;
+  unit: (count: number) => string;
+}[] = [
+  {
+    key: "winStreak",
+    icon: "🔥",
+    label: "Sequência de vitórias",
+    unit: (count) => (count === 1 ? "vitória seguida" : "vitórias seguidas"),
+  },
+  {
+    key: "unbeatenStreak",
+    icon: "🛡️",
+    label: "Melhor invencibilidade",
+    unit: (count) => (count === 1 ? "jogo invicto" : "jogos invicto"),
+  },
+  {
+    key: "scoringDroughtStreak",
+    icon: "🚧",
+    label: "Maior jejum de gols",
+    unit: (count) => (count === 1 ? "jogo sem marcar" : "jogos sem marcar"),
+  },
+];
+
+function StreaksSection({ streaks }: { streaks: TeamStreaks[] }) {
+  const highlights = STREAK_DEFINITIONS.map((def) => {
+    const leader = [...streaks]
+      .filter((s) => s[def.key] >= 2)
+      .sort((a, b) => b[def.key] - a[def.key])[0];
+    return { ...def, leader };
+  }).filter((h) => h.leader);
+
+  if (highlights.length === 0) {
+    return <EmptyState>Nenhuma sequência relevante ainda.</EmptyState>;
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {highlights.map((highlight) => (
+        <Card key={highlight.key} className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            {highlight.icon} {highlight.label}
+          </p>
+          <div className="mt-2">
+            <TeamCell
+              name={highlight.leader!.teamName}
+              crestUrl={highlight.leader!.teamCrestUrl}
+            />
+          </div>
+          <p className="mt-2 font-display text-2xl font-bold text-accent">
+            {highlight.leader![highlight.key]}{" "}
+            <span className="text-sm font-semibold text-muted">
+              {highlight.unit(highlight.leader![highlight.key])}
+            </span>
+          </p>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 export function OverviewHighlights({
   avgGoalsPerGame,
   avgCardsPerGame,
@@ -56,6 +120,7 @@ export function OverviewHighlights({
   positionHighlights,
   bestAttacks,
   bestDefenses,
+  streaks,
 }: {
   avgGoalsPerGame: number | null;
   avgCardsPerGame: number | null;
@@ -63,6 +128,7 @@ export function OverviewHighlights({
   positionHighlights: PositionHighlight[];
   bestAttacks: TeamGoalsRow[];
   bestDefenses: TeamGoalsRow[];
+  streaks: TeamStreaks[];
 }) {
   return (
     <div className="space-y-6">
@@ -98,6 +164,13 @@ export function OverviewHighlights({
           </h3>
           <TeamGoalsTable rows={bestDefenses} label={{ singular: "gol sofrido", plural: "gols sofridos" }} />
         </div>
+      </div>
+
+      <div>
+        <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+          Sequências
+        </h3>
+        <StreaksSection streaks={streaks} />
       </div>
 
       <div>

@@ -1,7 +1,23 @@
+"use client";
+
+import { useEffect, useRef } from "react";
+import { trackSponsorEvent } from "./sponsor-tracking-actions";
+
 type Sponsor = { id: string; name: string; logo_url: string | null; link_url: string | null };
 
 export function SponsorsFooter({ sponsors }: { sponsors: Sponsor[] }) {
   const withLogo = sponsors.filter((s) => s.logo_url);
+  const trackedViews = useRef(new Set<string>());
+
+  useEffect(() => {
+    for (const sponsor of withLogo) {
+      if (trackedViews.current.has(sponsor.id)) continue;
+      trackedViews.current.add(sponsor.id);
+      void trackSponsorEvent(sponsor.id, "view");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [withLogo.map((s) => s.id).join(",")]);
+
   if (withLogo.length === 0) return null;
 
   return (
@@ -23,6 +39,7 @@ export function SponsorsFooter({ sponsors }: { sponsors: Sponsor[] }) {
               href={sponsor.link_url}
               target="_blank"
               rel="noopener noreferrer nofollow"
+              onClick={() => void trackSponsorEvent(sponsor.id, "click")}
             >
               {logo}
             </a>

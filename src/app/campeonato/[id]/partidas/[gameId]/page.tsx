@@ -10,6 +10,7 @@ import { computeAutoLineup, type LineupPlayer } from "@/lib/lineup";
 import { GameDetailTabs } from "./game-detail-tabs";
 import { FormationsSection, type TeamLineup } from "./formations-section";
 import { BolaoTab } from "./bolao-tab";
+import { RefereeRatingSection } from "./referee-rating-section";
 
 type FullAttributes = {
   ovr: number;
@@ -73,7 +74,7 @@ export default async function GameDetailPage({
       supabase
         .from("games")
         .select(
-          "id, round, date, played, score_a, score_b, team_a_id, team_b_id, venue_id, championship_id"
+          "id, round, date, played, score_a, score_b, team_a_id, team_b_id, venue_id, championship_id, referee_id"
         )
         .eq("id", gameId)
         .eq("championship_id", id)
@@ -81,7 +82,7 @@ export default async function GameDetailPage({
       supabase.from("championships").select("format").eq("id", id).maybeSingle(),
       supabase
         .from("teams")
-        .select("id, name, crest_url, group_name")
+        .select("id, name, crest_url, group_name, owner_user_id")
         .eq("championship_id", id)
         .order("name"),
       supabase
@@ -98,33 +99,56 @@ export default async function GameDetailPage({
 
   const teamA = (allTeams ?? []).find((t) => t.id === game.team_a_id);
   const teamB = (allTeams ?? []).find((t) => t.id === game.team_b_id);
+  const myTeamId =
+    user && teamA?.owner_user_id === user.id
+      ? teamA.id
+      : user && teamB?.owner_user_id === user.id
+        ? teamB.id
+        : null;
 
-  const [{ data: venue }, { data: players }, { data: favoriteRow }, { data: myPrediction }] =
-    await Promise.all([
-      game.venue_id
-        ? supabase.from("venues").select("name").eq("id", game.venue_id).maybeSingle()
-        : Promise.resolve({ data: null }),
-      supabase
-        .from("players")
-        .select("id, name, position, photo_url, team_id")
-        .in("team_id", [game.team_a_id, game.team_b_id]),
-      user
-        ? supabase
-            .from("favorites")
-            .select("id")
-            .eq("kind", "game")
-            .eq("entity_id", gameId)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-      user
-        ? supabase
-            .from("bolao_predictions")
-            .select("predicted_score_a, predicted_score_b")
-            .eq("game_id", gameId)
-            .eq("user_id", user.id)
-            .maybeSingle()
-        : Promise.resolve({ data: null }),
-    ]);
+  const [
+    { data: venue },
+    { data: players },
+    { data: favoriteRow },
+    { data: myPrediction },
+    { data: referee },
+    { data: myRefereeRating },
+  ] = await Promise.all([
+    game.venue_id
+      ? supabase.from("venues").select("name").eq("id", game.venue_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("players")
+      .select("id, name, position, photo_url, team_id")
+      .in("team_id", [game.team_a_id, game.team_b_id]),
+    user
+      ? supabase
+          .from("favorites")
+          .select("id")
+          .eq("kind", "game")
+          .eq("entity_id", gameId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    user
+      ? supabase
+          .from("bolao_predictions")
+          .select("predicted_score_a, predicted_score_b")
+          .eq("game_id", gameId)
+          .eq("user_id", user.id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    game.referee_id
+      ? supabase.from("referees").select("name").eq("id", game.referee_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    myTeamId
+      ? supabase
+          .from("referee_ratings")
+          .select("rating, comment")
+          .eq("game_id", gameId)
+          .eq("team_id", myTeamId)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+  ]);
 
   const playerIds = (players ?? []).map((p) => p.id);
   const { data: attributesRows } =
@@ -209,6 +233,19 @@ export default async function GameDetailPage({
           <span>Local: {venue?.name ?? "A definir"}</span>
         </div>
       </Card>
+
+      {game.played && game.referee_id && myTeamId && (
+        <div className="mb-6">
+          <RefereeRatingSection
+            championshipId={id}
+            gameId={gameId}
+            teamId={myTeamId}
+            refereeId={game.referee_id}
+            refereeName={referee?.name ?? "Árbitro"}
+            existingRating={myRefereeRating ?? null}
+          />
+        </div>
+      )}
 
       <GameDetailTabs
         formacoes={<FormationsSection teamA={teamALineup} teamB={teamBLineup} />}
