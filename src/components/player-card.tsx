@@ -10,7 +10,18 @@ type Attributes = {
   fisico: number;
 };
 
-const CARD_CLIP = "polygon(10% 0%, 90% 0%, 100% 10%, 100% 80%, 50% 100%, 0% 80%, 0% 10%)";
+const CARD_WIDTH_PX = { sm: 128, md: 160, lg: 224 };
+const CARD_CORNER_PX = { sm: 8, md: 10, lg: 14 };
+const CARD_TIP_PX = { sm: 18, md: 22, lg: 30 };
+
+function shieldClipPath(size: "sm" | "md" | "lg") {
+  const w = CARD_WIDTH_PX[size];
+  const c = CARD_CORNER_PX[size];
+  const t = CARD_TIP_PX[size];
+  return `polygon(${c}px 0, ${w - c}px 0, ${w}px ${c}px, ${w}px calc(100% - ${t}px), ${
+    w / 2
+  }px 100%, 0px calc(100% - ${t}px), 0px ${c}px)`;
+}
 
 const RARITY_STYLES: Record<
   Rarity,
@@ -91,9 +102,9 @@ export function PlayerCard({
   const style = RARITY_STYLES[rarity];
 
   const sizes = {
-    sm: "w-32 px-3 pb-3 pt-4 text-xs",
-    md: "w-40 px-3.5 pb-4 pt-5 text-sm",
-    lg: "w-56 px-5 pb-6 pt-7 text-base",
+    sm: "w-32 px-3 pb-2 pt-4 text-xs",
+    md: "w-40 px-3.5 pb-2 pt-5 text-sm",
+    lg: "w-56 px-5 pb-2 pt-7 text-base",
   };
   const photoSizes = { sm: "h-14 w-14", md: "h-20 w-20", lg: "h-28 w-28" };
   const crestSizes = { sm: "h-5 w-5", md: "h-6 w-6", lg: "h-9 w-9" };
@@ -102,8 +113,8 @@ export function PlayerCard({
 
   return (
     <div
-      className={`relative flex aspect-[5/7] flex-col border-2 shadow-xl ${sizes[size]} ${style.card} ${style.border} ${style.text} ${className ?? ""}`}
-      style={{ clipPath: CARD_CLIP }}
+      className={`relative flex flex-col border-2 shadow-xl ${sizes[size]} ${style.card} ${style.border} ${style.text} ${className ?? ""}`}
+      style={{ clipPath: shieldClipPath(size) }}
     >
       <div className="flex items-start justify-between">
         <div className="flex flex-col items-center leading-none">
@@ -168,6 +179,8 @@ export function PlayerCard({
           ))}
         </div>
       </div>
+
+      <div style={{ height: CARD_TIP_PX[size] }} aria-hidden />
     </div>
   );
 }

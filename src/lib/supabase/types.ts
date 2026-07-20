@@ -1013,6 +1013,21 @@ export type Database = {
     }
     Functions: {
       accept_team_invite: { Args: { p_invite_id: string }; Returns: undefined }
+      admin_list_users: {
+        Args: never
+        Returns: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          first_name: string | null
+          last_name: string | null
+          last_sign_in_at: string | null
+          persona: string | null
+          phone: string | null
+          role: string | null
+          user_id: string
+        }[]
+      }
       admin_process_game_ovr: { Args: { p_game_id: string }; Returns: undefined }
       base_attributes_for_position: {
         Args: { p_position: string }

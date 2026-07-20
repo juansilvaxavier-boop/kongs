@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { signOut } from "@/app/login/actions";
 import { isAdmin } from "@/lib/auth/roles";
 import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
-import { BrandMark, Button } from "@/components/ui";
+import { BrandMark } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { AdminSidebarNav } from "./sidebar-nav";
 
 export default async function CampeonatosLayout({
   children,
@@ -37,16 +37,12 @@ export default async function CampeonatosLayout({
               {user.email}
             </span>
             <ThemeToggle />
-            <form action={signOut}>
-              <Button type="submit" variant="secondary">
-                Sair
-              </Button>
-            </form>
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6">
-        {children}
+      <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:gap-8">
+        <AdminSidebarNav />
+        <div className="min-w-0 flex-1">{children}</div>
       </main>
     </div>
   );
