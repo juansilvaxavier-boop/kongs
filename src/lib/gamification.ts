@@ -1,5 +1,5 @@
 export type Position = "Goleiro" | "Zagueiro" | "Meia" | "Atacante";
-export type Rarity = "bronze" | "prata" | "ouro";
+export type Rarity = "bronze" | "prata" | "ouro" | "legend";
 
 export const OVR_WEIGHTS = {
   gol: 0.3,
@@ -84,6 +84,7 @@ export function sumLedger(entries: OvrLedgerEntry[]): number {
 }
 
 export function computeRarity(ovr: number): Rarity {
+  if (ovr >= 96) return "legend";
   if (ovr >= 80) return "ouro";
   if (ovr >= 70) return "prata";
   return "bronze";

@@ -126,9 +126,14 @@ describe("computeRarity", () => {
     expect(computeRarity(79.9)).toBe("prata");
   });
 
-  it("classifies Ouro from 80 up", () => {
+  it("classifies Ouro from 80 to 95", () => {
     expect(computeRarity(80)).toBe("ouro");
-    expect(computeRarity(99)).toBe("ouro");
+    expect(computeRarity(95)).toBe("ouro");
+  });
+
+  it("classifies Legend from 96 to 99", () => {
+    expect(computeRarity(96)).toBe("legend");
+    expect(computeRarity(99)).toBe("legend");
   });
 });
 
