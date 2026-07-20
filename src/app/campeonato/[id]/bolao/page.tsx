@@ -92,7 +92,9 @@ export default async function BolaoPage({
     playedGames.map((g) => ({ id: g.id, scoreA: g.score_a!, scoreB: g.score_b! }))
   );
 
-  const groups = groupTeamsByFormat(championship?.format ?? "liga", teams ?? []);
+  const format = championship?.format ?? "liga";
+  const groupsDrawn = format !== "copa" || (teams ?? []).some((t) => t.group_name?.trim());
+  const groups = groupTeamsByFormat(format, teams ?? []);
   const groupInfos = groups.map((group) => {
     const groupGames = gamesWithinTeams(games, group.teams);
     const hasGames = groupGames.length > 0;
@@ -260,7 +262,7 @@ export default async function BolaoPage({
         )}
       </div>
 
-      {teams && teams.length > 1 && (
+      {teams && teams.length > 1 && groupsDrawn && (
         <div>
           <h2 className="mb-1 font-display text-lg font-bold uppercase tracking-wide text-foreground">
             Palpite de classificação

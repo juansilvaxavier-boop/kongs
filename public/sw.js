@@ -21,11 +21,22 @@ self.addEventListener("activate", (event) => {
 });
 
 // Passthrough de rede (o site é dinâmico — não faz sentido servir
-// páginas antigas do cache); só cai pro cache se a rede falhar de
-// verdade (ex.: offline), e só pros ícones pré-cacheados acima.
+// páginas antigas do cache); só intercepta os ícones pré-cacheados
+// acima. Para qualquer outra requisição, nem chama respondWith —
+// assim o navegador trata a requisição normalmente (com seu próprio
+// retry/erro de rede), em vez de o service worker cair num
+// caches.match() vazio e devolver `undefined` pro respondWith, o que
+// quebra a página inteira com "This page couldn't load" mesmo numa
+// simples instabilidade momentânea de rede.
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+
+  const url = new URL(event.request.url);
+  if (!PRECACHE_URLS.includes(url.pathname)) return;
+
+  event.respondWith(
+    fetch(event.request).catch(async () => (await caches.match(event.request)) ?? fetch(event.request))
+  );
 });
 
 self.addEventListener("push", (event) => {
