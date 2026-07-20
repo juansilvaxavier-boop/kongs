@@ -77,7 +77,7 @@ export async function signInWithGoogle() {
   });
 
   if (error || !data.url) {
-    throw new Error(error?.message ?? "Não foi possível iniciar o login com o Google.");
+    redirect("/login?error=google");
   }
 
   redirect(data.url);

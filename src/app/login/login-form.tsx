@@ -39,7 +39,7 @@ type Mode = "signin" | "signup" | "magic" | "recover";
 
 const initialAuthState: AuthState = { error: null, info: null };
 
-export function LoginForm() {
+export function LoginForm({ initialError = null }: { initialError?: string | null }) {
   const [mode, setMode] = useState<Mode>("signin");
 
   const [signInState, signInAction, signInPending] = useActionState(
@@ -67,6 +67,7 @@ export function LoginForm() {
 
   return (
     <div className="w-full max-w-sm">
+      {initialError && <p className="mb-4 text-sm text-danger">{initialError}</p>}
       {mode !== "recover" && (
         <div className="mb-6 flex rounded-lg border border-border bg-surface-2 p-1 text-sm">
           {tabs.map((tab) => (

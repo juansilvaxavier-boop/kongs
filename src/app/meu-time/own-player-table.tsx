@@ -6,10 +6,6 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import { deleteOwnPlayer, updateOwnPlayer } from "./actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 type Player = {
   id: string;
   name: string;
@@ -107,11 +103,8 @@ export function OwnPlayerTable({ players }: { players: Player[] }) {
                           if (
                             window.confirm(`Excluir o jogador "${player.name}"?`)
                           ) {
-                            try {
-                              await deleteOwnPlayer(player.id);
-                            } catch (error) {
-                              alert(errorMessage(error));
-                            }
+                            const result = await deleteOwnPlayer(player.id);
+                            if (!result.ok) alert(result.error);
                           }
                         }}
                       >

@@ -12,10 +12,6 @@ type Championship = {
   created_at: string;
 };
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 export function ChampionshipList({ items }: { items: Championship[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -79,11 +75,8 @@ export function ChampionshipList({ items }: { items: Championship[] }) {
                         `Excluir o campeonato "${championship.name}"? Essa ação não pode ser desfeita.`
                       )
                     ) {
-                      try {
-                        await deleteChampionship(championship.id);
-                      } catch (error) {
-                        alert(errorMessage(error));
-                      }
+                      const result = await deleteChampionship(championship.id);
+                      if (!result.ok) alert(result.error);
                     }
                   }}
                 >

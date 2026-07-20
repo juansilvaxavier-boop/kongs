@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
-import { Badge, Button, Card, Textarea } from "@/components/ui";
+import { Badge, Card, Textarea } from "@/components/ui";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { deleteComment, postComment } from "./actions";
 
 const PERSONA_LABELS: Record<string, string> = {
@@ -35,8 +38,6 @@ export function CommentsSection({
   currentUserId: string | null;
 }) {
   const profileByUserId = new Map(profiles.map((p) => [p.user_id, p]));
-  const postCommentWithId = postComment.bind(null, championshipId);
-  const deleteCommentWithId = deleteComment.bind(null, championshipId);
 
   return (
     <div>
@@ -46,7 +47,10 @@ export function CommentsSection({
 
       {currentUserId ? (
         <Card className="mb-5 p-4">
-          <form action={postCommentWithId} className="flex flex-col gap-3">
+          <ActionForm
+            action={(formData) => postComment(championshipId, formData)}
+            className="flex flex-col gap-3"
+          >
             <Textarea
               name="body"
               required
@@ -55,9 +59,9 @@ export function CommentsSection({
               placeholder="Deixe um comentário sobre o campeonato..."
             />
             <div>
-              <Button type="submit">Comentar</Button>
+              <SubmitButton pendingText="Enviando...">Comentar</SubmitButton>
             </div>
-          </form>
+          </ActionForm>
         </Card>
       ) : (
         <Card className="mb-5 p-4 text-sm text-muted">
@@ -107,14 +111,16 @@ export function CommentsSection({
                     )}
                   </div>
                   {currentUserId === comment.user_id && (
-                    <form action={deleteCommentWithId.bind(null, comment.id)}>
+                    <ActionForm
+                      action={() => deleteComment(championshipId, comment.id)}
+                    >
                       <button
                         type="submit"
                         className="text-xs text-muted hover:text-danger"
                       >
                         Excluir
                       </button>
-                    </form>
+                    </ActionForm>
                   )}
                 </div>
                 <p className="whitespace-pre-wrap text-sm text-foreground">{comment.body}</p>

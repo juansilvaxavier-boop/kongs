@@ -7,10 +7,6 @@ import { deleteTeam, updateTeam } from "./actions";
 import { TeamRoster } from "./team-roster";
 import { TeamRosterLinkPanel } from "./team-roster-link-panel";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 type Coach = { id: string; name: string };
 type Team = {
   id: string;
@@ -199,11 +195,8 @@ export function TeamTable({
                         <form
                           action={async () => {
                             if (window.confirm(`Excluir o time "${team.name}"?`)) {
-                              try {
-                                await deleteTeam(team.id, championshipId);
-                              } catch (error) {
-                                alert(errorMessage(error));
-                              }
+                              const result = await deleteTeam(team.id, championshipId);
+                              if (!result.ok) alert(result.error);
                             }
                           }}
                         >

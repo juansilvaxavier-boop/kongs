@@ -57,11 +57,11 @@ export function PushSubscribeButton({ championshipId }: { championshipId: string
           const json = subscription.toJSON();
           if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) return;
 
-          await subscribeToPush(championshipId, {
+          const result = await subscribeToPush(championshipId, {
             endpoint: json.endpoint,
             keys: { p256dh: json.keys.p256dh, auth: json.keys.auth },
           });
-          setSubscribed(true);
+          if (result.ok) setSubscribed(true);
         } catch {
           // usuário negou permissão ou navegador bloqueou — falha silenciosa
         } finally {

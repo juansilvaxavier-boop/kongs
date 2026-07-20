@@ -5,10 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button, Card } from "@/components/ui";
 import { resetSorteio, sortearGrupos, type SorteioReveal } from "./actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível sortear os grupos.";
-}
-
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -31,22 +27,20 @@ export function SortearGruposButton({ championshipId }: { championshipId: string
       return;
     }
 
-    let result: SorteioReveal[];
-    try {
-      result = await sortearGrupos(championshipId);
-    } catch (error) {
-      alert(errorMessage(error));
+    const result = await sortearGrupos(championshipId);
+    if (!result.ok) {
+      alert(result.error);
       return;
     }
 
-    const groups = [...new Set(result.map((r) => r.groupName))].sort((a, b) =>
+    const groups = [...new Set(result.data.map((r) => r.groupName))].sort((a, b) =>
       a.localeCompare(b, "pt-BR")
     );
     setGroupOrder(groups);
     setRevealed([]);
     setPhase("drawing");
 
-    for (const entry of result) {
+    for (const entry of result.data) {
       await sleep(REVEAL_DELAY_MS);
       setRevealed((prev) => [...prev, entry]);
     }
@@ -69,14 +63,13 @@ export function SortearGruposButton({ championshipId }: { championshipId: string
       return;
     }
     setResetting(true);
-    try {
-      await resetSorteio(championshipId);
+    const result = await resetSorteio(championshipId);
+    if (!result.ok) {
+      alert(result.error);
+    } else {
       router.refresh();
-    } catch (error) {
-      alert(errorMessage(error));
-    } finally {
-      setResetting(false);
     }
+    setResetting(false);
   }
 
   return (

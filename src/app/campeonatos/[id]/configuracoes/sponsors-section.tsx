@@ -5,10 +5,6 @@ import { Button, Card, FileInput, Input, Label } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { createSponsor, deleteSponsor, updateSponsor } from "./sponsors-actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 type Sponsor = { id: string; name: string; logo_url: string | null; link_url: string | null };
 
 export function SponsorsSection({
@@ -105,11 +101,8 @@ export function SponsorsSection({
                     <form
                       action={async () => {
                         if (window.confirm(`Excluir o patrocinador "${sponsor.name}"?`)) {
-                          try {
-                            await deleteSponsor(sponsor.id, championshipId);
-                          } catch (error) {
-                            alert(errorMessage(error));
-                          }
+                          const result = await deleteSponsor(sponsor.id, championshipId);
+                          if (!result.ok) alert(result.error);
                         }
                       }}
                     >

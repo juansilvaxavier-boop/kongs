@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card } from "./ui";
 import { SignaturePad } from "./signature-pad";
+import type { ActionResult } from "@/lib/action-result";
 
 type Player = { id: string; name: string; team_id: string | null };
 export type CaptainSignature = {
@@ -10,10 +11,6 @@ export type CaptainSignature = {
   signatureDataUrl: string;
   signedAt: string;
 };
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
 
 function TeamLineupColumn({
   teamName,
@@ -26,9 +23,9 @@ function TeamLineupColumn({
   teamName: string;
   teamPlayers: Player[];
   confirmedPlayerIds: Set<string>;
-  onToggle: (playerId: string, confirmed: boolean) => Promise<void>;
+  onToggle: (playerId: string, confirmed: boolean) => Promise<ActionResult>;
   signature: CaptainSignature | null;
-  onSignCaptain: (captainName: string, signatureDataUrl: string) => Promise<void>;
+  onSignCaptain: (captainName: string, signatureDataUrl: string) => Promise<ActionResult>;
 }) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [resigning, setResigning] = useState(false);
@@ -60,13 +57,9 @@ function TeamLineupColumn({
                     disabled={pendingId === player.id}
                     onChange={async (event) => {
                       setPendingId(player.id);
-                      try {
-                        await onToggle(player.id, event.target.checked);
-                      } catch (err) {
-                        alert(errorMessage(err));
-                      } finally {
-                        setPendingId(null);
-                      }
+                      const result = await onToggle(player.id, event.target.checked);
+                      if (!result.ok) alert(result.error);
+                      setPendingId(null);
                     }}
                   />
                   Confirmado
@@ -122,14 +115,13 @@ function TeamLineupColumn({
                 }
                 setError(null);
                 setSigning(true);
-                try {
-                  await onSignCaptain(captainName.trim(), dataUrl);
+                const result = await onSignCaptain(captainName.trim(), dataUrl);
+                if (result.ok) {
                   setResigning(false);
-                } catch (err) {
-                  setError(errorMessage(err));
-                } finally {
-                  setSigning(false);
+                } else {
+                  setError(result.error);
                 }
+                setSigning(false);
               }}
             />
           </div>
@@ -157,8 +149,12 @@ export function PreSumulaPanel({
   players: Player[];
   confirmedPlayerIds: Set<string>;
   signatures: Record<string, CaptainSignature>;
-  onToggleLineup: (playerId: string, confirmed: boolean) => Promise<void>;
-  onSignCaptain: (teamId: string, captainName: string, signatureDataUrl: string) => Promise<void>;
+  onToggleLineup: (playerId: string, confirmed: boolean) => Promise<ActionResult>;
+  onSignCaptain: (
+    teamId: string,
+    captainName: string,
+    signatureDataUrl: string
+  ) => Promise<ActionResult>;
 }) {
   const teamAPlayers = players.filter((p) => p.team_id === teamAId);
   const teamBPlayers = players.filter((p) => p.team_id === teamBId);

@@ -8,10 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { Button } from "./ui";
-
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
+import type { ActionResult } from "@/lib/action-result";
 
 export function SubmitButton({
   children,
@@ -40,7 +37,7 @@ export function SubmitButton({
 }
 
 type ActionFormProps = {
-  action: (formData: FormData) => Promise<void>;
+  action: (formData: FormData) => Promise<ActionResult<unknown>>;
   onSuccess?: () => void;
   children: ReactNode;
   successMessage?: string;
@@ -59,14 +56,14 @@ export function ActionForm({
   async function handleAction(formData: FormData) {
     setError(null);
     setSuccess(false);
-    try {
-      await action(formData);
-      setSuccess(true);
-      onSuccess?.();
-      window.setTimeout(() => setSuccess(false), 2500);
-    } catch (err) {
-      setError(errorMessage(err));
+    const result = await action(formData);
+    if (!result.ok) {
+      setError(result.error);
+      return;
     }
+    setSuccess(true);
+    onSuccess?.();
+    window.setTimeout(() => setSuccess(false), 2500);
   }
 
   return (

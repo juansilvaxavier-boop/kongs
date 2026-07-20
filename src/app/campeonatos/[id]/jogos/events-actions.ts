@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
+import { runAction, type ActionResult } from "@/lib/action-result";
 import { processGameOvr } from "./ovr-processing";
 
 function parseMinute(formData: FormData) {
@@ -46,75 +47,83 @@ export async function createGoalEvent(
   gameId: string,
   championshipId: string,
   formData: FormData
-) {
-  const playerId = String(formData.get("player_id") || "");
-  if (!playerId) throw new Error("Selecione o jogador.");
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const playerId = String(formData.get("player_id") || "");
+    if (!playerId) throw new Error("Selecione o jogador.");
 
-  const supabase = await createClient();
-  await assertPlayerBelongsToGame(supabase, championshipId, gameId, playerId);
+    const supabase = await createClient();
+    await assertPlayerBelongsToGame(supabase, championshipId, gameId, playerId);
 
-  const { error } = await supabase.from("goal_events").insert({
-    championship_id: championshipId,
-    game_id: gameId,
-    player_id: playerId,
-    minute: parseMinute(formData),
+    const { error } = await supabase.from("goal_events").insert({
+      championship_id: championshipId,
+      game_id: gameId,
+      player_id: playerId,
+      minute: parseMinute(formData),
+    });
+
+    if (error) throw new Error(error.message);
+    await processGameOvr(supabase, gameId);
+    revalidateChampionship(championshipId);
   });
-
-  if (error) throw new Error(error.message);
-  await processGameOvr(supabase, gameId);
-  revalidateChampionship(championshipId);
 }
 
 export async function deleteGoalEvent(
   id: string,
   championshipId: string,
   gameId: string
-) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("goal_events").delete().eq("id", id);
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.from("goal_events").delete().eq("id", id);
 
-  if (error) throw new Error(error.message);
-  await processGameOvr(supabase, gameId);
-  revalidateChampionship(championshipId);
+    if (error) throw new Error(error.message);
+    await processGameOvr(supabase, gameId);
+    revalidateChampionship(championshipId);
+  });
 }
 
 export async function createCardEvent(
   gameId: string,
   championshipId: string,
   formData: FormData
-) {
-  const playerId = String(formData.get("player_id") || "");
-  const cardType = String(formData.get("card_type") || "");
-  if (!playerId) throw new Error("Selecione o jogador.");
-  if (cardType !== "yellow" && cardType !== "red") {
-    throw new Error("Selecione o tipo de cartão.");
-  }
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const playerId = String(formData.get("player_id") || "");
+    const cardType = String(formData.get("card_type") || "");
+    if (!playerId) throw new Error("Selecione o jogador.");
+    if (cardType !== "yellow" && cardType !== "red") {
+      throw new Error("Selecione o tipo de cartão.");
+    }
 
-  const supabase = await createClient();
-  await assertPlayerBelongsToGame(supabase, championshipId, gameId, playerId);
+    const supabase = await createClient();
+    await assertPlayerBelongsToGame(supabase, championshipId, gameId, playerId);
 
-  const { error } = await supabase.from("card_events").insert({
-    championship_id: championshipId,
-    game_id: gameId,
-    player_id: playerId,
-    card_type: cardType,
-    minute: parseMinute(formData),
+    const { error } = await supabase.from("card_events").insert({
+      championship_id: championshipId,
+      game_id: gameId,
+      player_id: playerId,
+      card_type: cardType,
+      minute: parseMinute(formData),
+    });
+
+    if (error) throw new Error(error.message);
+    await processGameOvr(supabase, gameId);
+    revalidateChampionship(championshipId);
   });
-
-  if (error) throw new Error(error.message);
-  await processGameOvr(supabase, gameId);
-  revalidateChampionship(championshipId);
 }
 
 export async function deleteCardEvent(
   id: string,
   championshipId: string,
   gameId: string
-) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("card_events").delete().eq("id", id);
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.from("card_events").delete().eq("id", id);
 
-  if (error) throw new Error(error.message);
-  await processGameOvr(supabase, gameId);
-  revalidateChampionship(championshipId);
+    if (error) throw new Error(error.message);
+    await processGameOvr(supabase, gameId);
+    revalidateChampionship(championshipId);
+  });
 }

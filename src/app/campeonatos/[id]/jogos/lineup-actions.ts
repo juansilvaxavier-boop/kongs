@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
+import { runAction, type ActionResult } from "@/lib/action-result";
 
 async function assertPlayerBelongsToGame(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -39,28 +40,30 @@ export async function toggleLineupPlayer(
   championshipId: string,
   playerId: string,
   confirmed: boolean
-) {
-  const supabase = await createClient();
-  await assertPlayerBelongsToGame(supabase, championshipId, gameId, playerId);
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    await assertPlayerBelongsToGame(supabase, championshipId, gameId, playerId);
 
-  if (confirmed) {
-    const { error } = await supabase
-      .from("game_lineups")
-      .upsert(
-        { championship_id: championshipId, game_id: gameId, player_id: playerId },
-        { onConflict: "game_id,player_id" }
-      );
-    if (error) throw new Error(error.message);
-  } else {
-    const { error } = await supabase
-      .from("game_lineups")
-      .delete()
-      .eq("game_id", gameId)
-      .eq("player_id", playerId);
-    if (error) throw new Error(error.message);
-  }
+    if (confirmed) {
+      const { error } = await supabase
+        .from("game_lineups")
+        .upsert(
+          { championship_id: championshipId, game_id: gameId, player_id: playerId },
+          { onConflict: "game_id,player_id" }
+        );
+      if (error) throw new Error(error.message);
+    } else {
+      const { error } = await supabase
+        .from("game_lineups")
+        .delete()
+        .eq("game_id", gameId)
+        .eq("player_id", playerId);
+      if (error) throw new Error(error.message);
+    }
 
-  revalidateChampionship(championshipId);
+    revalidateChampionship(championshipId);
+  });
 }
 
 async function assertTeamBelongsToGame(
@@ -88,24 +91,26 @@ export async function signCaptain(
   teamId: string,
   captainName: string,
   signatureDataUrl: string
-) {
-  if (!captainName.trim()) throw new Error("Informe o nome do capitão.");
-  if (!signatureDataUrl) throw new Error("Assinatura inválida.");
+): Promise<ActionResult> {
+  return runAction(async () => {
+    if (!captainName.trim()) throw new Error("Informe o nome do capitão.");
+    if (!signatureDataUrl) throw new Error("Assinatura inválida.");
 
-  const supabase = await createClient();
-  await assertTeamBelongsToGame(supabase, championshipId, gameId, teamId);
-  const { error } = await supabase.from("game_captain_signatures").upsert(
-    {
-      championship_id: championshipId,
-      game_id: gameId,
-      team_id: teamId,
-      captain_name: captainName.trim(),
-      signature_data_url: signatureDataUrl,
-      signed_at: new Date().toISOString(),
-    },
-    { onConflict: "game_id,team_id" }
-  );
-  if (error) throw new Error(error.message);
+    const supabase = await createClient();
+    await assertTeamBelongsToGame(supabase, championshipId, gameId, teamId);
+    const { error } = await supabase.from("game_captain_signatures").upsert(
+      {
+        championship_id: championshipId,
+        game_id: gameId,
+        team_id: teamId,
+        captain_name: captainName.trim(),
+        signature_data_url: signatureDataUrl,
+        signed_at: new Date().toISOString(),
+      },
+      { onConflict: "game_id,team_id" }
+    );
+    if (error) throw new Error(error.message);
 
-  revalidateChampionship(championshipId);
+    revalidateChampionship(championshipId);
+  });
 }

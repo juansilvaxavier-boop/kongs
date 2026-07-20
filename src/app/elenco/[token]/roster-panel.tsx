@@ -13,10 +13,6 @@ import {
   rosterUpdatePlayer,
 } from "./actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 const DOCUMENT_LABELS: Record<string, string> = { cpf: "CPF", rg: "RG" };
 const MAX_PLAYERS = 20;
 
@@ -125,14 +121,13 @@ export function RosterPanel({
     }
     setSubmitting(true);
     setError(null);
-    try {
-      await rosterSubmit(token);
+    const result = await rosterSubmit(token);
+    if (!result.ok) {
+      setError(result.error);
+    } else {
       router.refresh();
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setSubmitting(false);
     }
+    setSubmitting(false);
   }
 
   return (
@@ -280,11 +275,11 @@ export function RosterPanel({
                               <form
                                 action={async () => {
                                   if (window.confirm(`Excluir o jogador "${player.name}"?`)) {
-                                    try {
-                                      await rosterDeletePlayer(token, player.id);
+                                    const result = await rosterDeletePlayer(token, player.id);
+                                    if (result.ok) {
                                       router.refresh();
-                                    } catch (err) {
-                                      alert(errorMessage(err));
+                                    } else {
+                                      alert(result.error);
                                     }
                                   }
                                 }}

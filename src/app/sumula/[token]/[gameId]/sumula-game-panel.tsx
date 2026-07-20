@@ -15,10 +15,6 @@ import {
   sumulaToggleLineup,
 } from "../actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 type Player = { id: string; name: string; team_id: string | null; number: number | null };
 type GoalEvent = { id: string; player_id: string; minute: number | null; game_id: string };
 type CardEvent = {
@@ -74,11 +70,8 @@ function TeamSumulaColumn({
                     type="button"
                     className="text-xs text-muted underline hover:text-danger"
                     onClick={async () => {
-                      try {
-                        await sumulaDeleteGoal(token, gameId, goal.id);
-                      } catch (error) {
-                        alert(errorMessage(error));
-                      }
+                      const result = await sumulaDeleteGoal(token, gameId, goal.id);
+                      if (!result.ok) alert(result.error);
                     }}
                   >
                     remover
@@ -124,11 +117,8 @@ function TeamSumulaColumn({
                     type="button"
                     className="text-xs text-muted underline hover:text-danger"
                     onClick={async () => {
-                      try {
-                        await sumulaDeleteCard(token, gameId, card.id);
-                      } catch (error) {
-                        alert(errorMessage(error));
-                      }
+                      const result = await sumulaDeleteCard(token, gameId, card.id);
+                      if (!result.ok) alert(result.error);
                     }}
                   >
                     remover
@@ -211,13 +201,9 @@ export function SumulaGamePanel({
   async function togglePlayed() {
     setPending(true);
     setError(null);
-    try {
-      await sumulaSetPlayed(token, gameId, !played);
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setPending(false);
-    }
+    const result = await sumulaSetPlayed(token, gameId, !played);
+    if (!result.ok) setError(result.error);
+    setPending(false);
   }
 
   return (

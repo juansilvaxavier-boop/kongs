@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
 import { fileExtension, imageContentType, validateImageFile } from "@/lib/uploads";
+import { runAction, type ActionResult } from "@/lib/action-result";
 
 function parseLogoFile(formData: FormData): File | null {
   const file = formData.get("logo");
@@ -34,68 +35,77 @@ async function uploadSponsorLogo(
   return `${data.publicUrl}?v=${Date.now()}`;
 }
 
-export async function createSponsor(championshipId: string, formData: FormData) {
-  const name = String(formData.get("name") || "").trim();
-  if (!name) throw new Error("Informe o nome do patrocinador.");
-  const logoFile = parseLogoFile(formData);
+export async function createSponsor(
+  championshipId: string,
+  formData: FormData
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const name = String(formData.get("name") || "").trim();
+    if (!name) throw new Error("Informe o nome do patrocinador.");
+    const logoFile = parseLogoFile(formData);
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("sponsors")
-    .insert({
-      championship_id: championshipId,
-      name,
-      link_url: parseLinkUrl(formData),
-    })
-    .select("id")
-    .single();
-
-  if (error) throw new Error(error.message);
-
-  if (logoFile) {
-    const logoUrl = await uploadSponsorLogo(supabase, data.id, logoFile);
-    const { error: logoError } = await supabase
+    const supabase = await createClient();
+    const { data, error } = await supabase
       .from("sponsors")
-      .update({ logo_url: logoUrl })
-      .eq("id", data.id);
-    if (logoError) throw new Error(logoError.message);
-  }
+      .insert({
+        championship_id: championshipId,
+        name,
+        link_url: parseLinkUrl(formData),
+      })
+      .select("id")
+      .single();
 
-  revalidateChampionship(championshipId);
+    if (error) throw new Error(error.message);
+
+    if (logoFile) {
+      const logoUrl = await uploadSponsorLogo(supabase, data.id, logoFile);
+      const { error: logoError } = await supabase
+        .from("sponsors")
+        .update({ logo_url: logoUrl })
+        .eq("id", data.id);
+      if (logoError) throw new Error(logoError.message);
+    }
+
+    revalidateChampionship(championshipId);
+  });
 }
 
 export async function updateSponsor(
   id: string,
   championshipId: string,
   formData: FormData
-) {
-  const name = String(formData.get("name") || "").trim();
-  if (!name) throw new Error("Informe o nome do patrocinador.");
-  const logoFile = parseLogoFile(formData);
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const name = String(formData.get("name") || "").trim();
+    if (!name) throw new Error("Informe o nome do patrocinador.");
+    const logoFile = parseLogoFile(formData);
 
-  const supabase = await createClient();
-  const logoUrl = logoFile ? await uploadSponsorLogo(supabase, id, logoFile) : undefined;
+    const supabase = await createClient();
+    const logoUrl = logoFile ? await uploadSponsorLogo(supabase, id, logoFile) : undefined;
 
-  const { data, error } = await supabase
-    .from("sponsors")
-    .update({
-      name,
-      link_url: parseLinkUrl(formData),
-      ...(logoUrl ? { logo_url: logoUrl } : {}),
-    })
-    .eq("id", id)
-    .select("id")
-    .maybeSingle();
+    const { data, error } = await supabase
+      .from("sponsors")
+      .update({
+        name,
+        link_url: parseLinkUrl(formData),
+        ...(logoUrl ? { logo_url: logoUrl } : {}),
+      })
+      .eq("id", id)
+      .select("id")
+      .maybeSingle();
 
-  if (error) throw new Error(error.message);
-  if (!data) throw new Error("Patrocinador não encontrado ou sem permissão para editar.");
-  revalidateChampionship(championshipId);
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error("Patrocinador não encontrado ou sem permissão para editar.");
+    revalidateChampionship(championshipId);
+  });
 }
 
-export async function deleteSponsor(id: string, championshipId: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.from("sponsors").delete().eq("id", id);
+export async function deleteSponsor(id: string, championshipId: string): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.from("sponsors").delete().eq("id", id);
 
-  if (error) throw new Error(error.message);
-  revalidateChampionship(championshipId);
+    if (error) throw new Error(error.message);
+    revalidateChampionship(championshipId);
+  });
 }

@@ -8,10 +8,6 @@ import {
   regenerateTeamRosterLink,
 } from "./actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 export function TeamRosterLinkPanel({ teamId }: { teamId: string }) {
   const [link, setLink] = useState<string | null>(null);
   const [status, setStatus] = useState<{ playerCount: number; submitted: boolean } | null>(
@@ -23,16 +19,21 @@ export function TeamRosterLinkPanel({ teamId }: { teamId: string }) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([getTeamRosterLink(teamId), getTeamRosterStatus(teamId)])
-      .then(([url, teamStatus]) => {
-        if (!cancelled) {
-          setLink(url);
-          setStatus(teamStatus);
+    Promise.all([getTeamRosterLink(teamId), getTeamRosterStatus(teamId)]).then(
+      ([linkResult, statusResult]) => {
+        if (cancelled) return;
+        if (!linkResult.ok) {
+          setError(linkResult.error);
+          return;
         }
-      })
-      .catch((err) => {
-        if (!cancelled) setError(errorMessage(err));
-      });
+        if (!statusResult.ok) {
+          setError(statusResult.error);
+          return;
+        }
+        setLink(linkResult.data);
+        setStatus(statusResult.data);
+      }
+    );
     return () => {
       cancelled = true;
     };
@@ -58,15 +59,14 @@ export function TeamRosterLinkPanel({ teamId }: { teamId: string }) {
       return;
     }
     setRegenerating(true);
-    try {
-      const url = await regenerateTeamRosterLink(teamId);
-      setLink(url);
+    const result = await regenerateTeamRosterLink(teamId);
+    if (result.ok) {
+      setLink(result.data);
       setStatus({ playerCount: status?.playerCount ?? 0, submitted: false });
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setRegenerating(false);
+    } else {
+      setError(result.error);
     }
+    setRegenerating(false);
   }
 
   return (

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { fileExtension, imageContentType, validateImageFile } from "@/lib/uploads";
+import { runAction, type ActionResult } from "@/lib/action-result";
 
 function parsePhotoFile(formData: FormData): File | null {
   const file = formData.get("photo");
@@ -53,79 +54,89 @@ function playerArgs(token: string, formData: FormData) {
   };
 }
 
-export async function rosterAddPlayer(token: string, formData: FormData) {
-  const supabase = await createClient();
-  const photoFile = parsePhotoFile(formData);
+export async function rosterAddPlayer(token: string, formData: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const photoFile = parsePhotoFile(formData);
 
-  const { data: playerId, error } = await supabase.rpc(
-    "roster_add_player",
-    playerArgs(token, formData)
-  );
-  if (error) throw new Error(error.message);
+    const { data: playerId, error } = await supabase.rpc(
+      "roster_add_player",
+      playerArgs(token, formData)
+    );
+    if (error) throw new Error(error.message);
 
-  if (photoFile && playerId) {
-    const photoUrl = await uploadPlayerPhoto(supabase, token, playerId, photoFile);
-    const { error: photoError } = await supabase.rpc("roster_set_player_photo", {
-      p_token: token,
-      p_player_id: playerId,
-      p_photo_url: photoUrl,
-    });
-    if (photoError) throw new Error(photoError.message);
-  }
+    if (photoFile && playerId) {
+      const photoUrl = await uploadPlayerPhoto(supabase, token, playerId, photoFile);
+      const { error: photoError } = await supabase.rpc("roster_set_player_photo", {
+        p_token: token,
+        p_player_id: playerId,
+        p_photo_url: photoUrl,
+      });
+      if (photoError) throw new Error(photoError.message);
+    }
 
-  revalidatePath(`/elenco/${token}`);
+    revalidatePath(`/elenco/${token}`);
+  });
 }
 
 export async function rosterUpdatePlayer(
   token: string,
   playerId: string,
   formData: FormData
-) {
-  const supabase = await createClient();
-  const photoFile = parsePhotoFile(formData);
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const photoFile = parsePhotoFile(formData);
 
-  const { error } = await supabase.rpc("roster_update_player", {
-    ...playerArgs(token, formData),
-    p_player_id: playerId,
+    const { error } = await supabase.rpc("roster_update_player", {
+      ...playerArgs(token, formData),
+      p_player_id: playerId,
+    });
+    if (error) throw new Error(error.message);
+
+    if (photoFile) {
+      const photoUrl = await uploadPlayerPhoto(supabase, token, playerId, photoFile);
+      const { error: photoError } = await supabase.rpc("roster_set_player_photo", {
+        p_token: token,
+        p_player_id: playerId,
+        p_photo_url: photoUrl,
+      });
+      if (photoError) throw new Error(photoError.message);
+    }
+
+    revalidatePath(`/elenco/${token}`);
   });
-  if (error) throw new Error(error.message);
+}
 
-  if (photoFile) {
-    const photoUrl = await uploadPlayerPhoto(supabase, token, playerId, photoFile);
-    const { error: photoError } = await supabase.rpc("roster_set_player_photo", {
+export async function rosterDeletePlayer(token: string, playerId: string): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("roster_delete_player", {
       p_token: token,
       p_player_id: playerId,
-      p_photo_url: photoUrl,
     });
-    if (photoError) throw new Error(photoError.message);
-  }
-
-  revalidatePath(`/elenco/${token}`);
-}
-
-export async function rosterDeletePlayer(token: string, playerId: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("roster_delete_player", {
-    p_token: token,
-    p_player_id: playerId,
+    if (error) throw new Error(error.message);
+    revalidatePath(`/elenco/${token}`);
   });
-  if (error) throw new Error(error.message);
-  revalidatePath(`/elenco/${token}`);
 }
 
-export async function rosterSetCoach(token: string, formData: FormData) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("roster_set_coach", {
-    p_token: token,
-    p_coach_name: String(formData.get("coach_name") || ""),
+export async function rosterSetCoach(token: string, formData: FormData): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("roster_set_coach", {
+      p_token: token,
+      p_coach_name: String(formData.get("coach_name") || ""),
+    });
+    if (error) throw new Error(error.message);
+    revalidatePath(`/elenco/${token}`);
   });
-  if (error) throw new Error(error.message);
-  revalidatePath(`/elenco/${token}`);
 }
 
-export async function rosterSubmit(token: string) {
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("roster_submit", { p_token: token });
-  if (error) throw new Error(error.message);
-  revalidatePath(`/elenco/${token}`);
+export async function rosterSubmit(token: string): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("roster_submit", { p_token: token });
+    if (error) throw new Error(error.message);
+    revalidatePath(`/elenco/${token}`);
+  });
 }

@@ -1,7 +1,13 @@
 import { BrandMark } from "@/components/ui";
 import { LoginForm } from "./login-form";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await searchParams;
+
   return (
     <main className="pitch-lines flex flex-1 flex-col items-center justify-center px-4 py-16">
       <div className="mb-10 text-center">
@@ -19,7 +25,9 @@ export default function LoginPage() {
           campeonatos de futebol em um só lugar.
         </p>
       </div>
-      <LoginForm />
+      <LoginForm
+        initialError={error === "google" ? "Não foi possível iniciar o login com o Google." : null}
+      />
     </main>
   );
 }

@@ -5,10 +5,6 @@ import { Button, Card, Input, Label } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { createReferee, deleteReferee, updateReferee } from "./actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 type Referee = { id: string; name: string; cpf: string | null };
 
 export function RefereesSection({
@@ -81,11 +77,8 @@ export function RefereesSection({
                       <form
                         action={async () => {
                           if (window.confirm(`Excluir o árbitro "${referee.name}"?`)) {
-                            try {
-                              await deleteReferee(referee.id, championshipId);
-                            } catch (error) {
-                              alert(errorMessage(error));
-                            }
+                            const result = await deleteReferee(referee.id, championshipId);
+                            if (!result.ok) alert(result.error);
                           }
                         }}
                       >

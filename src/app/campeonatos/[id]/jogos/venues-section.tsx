@@ -5,10 +5,6 @@ import { Button, Card, Input, Label } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { createVenue, deleteVenue, updateVenue } from "./actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 type Venue = { id: string; name: string; address: string | null };
 
 export function VenuesSection({
@@ -81,11 +77,8 @@ export function VenuesSection({
                       <form
                         action={async () => {
                           if (window.confirm(`Excluir o local "${venue.name}"?`)) {
-                            try {
-                              await deleteVenue(venue.id, championshipId);
-                            } catch (error) {
-                              alert(errorMessage(error));
-                            }
+                            const result = await deleteVenue(venue.id, championshipId);
+                            if (!result.ok) alert(result.error);
                           }
                         }}
                       >

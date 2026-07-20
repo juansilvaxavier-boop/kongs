@@ -11,10 +11,6 @@ import {
   updatePlayer,
 } from "./actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 const DOCUMENT_LABELS: Record<string, string> = { cpf: "CPF", rg: "RG" };
 
 type Coach = { id: string; name: string };
@@ -260,11 +256,8 @@ export function TeamRoster({
                             <form
                               action={async () => {
                                 if (window.confirm(`Excluir o jogador "${player.name}"?`)) {
-                                  try {
-                                    await deletePlayer(player.id, championshipId);
-                                  } catch (error) {
-                                    alert(errorMessage(error));
-                                  }
+                                  const result = await deletePlayer(player.id, championshipId);
+                                  if (!result.ok) alert(result.error);
                                 }
                               }}
                             >

@@ -4,10 +4,6 @@ import { useEffect, useState } from "react";
 import { Button, Card, Input } from "@/components/ui";
 import { getChampionshipSumulaLink, regenerateChampionshipSumulaLink } from "./actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 export function SumulaLinkSection({ championshipId }: { championshipId: string }) {
   const [link, setLink] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -16,13 +12,11 @@ export function SumulaLinkSection({ championshipId }: { championshipId: string }
 
   useEffect(() => {
     let cancelled = false;
-    getChampionshipSumulaLink(championshipId)
-      .then((url) => {
-        if (!cancelled) setLink(url);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(errorMessage(err));
-      });
+    getChampionshipSumulaLink(championshipId).then((result) => {
+      if (cancelled) return;
+      if (result.ok) setLink(result.data);
+      else setError(result.error);
+    });
     return () => {
       cancelled = true;
     };
@@ -48,14 +42,13 @@ export function SumulaLinkSection({ championshipId }: { championshipId: string }
       return;
     }
     setRegenerating(true);
-    try {
-      const url = await regenerateChampionshipSumulaLink(championshipId);
-      setLink(url);
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setRegenerating(false);
+    const result = await regenerateChampionshipSumulaLink(championshipId);
+    if (result.ok) {
+      setLink(result.data);
+    } else {
+      setError(result.error);
     }
+    setRegenerating(false);
   }
 
   return (

@@ -2,15 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getOwnedTeam } from "@/lib/auth/roles";
-import {
-  Button,
-  Card,
-  Input,
-  Label,
-  PageHeader,
-  Select,
-} from "@/components/ui";
+import { Card, Input, Label, PageHeader, Select } from "@/components/ui";
 import { PLAYER_POSITIONS } from "@/lib/positions";
+import { ActionForm, SubmitButton } from "@/components/action-form";
 import { createOwnPlayer, updateOwnTeam } from "./actions";
 import { OwnPlayerTable } from "./own-player-table";
 
@@ -61,7 +55,7 @@ export default async function MeuTimePage() {
         <h2 className="mb-4 font-display text-lg font-bold uppercase tracking-wide text-foreground">
           Dados do time
         </h2>
-        <form
+        <ActionForm
           action={updateOwnTeam}
           className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
         >
@@ -89,8 +83,8 @@ export default async function MeuTimePage() {
               defaultValue={fullTeam?.crest_url ?? ""}
             />
           </div>
-          <Button type="submit">Salvar</Button>
-        </form>
+          <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
+        </ActionForm>
       </Card>
 
       <div>
@@ -99,7 +93,7 @@ export default async function MeuTimePage() {
         </h2>
 
         <Card className="mb-6 p-5">
-          <form
+          <ActionForm
             action={createOwnPlayer}
             className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end"
           >
@@ -122,8 +116,8 @@ export default async function MeuTimePage() {
                 ))}
               </Select>
             </div>
-            <Button type="submit">Adicionar</Button>
-          </form>
+            <SubmitButton pendingText="Adicionando…">Adicionar</SubmitButton>
+          </ActionForm>
         </Card>
 
         <OwnPlayerTable players={players ?? []} />

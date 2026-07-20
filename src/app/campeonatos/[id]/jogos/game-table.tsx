@@ -7,10 +7,6 @@ import { deleteAllGames, deleteGame, updateGame } from "./actions";
 import { GameDateField } from "./game-date-field";
 import { SumulaPanel } from "./sumula-panel";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 type Team = { id: string; name: string };
 type Player = { id: string; name: string; team_id: string | null };
 type GoalEvent = { id: string; player_id: string; minute: number | null; game_id: string };
@@ -101,11 +97,8 @@ export function GameTable({
               `Excluir todos os ${games.length} jogos deste campeonato? Os gols e cartões lançados também serão apagados. Essa ação não pode ser desfeita.`
             )
           ) {
-            try {
-              await deleteAllGames(championshipId);
-            } catch (error) {
-              alert(errorMessage(error));
-            }
+            const result = await deleteAllGames(championshipId);
+            if (!result.ok) alert(result.error);
           }
         }}
       >
@@ -306,11 +299,8 @@ export function GameTable({
                               )}"?`
                             )
                           ) {
-                            try {
-                              await deleteGame(game.id, championshipId);
-                            } catch (error) {
-                              alert(errorMessage(error));
-                            }
+                            const result = await deleteGame(game.id, championshipId);
+                            if (!result.ok) alert(result.error);
                           }
                         }}
                       >

@@ -14,10 +14,6 @@ import {
 import { setGamePlayed } from "./actions";
 import { signCaptain, toggleLineupPlayer } from "./lineup-actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 type Player = { id: string; name: string; team_id: string | null };
 type GoalEvent = { id: string; player_id: string; minute: number | null; game_id: string };
 type CardEvent = {
@@ -73,11 +69,8 @@ function TeamSumulaColumn({
                     type="button"
                     className="text-xs text-muted underline hover:text-danger"
                     onClick={async () => {
-                      try {
-                        await deleteGoalEvent(goal.id, championshipId, gameId);
-                      } catch (error) {
-                        alert(errorMessage(error));
-                      }
+                      const result = await deleteGoalEvent(goal.id, championshipId, gameId);
+                      if (!result.ok) alert(result.error);
                     }}
                   >
                     remover
@@ -123,11 +116,8 @@ function TeamSumulaColumn({
                     type="button"
                     className="text-xs text-muted underline hover:text-danger"
                     onClick={async () => {
-                      try {
-                        await deleteCardEvent(card.id, championshipId, gameId);
-                      } catch (error) {
-                        alert(errorMessage(error));
-                      }
+                      const result = await deleteCardEvent(card.id, championshipId, gameId);
+                      if (!result.ok) alert(result.error);
                     }}
                   >
                     remover
@@ -212,13 +202,9 @@ export function SumulaPanel({
   async function togglePlayed() {
     setPending(true);
     setError(null);
-    try {
-      await setGamePlayed(gameId, championshipId, !played);
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setPending(false);
-    }
+    const result = await setGamePlayed(gameId, championshipId, !played);
+    if (!result.ok) setError(result.error);
+    setPending(false);
   }
 
   return (

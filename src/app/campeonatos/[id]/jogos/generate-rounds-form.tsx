@@ -6,10 +6,6 @@ import { Button, Card, Input, Label } from "@/components/ui";
 import { generateRoundRobinForTotalRounds } from "@/lib/round-robin";
 import { generateRounds, type GeneratedGamePreview } from "./actions";
 
-function errorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Não foi possível concluir a ação.";
-}
-
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -66,17 +62,15 @@ export function GenerateRoundsForm({
     }
 
     setPending(true);
-    let preview: GeneratedGamePreview[];
-    try {
-      const formData = new FormData();
-      formData.set("rounds", String(totalRounds));
-      preview = await generateRounds(championshipId, formData);
-    } catch (error) {
-      alert(errorMessage(error));
-      setPending(false);
+    const formData = new FormData();
+    formData.set("rounds", String(totalRounds));
+    const result = await generateRounds(championshipId, formData);
+    setPending(false);
+    if (!result.ok) {
+      alert(result.error);
       return;
     }
-    setPending(false);
+    const preview = result.data;
 
     fullPreviewRef.current = preview;
     skippedRef.current = false;
