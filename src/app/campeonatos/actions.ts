@@ -7,6 +7,32 @@ import { revalidateChampionship } from "@/lib/revalidate";
 import { isAdmin } from "@/lib/auth/roles";
 import { parsePositiveIntOrNull } from "@/lib/forms";
 import { runAction, type ActionResult } from "@/lib/action-result";
+import { fileExtension, imageContentType, validateImageFile } from "@/lib/uploads";
+
+function parseLogoFile(formData: FormData): File | null {
+  const file = formData.get("logo");
+  if (file instanceof File && file.size > 0) {
+    validateImageFile(file);
+    return file;
+  }
+  return null;
+}
+
+async function uploadChampionshipLogo(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  championshipId: string,
+  file: File
+): Promise<string> {
+  const path = `${championshipId}/logo.${fileExtension(file)}`;
+  const { error } = await supabase.storage.from("championship-logos").upload(path, file, {
+    upsert: true,
+    contentType: imageContentType(file),
+  });
+  if (error) throw new Error(error.message);
+
+  const { data } = supabase.storage.from("championship-logos").getPublicUrl(path);
+  return `${data.publicUrl}?v=${Date.now()}`;
+}
 
 export async function createChampionship(formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
@@ -29,6 +55,7 @@ export async function createChampionship(formData: FormData): Promise<ActionResu
     const hasKnockoutStage = formData.get("has_knockout_stage") === "on";
     const teamCount = parsePositiveIntOrNull(formData, "team_count", "Quantidade de times");
     const groupCount = parsePositiveIntOrNull(formData, "group_count", "Quantidade de grupos");
+    const logoFile = parseLogoFile(formData);
 
     if (!(await isAdmin(supabase))) {
       throw new Error("Apenas a organização pode criar campeonatos.");
@@ -48,6 +75,15 @@ export async function createChampionship(formData: FormData): Promise<ActionResu
       .single();
 
     if (error) throw new Error(error.message);
+
+    if (logoFile) {
+      const logoUrl = await uploadChampionshipLogo(supabase, data.id, logoFile);
+      const { error: logoError } = await supabase
+        .from("championships")
+        .update({ logo_url: logoUrl })
+        .eq("id", data.id);
+      if (logoError) throw new Error(logoError.message);
+    }
 
     revalidatePath("/campeonatos");
     return data.id;

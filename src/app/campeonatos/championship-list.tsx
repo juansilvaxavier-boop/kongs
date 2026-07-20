@@ -10,6 +10,7 @@ type Championship = {
   id: string;
   name: string;
   created_at: string;
+  logo_url?: string | null;
 };
 
 export function ChampionshipList({ items }: { items: Championship[] }) {
@@ -47,16 +48,26 @@ export function ChampionshipList({ items }: { items: Championship[] }) {
             </ActionForm>
           ) : (
             <>
-              <div>
-                <h2 className="font-display text-xl font-bold uppercase tracking-wide text-foreground">
-                  {championship.name}
-                </h2>
-                <p className="text-xs text-muted">
-                  Criado em{" "}
-                  {new Date(championship.created_at).toLocaleDateString(
-                    "pt-BR"
-                  )}
-                </p>
+              <div className="flex items-center gap-3">
+                {championship.logo_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={championship.logo_url}
+                    alt=""
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                ) : null}
+                <div>
+                  <h2 className="font-display text-xl font-bold uppercase tracking-wide text-foreground">
+                    {championship.name}
+                  </h2>
+                  <p className="text-xs text-muted">
+                    Criado em{" "}
+                    {new Date(championship.created_at).toLocaleDateString(
+                      "pt-BR"
+                    )}
+                  </p>
+                </div>
               </div>
               <div className="mt-auto flex flex-wrap gap-2">
                 <Link href={`/campeonatos/${championship.id}/classificacao`}>

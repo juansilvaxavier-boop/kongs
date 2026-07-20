@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, EmptyState, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Card, EmptyState, FileInput, Input, Label, PageHeader, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { createChampionship } from "./actions";
 import { ChampionshipList } from "./championship-list";
@@ -14,7 +14,7 @@ export default async function CampeonatosPage() {
 
   const { data: championships } = await supabase
     .from("championships")
-    .select("id, name, created_at")
+    .select("id, name, created_at, logo_url")
     .eq("owner_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -52,6 +52,10 @@ export default async function CampeonatosPage() {
           <div className="w-32">
             <Label>Nº de grupos</Label>
             <Input name="group_count" type="number" min={1} placeholder="Se for Copa" />
+          </div>
+          <div className="flex-1 basis-40">
+            <Label>Foto/logo (opcional)</Label>
+            <FileInput name="logo" accept="image/*" />
           </div>
           <label className="flex items-center gap-2 pb-2 text-sm text-muted">
             <input

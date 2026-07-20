@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, Input, Label, PageHeader, Select, Textarea } from "@/components/ui";
+import { Card, FileInput, Input, Label, PageHeader, Select, Textarea } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { updateChampionshipSettings } from "./actions";
 import { SponsorsSection } from "./sponsors-section";
@@ -16,7 +16,9 @@ export default async function ConfiguracoesPage({
   const [{ data: championship }, { data: sponsors }] = await Promise.all([
     supabase
       .from("championships")
-      .select("format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text")
+      .select(
+        "format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text, logo_url"
+      )
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -36,6 +38,25 @@ export default async function ConfiguracoesPage({
 
       <Card className="max-w-xl p-5">
         <ActionForm action={updateSettingsWithId} className="flex flex-col gap-5">
+          <div>
+            <Label>Foto/logo do campeonato</Label>
+            <div className="flex items-center gap-3">
+              {championship.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={championship.logo_url}
+                  alt=""
+                  className="h-14 w-14 rounded-full object-cover"
+                />
+              ) : (
+                <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-2 text-xs text-muted">
+                  Sem foto
+                </span>
+              )}
+              <FileInput name="logo" accept="image/*" className="max-w-xs" />
+            </div>
+          </div>
+
           <div>
             <Label>Formato do campeonato</Label>
             <Select name="format" defaultValue={championship.format}>

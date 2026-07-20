@@ -21,7 +21,7 @@ export default async function PublicChampionshipLayout({
   const supabase = await createClient();
 
   const [{ data: championship }, { data: sponsors }] = await Promise.all([
-    supabase.from("championships").select("id, name").eq("id", id).maybeSingle(),
+    supabase.from("championships").select("id, name, logo_url").eq("id", id).maybeSingle(),
     supabase
       .from("sponsors")
       .select("id, name, logo_url, link_url")
@@ -40,7 +40,16 @@ export default async function PublicChampionshipLayout({
       <header className="border-b border-border bg-surface/70 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-6">
           <Link href={`/campeonato/${id}`} className="flex items-center gap-2">
-            <BrandMark />
+            {championship.logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={championship.logo_url}
+                alt=""
+                className="h-8 w-8 rounded-full object-cover"
+              />
+            ) : (
+              <BrandMark />
+            )}
             <span className="font-display text-lg font-bold uppercase tracking-wide">
               {championship.name}
             </span>

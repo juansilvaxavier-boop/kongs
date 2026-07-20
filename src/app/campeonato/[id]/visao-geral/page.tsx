@@ -2,9 +2,14 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, EmptyState, PageHeader } from "@/components/ui";
 import { computeTopScorers } from "@/lib/stats";
+import { computeStandings } from "@/lib/standings";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import { CommentsSection } from "../comments-section";
-import { OverviewHighlights, type PositionHighlight } from "../overview-highlights";
+import {
+  OverviewHighlights,
+  type PositionHighlight,
+  type TeamGoalsRow,
+} from "../overview-highlights";
 
 export default async function VisaoGeralPage({
   params,
@@ -38,7 +43,7 @@ export default async function VisaoGeralPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("games")
-      .select("id, played, score_a, score_b")
+      .select("id, team_a_id, team_b_id, played, score_a, score_b")
       .eq("championship_id", id),
     supabase.from("card_events").select("game_id").eq("championship_id", id),
     supabase
@@ -81,6 +86,28 @@ export default async function VisaoGeralPage({
 
   const topScorers = computeTopScorers(allPlayers, goals ?? [], teams ?? []).slice(0, 3);
 
+  const standings = computeStandings(teams ?? [], games ?? []).filter((row) => row.j > 0);
+
+  const bestAttacks: TeamGoalsRow[] = [...standings]
+    .sort((a, b) => b.gp - a.gp || a.teamName.localeCompare(b.teamName, "pt-BR"))
+    .slice(0, 3)
+    .map((row) => ({
+      teamId: row.teamId,
+      teamName: row.teamName,
+      teamCrestUrl: row.teamCrestUrl,
+      goals: row.gp,
+    }));
+
+  const bestDefenses: TeamGoalsRow[] = [...standings]
+    .sort((a, b) => a.gc - b.gc || a.teamName.localeCompare(b.teamName, "pt-BR"))
+    .slice(0, 3)
+    .map((row) => ({
+      teamId: row.teamId,
+      teamName: row.teamName,
+      teamCrestUrl: row.teamCrestUrl,
+      goals: row.gc,
+    }));
+
   const positionHighlights: PositionHighlight[] = PLAYER_POSITIONS.map((position) => {
     const best = allPlayers
       .filter((p) => p.position === position && ovrByPlayer.has(p.id))
@@ -109,6 +136,8 @@ export default async function VisaoGeralPage({
           avgCardsPerGame={avgCardsPerGame}
           topScorers={topScorers}
           positionHighlights={positionHighlights}
+          bestAttacks={bestAttacks}
+          bestDefenses={bestDefenses}
         />
       </div>
 

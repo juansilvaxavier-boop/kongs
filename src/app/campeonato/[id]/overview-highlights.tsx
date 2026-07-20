@@ -13,16 +13,56 @@ export type PositionHighlight = {
   } | null;
 };
 
+export type TeamGoalsRow = {
+  teamId: string;
+  teamName: string;
+  teamCrestUrl: string | null;
+  goals: number;
+};
+
+function TeamGoalsTable({
+  rows,
+  label,
+}: {
+  rows: TeamGoalsRow[];
+  label: { singular: string; plural: string };
+}) {
+  if (rows.length === 0) return <EmptyState>Nenhum jogo realizado ainda.</EmptyState>;
+  return (
+    <Card className="overflow-x-auto">
+      <table className="w-full min-w-[22rem] text-sm">
+        <tbody>
+          {rows.map((row, index) => (
+            <tr key={row.teamId} className="border-b border-border last:border-0">
+              <td className="w-10 px-4 py-3 text-muted">{index + 1}</td>
+              <td className="px-4 py-3 font-medium text-foreground">
+                <TeamCell name={row.teamName} crestUrl={row.teamCrestUrl} />
+              </td>
+              <td className="px-4 py-3 text-right font-display text-base font-semibold text-accent">
+                {row.goals} {row.goals === 1 ? label.singular : label.plural}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Card>
+  );
+}
+
 export function OverviewHighlights({
   avgGoalsPerGame,
   avgCardsPerGame,
   topScorers,
   positionHighlights,
+  bestAttacks,
+  bestDefenses,
 }: {
   avgGoalsPerGame: number | null;
   avgCardsPerGame: number | null;
   topScorers: ScorerRow[];
   positionHighlights: PositionHighlight[];
+  bestAttacks: TeamGoalsRow[];
+  bestDefenses: TeamGoalsRow[];
 }) {
   return (
     <div className="space-y-6">
@@ -43,6 +83,21 @@ export function OverviewHighlights({
             {avgCardsPerGame === null ? "—" : avgCardsPerGame.toFixed(1)}
           </p>
         </Card>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+        <div>
+          <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+            Top 3 melhores ataques
+          </h3>
+          <TeamGoalsTable rows={bestAttacks} label={{ singular: "gol marcado", plural: "gols marcados" }} />
+        </div>
+        <div>
+          <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+            Top 3 melhores defesas
+          </h3>
+          <TeamGoalsTable rows={bestDefenses} label={{ singular: "gol sofrido", plural: "gols sofridos" }} />
+        </div>
       </div>
 
       <div>

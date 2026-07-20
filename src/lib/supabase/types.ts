@@ -202,6 +202,7 @@ export type Database = {
           group_count: number | null
           has_knockout_stage: boolean
           id: string
+          logo_url: string | null
           name: string
           owner_id: string
           rules_text: string | null
@@ -214,6 +215,7 @@ export type Database = {
           group_count?: number | null
           has_knockout_stage?: boolean
           id?: string
+          logo_url?: string | null
           name: string
           owner_id: string
           rules_text?: string | null
@@ -226,6 +228,7 @@ export type Database = {
           group_count?: number | null
           has_knockout_stage?: boolean
           id?: string
+          logo_url?: string | null
           name?: string
           owner_id?: string
           rules_text?: string | null
