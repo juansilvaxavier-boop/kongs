@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "./toast-provider";
 import { Button } from "./ui";
 
 export function ShareButton({ title }: { title: string }) {
   const [label, setLabel] = useState("Compartilhar");
+  const toast = useToast();
 
   return (
     <Button
@@ -25,7 +27,7 @@ export function ShareButton({ title }: { title: string }) {
           setLabel("Link copiado!");
           setTimeout(() => setLabel("Compartilhar"), 2000);
         } catch {
-          alert(url);
+          toast.error(`Não foi possível copiar automaticamente. Link: ${url}`);
         }
       }}
     >

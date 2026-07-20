@@ -6,17 +6,8 @@ import { PlayerCard } from "@/components/player-card";
 import { FavoriteButton } from "@/components/favorite-button";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import type { Achievement } from "@/lib/achievements";
+import type { PlayerAttributes as Attributes } from "@/lib/gamification";
 import { PlayerCardModal, type HistoryEntry } from "./player-card-modal";
-
-type Attributes = {
-  ovr: number;
-  ritmo: number;
-  finalizacao: number;
-  passe: number;
-  drible: number;
-  defesa: number;
-  fisico: number;
-};
 
 export type RosterPlayer = {
   id: string;

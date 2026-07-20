@@ -1,6 +1,16 @@
 export type Position = "Goleiro" | "Zagueiro" | "Meia" | "Atacante";
 export type Rarity = "bronze" | "prata" | "ouro" | "legend";
 
+export type PlayerAttributes = {
+  ovr: number;
+  ritmo: number;
+  finalizacao: number;
+  passe: number;
+  drible: number;
+  defesa: number;
+  fisico: number;
+};
+
 export const OVR_WEIGHTS = {
   gol: 0.3,
   vitoria: 0.2,

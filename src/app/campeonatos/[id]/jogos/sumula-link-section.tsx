@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button, Card, Input } from "@/components/ui";
+import { useConfirm } from "@/components/confirm-provider";
 import { getChampionshipSumulaLink, regenerateChampionshipSumulaLink } from "./actions";
 
 export function SumulaLinkSection({ championshipId }: { championshipId: string }) {
@@ -9,6 +10,7 @@ export function SumulaLinkSection({ championshipId }: { championshipId: string }
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const confirm = useConfirm();
 
   useEffect(() => {
     let cancelled = false;
@@ -34,11 +36,13 @@ export function SumulaLinkSection({ championshipId }: { championshipId: string }
   }
 
   async function regenerate() {
-    if (
-      !window.confirm(
-        "Isso invalida o link atual — quem já tiver salvo o link antigo não vai mais conseguir preencher a súmula. Continuar?"
-      )
-    ) {
+    const ok = await confirm({
+      title: "Gerar um novo link?",
+      description:
+        "Isso invalida o link atual — quem já tiver salvo o link antigo não vai mais conseguir preencher a súmula.",
+      confirmLabel: "Gerar novo link",
+    });
+    if (!ok) {
       return;
     }
     setRegenerating(true);

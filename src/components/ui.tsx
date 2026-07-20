@@ -163,6 +163,32 @@ export function Label({ children }: { children: ReactNode }) {
   );
 }
 
+export function Skeleton({ className }: { className?: string }) {
+  return <div className={cn("animate-pulse rounded-md bg-surface-2", className)} />;
+}
+
+export function TableSkeleton({ rows = 6 }: { rows?: number }) {
+  return (
+    <Card className="overflow-hidden p-0">
+      <div className="flex items-center gap-4 border-b border-border bg-surface-2/60 px-4 py-3">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-3 w-32" />
+        <Skeleton className="ml-auto h-3 w-16" />
+      </div>
+      <div className="divide-y divide-border">
+        {Array.from({ length: rows }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 px-4 py-4">
+            <Skeleton className="h-8 w-8 shrink-0 rounded-full" />
+            <Skeleton className="h-3 w-1/4" />
+            <Skeleton className="h-3 w-1/5" />
+            <Skeleton className="ml-auto h-3 w-16" />
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+}
+
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
     <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted">

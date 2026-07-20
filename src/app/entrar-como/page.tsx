@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isAdmin, getUserPermissions } from "@/lib/auth/roles";
+import { getAccessContext } from "@/lib/auth/roles";
 import { resolveRegularDestination } from "@/lib/auth/destination";
 import { BrandMark, Card } from "@/components/ui";
 
@@ -12,14 +12,13 @@ export default async function EntrarComoPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  if (await isAdmin(supabase)) redirect("/campeonatos");
+  const [{ isAdmin: admin, permissions }, regularDestination] = await Promise.all([
+    getAccessContext(supabase),
+    resolveRegularDestination(supabase),
+  ]);
 
-  const permissions = await getUserPermissions(supabase);
-  if (permissions.length === 0) {
-    redirect(await resolveRegularDestination(supabase));
-  }
-
-  const regularDestination = await resolveRegularDestination(supabase);
+  if (admin) redirect("/campeonatos");
+  if (permissions.length === 0) redirect(regularDestination);
 
   return (
     <main className="pitch-lines flex flex-1 flex-col items-center justify-center px-4 py-16">

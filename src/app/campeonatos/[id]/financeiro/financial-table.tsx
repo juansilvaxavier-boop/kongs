@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { createFinancialEntry, deleteFinancialEntry, updateFinancialEntry } from "./actions";
 
 const CATEGORIES = [
@@ -14,6 +16,8 @@ const CATEGORIES = [
   "Material",
   "Outros",
 ];
+
+const PAGE_SIZE = 20;
 
 type Team = { id: string; name: string };
 type FinancialEntry = {
@@ -33,6 +37,14 @@ function formatCurrency(value: number) {
 
 function formatDate(value: string) {
   return new Date(`${value}T00:00:00`).toLocaleDateString("pt-BR");
+}
+
+function TypeBadge({ type }: { type: string }) {
+  return type === "receita" ? (
+    <Badge tone="success">Receita</Badge>
+  ) : (
+    <Badge tone="warning">Despesa</Badge>
+  );
 }
 
 function EntryFields({
@@ -108,6 +120,31 @@ function EntryFields({
   );
 }
 
+function DeleteEntryButton({ entryId, championshipId }: { entryId: string; championshipId: string }) {
+  const confirm = useConfirm();
+  const toast = useToast();
+
+  return (
+    <form
+      action={async () => {
+        const ok = await confirm({
+          title: "Excluir este lançamento?",
+          confirmLabel: "Excluir",
+          danger: true,
+        });
+        if (ok) {
+          const result = await deleteFinancialEntry(entryId, championshipId);
+          if (!result.ok) toast.error(result.error);
+        }
+      }}
+    >
+      <Button type="submit" variant="danger">
+        Excluir
+      </Button>
+    </form>
+  );
+}
+
 export function FinancialTable({
   championshipId,
   entries,
@@ -119,17 +156,46 @@ export function FinancialTable({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [query, setQuery] = useState("");
+  const [page, setPage] = useState(0);
   const teamName = (teamId: string | null) => teams.find((t) => t.id === teamId)?.name ?? "—";
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return entries;
+    return entries.filter(
+      (entry) =>
+        entry.category.toLowerCase().includes(q) ||
+        (entry.description ?? "").toLowerCase().includes(q) ||
+        teamName(entry.team_id).toLowerCase().includes(q)
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entries, query, teams]);
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages - 1);
+  const paginated = filtered.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
 
   return (
     <Card className="overflow-x-auto">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
           Lançamentos
         </h2>
-        <Button variant="secondary" onClick={() => setCreating((v) => !v)}>
-          {creating ? "Cancelar" : "+ Novo lançamento"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Buscar…"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setPage(0);
+            }}
+            className="w-40"
+          />
+          <Button variant="secondary" onClick={() => setCreating((v) => !v)}>
+            {creating ? "Cancelar" : "+ Novo lançamento"}
+          </Button>
+        </div>
       </div>
 
       {creating && (
@@ -145,89 +211,148 @@ export function FinancialTable({
         </div>
       )}
 
-      {entries.length === 0 ? (
-        <EmptyState>Nenhum lançamento cadastrado ainda.</EmptyState>
+      {filtered.length === 0 ? (
+        <EmptyState>Nenhum lançamento encontrado.</EmptyState>
       ) : (
-        <table className="w-full min-w-[54rem] text-sm">
-          <thead>
-            <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
-              <th className="px-4 py-3">Data</th>
-              <th className="px-4 py-3">Tipo</th>
-              <th className="px-4 py-3">Categoria</th>
-              <th className="px-4 py-3">Descrição</th>
-              <th className="px-4 py-3">Time</th>
-              <th className="px-4 py-3 text-right">Valor</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="w-40 px-4 py-3 text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody>
-            {entries.map((entry) => (
-              <tr key={entry.id} className="border-b border-border last:border-0">
-                {editingId === entry.id ? (
-                  <td colSpan={8} className="px-4 py-3">
-                    <ActionForm
-                      action={(formData) => updateFinancialEntry(entry.id, championshipId, formData)}
-                      onSuccess={() => setEditingId(null)}
-                      className="flex flex-wrap items-end gap-2"
-                    >
-                      <EntryFields entry={entry} teams={teams} />
-                      <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
-                      <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>
-                        Cancelar
-                      </Button>
-                    </ActionForm>
-                  </td>
-                ) : (
-                  <>
-                    <td className="px-4 py-3 text-muted">{formatDate(entry.entry_date)}</td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={
-                          entry.type === "receita" ? "text-accent font-medium" : "text-danger font-medium"
-                        }
-                      >
-                        {entry.type === "receita" ? "Receita" : "Despesa"}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-foreground">{entry.category}</td>
-                    <td className="px-4 py-3 text-muted">{entry.description ?? "—"}</td>
-                    <td className="px-4 py-3 text-muted">{teamName(entry.team_id)}</td>
-                    <td className="px-4 py-3 text-right font-display font-semibold text-foreground">
-                      {formatCurrency(entry.amount)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {entry.paid ? (
-                        <Badge tone="success">Pago</Badge>
-                      ) : (
-                        <Badge tone="warning">Pendente</Badge>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="secondary" onClick={() => setEditingId(entry.id)}>
-                          Editar
-                        </Button>
-                        <form
-                          action={async () => {
-                            if (window.confirm("Excluir este lançamento?")) {
-                              const result = await deleteFinancialEntry(entry.id, championshipId);
-                              if (!result.ok) alert(result.error);
-                            }
-                          }}
-                        >
-                          <Button type="submit" variant="danger">
-                            Excluir
-                          </Button>
-                        </form>
-                      </div>
-                    </td>
-                  </>
-                )}
+        <>
+          {/* Mobile: cards empilhados */}
+          <div className="flex flex-col gap-3 p-4 sm:hidden">
+            {paginated.map((entry) =>
+              editingId === entry.id ? (
+                <Card key={entry.id} className="p-3">
+                  <ActionForm
+                    action={(formData) => updateFinancialEntry(entry.id, championshipId, formData)}
+                    onSuccess={() => setEditingId(null)}
+                    className="flex flex-wrap items-end gap-2"
+                  >
+                    <EntryFields entry={entry} teams={teams} />
+                    <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
+                    <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>
+                      Cancelar
+                    </Button>
+                  </ActionForm>
+                </Card>
+              ) : (
+                <Card key={entry.id} className="p-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <TypeBadge type={entry.type} />
+                    {entry.paid ? (
+                      <Badge tone="success">Pago</Badge>
+                    ) : (
+                      <Badge tone="warning">Pendente</Badge>
+                    )}
+                  </div>
+                  <p className="font-medium text-foreground">{entry.category}</p>
+                  {entry.description && <p className="text-xs text-muted">{entry.description}</p>}
+                  <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted">
+                    <dt>Time</dt>
+                    <dd className="text-right text-foreground">{teamName(entry.team_id)}</dd>
+                    <dt>Data</dt>
+                    <dd className="text-right text-foreground">{formatDate(entry.entry_date)}</dd>
+                  </dl>
+                  <p className="mt-2 text-right font-display text-lg font-semibold text-foreground">
+                    {formatCurrency(entry.amount)}
+                  </p>
+                  <div className="mt-2 flex justify-end gap-2">
+                    <Button variant="secondary" onClick={() => setEditingId(entry.id)}>
+                      Editar
+                    </Button>
+                    <DeleteEntryButton entryId={entry.id} championshipId={championshipId} />
+                  </div>
+                </Card>
+              )
+            )}
+          </div>
+
+          {/* Desktop: tabela */}
+          <table className="hidden w-full min-w-[54rem] text-sm sm:table">
+            <thead>
+              <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
+                <th className="px-4 py-3">Data</th>
+                <th className="px-4 py-3">Tipo</th>
+                <th className="px-4 py-3">Categoria</th>
+                <th className="px-4 py-3">Descrição</th>
+                <th className="px-4 py-3">Time</th>
+                <th className="px-4 py-3 text-right">Valor</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="w-40 px-4 py-3 text-right">Ações</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {paginated.map((entry) => (
+                <tr key={entry.id} className="border-b border-border last:border-0">
+                  {editingId === entry.id ? (
+                    <td colSpan={8} className="px-4 py-3">
+                      <ActionForm
+                        action={(formData) => updateFinancialEntry(entry.id, championshipId, formData)}
+                        onSuccess={() => setEditingId(null)}
+                        className="flex flex-wrap items-end gap-2"
+                      >
+                        <EntryFields entry={entry} teams={teams} />
+                        <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
+                        <Button type="button" variant="secondary" onClick={() => setEditingId(null)}>
+                          Cancelar
+                        </Button>
+                      </ActionForm>
+                    </td>
+                  ) : (
+                    <>
+                      <td className="px-4 py-3 text-muted">{formatDate(entry.entry_date)}</td>
+                      <td className="px-4 py-3">
+                        <TypeBadge type={entry.type} />
+                      </td>
+                      <td className="px-4 py-3 text-foreground">{entry.category}</td>
+                      <td className="px-4 py-3 text-muted">{entry.description ?? "—"}</td>
+                      <td className="px-4 py-3 text-muted">{teamName(entry.team_id)}</td>
+                      <td className="px-4 py-3 text-right font-display font-semibold text-foreground">
+                        {formatCurrency(entry.amount)}
+                      </td>
+                      <td className="px-4 py-3">
+                        {entry.paid ? (
+                          <Badge tone="success">Pago</Badge>
+                        ) : (
+                          <Badge tone="warning">Pendente</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="secondary" onClick={() => setEditingId(entry.id)}>
+                            Editar
+                          </Button>
+                          <DeleteEntryButton entryId={entry.id} championshipId={championshipId} />
+                        </div>
+                      </td>
+                    </>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 text-sm text-muted">
+              <span>
+                Página {currentPage + 1} de {totalPages} · {filtered.length} lançamentos
+              </span>
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  disabled={currentPage === 0}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  Anterior
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={currentPage >= totalPages - 1}
+                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                >
+                  Próxima
+                </Button>
+              </div>
+            </div>
+          )}
+        </>
       )}
     </Card>
   );

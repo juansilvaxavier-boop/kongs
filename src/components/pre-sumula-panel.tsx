@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card } from "./ui";
 import { SignaturePad } from "./signature-pad";
+import { useToast } from "./toast-provider";
 import type { ActionResult } from "@/lib/action-result";
 
 type Player = { id: string; name: string; team_id: string | null };
@@ -32,6 +33,7 @@ function TeamLineupColumn({
   const [captainName, setCaptainName] = useState(signature?.captainName ?? "");
   const [signing, setSigning] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const toast = useToast();
 
   const showForm = !signature || resigning;
 
@@ -58,7 +60,7 @@ function TeamLineupColumn({
                     onChange={async (event) => {
                       setPendingId(player.id);
                       const result = await onToggle(player.id, event.target.checked);
-                      if (!result.ok) alert(result.error);
+                      if (!result.ok) toast.error(result.error);
                       setPendingId(null);
                     }}
                   />

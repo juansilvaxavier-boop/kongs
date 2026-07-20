@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button, Card, Input } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { deleteChampionship, renameChampionship } from "./actions";
 
 type Championship = {
@@ -15,6 +17,8 @@ type Championship = {
 
 export function ChampionshipList({ items }: { items: Championship[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const confirm = useConfirm();
+  const toast = useToast();
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -81,13 +85,15 @@ export function ChampionshipList({ items }: { items: Championship[] }) {
                 </Button>
                 <form
                   action={async () => {
-                    if (
-                      window.confirm(
-                        `Excluir o campeonato "${championship.name}"? Essa ação não pode ser desfeita.`
-                      )
-                    ) {
+                    const ok = await confirm({
+                      title: `Excluir o campeonato "${championship.name}"?`,
+                      description: "Essa ação não pode ser desfeita.",
+                      confirmLabel: "Excluir",
+                      danger: true,
+                    });
+                    if (ok) {
                       const result = await deleteChampionship(championship.id);
-                      if (!result.ok) alert(result.error);
+                      if (!result.ok) toast.error(result.error);
                     }
                   }}
                 >

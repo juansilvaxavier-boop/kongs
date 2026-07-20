@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getOwnedTeam, getUserPermissions, isAdmin } from "@/lib/auth/roles";
+import { getAccessContext, getOwnedTeam } from "@/lib/auth/roles";
 import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
 import { signOut } from "@/app/login/actions";
 import { BrandMark, Button } from "@/components/ui";
@@ -20,14 +20,13 @@ export default async function MeuTimeLayout({
 
   if (!user) redirect("/login");
 
-  const team = await getOwnedTeam(supabase, user.id);
+  const [team, { canManage }] = await Promise.all([
+    getOwnedTeam(supabase, user.id),
+    getAccessContext(supabase),
+  ]);
   if (!team) {
     redirect(await resolveAuthenticatedDestination(supabase));
   }
-
-  const admin = await isAdmin(supabase);
-  const permissions = admin ? [] : await getUserPermissions(supabase);
-  const canManage = admin || permissions.length > 0;
 
   return (
     <div className="pitch-lines flex min-h-dvh flex-1 flex-col">

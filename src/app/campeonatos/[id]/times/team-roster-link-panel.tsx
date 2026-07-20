@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Badge, Button, Input } from "@/components/ui";
+import { useConfirm } from "@/components/confirm-provider";
 import {
   getTeamRosterLink,
   getTeamRosterStatus,
@@ -16,6 +17,7 @@ export function TeamRosterLinkPanel({ teamId }: { teamId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const confirm = useConfirm();
 
   useEffect(() => {
     let cancelled = false;
@@ -51,11 +53,13 @@ export function TeamRosterLinkPanel({ teamId }: { teamId: string }) {
   }
 
   async function regenerate() {
-    if (
-      !window.confirm(
-        "Isso invalida o link atual e reabre o cadastro para edição — quem já tiver salvo o link antigo não vai mais conseguir usá-lo. Continuar?"
-      )
-    ) {
+    const ok = await confirm({
+      title: "Gerar um novo link?",
+      description:
+        "Isso invalida o link atual e reabre o cadastro para edição — quem já tiver salvo o link antigo não vai mais conseguir usá-lo.",
+      confirmLabel: "Gerar novo link",
+    });
+    if (!ok) {
       return;
     }
     setRegenerating(true);

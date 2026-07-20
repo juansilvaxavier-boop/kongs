@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui";
+import { useToast } from "@/components/toast-provider";
 
 const DOCUMENT_LABELS: Record<string, string> = { cpf: "CPF", rg: "RG" };
 
@@ -62,6 +63,7 @@ export function RosterPdfButton({
   players: RosterPlayer[];
 }) {
   const [pending, setPending] = useState(false);
+  const toast = useToast();
 
   return (
     <Button
@@ -101,7 +103,7 @@ export function RosterPdfButton({
 
           doc.save(`elenco-${teamName}.pdf`);
         } catch {
-          alert("Não foi possível gerar o PDF. Tente novamente.");
+          toast.error("Não foi possível gerar o PDF. Tente novamente.");
         } finally {
           setPending(false);
         }

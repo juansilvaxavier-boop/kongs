@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Button, Card, FileInput, Input, Label } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { createSponsor, deleteSponsor, updateSponsor } from "./sponsors-actions";
 
 type Sponsor = { id: string; name: string; logo_url: string | null; link_url: string | null };
@@ -18,6 +20,8 @@ export function SponsorsSection({
   metricsBySponsor?: Record<string, Metrics>;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const confirm = useConfirm();
+  const toast = useToast();
 
   return (
     <Card className="max-w-xl p-5">
@@ -109,9 +113,14 @@ export function SponsorsSection({
                     </Button>
                     <form
                       action={async () => {
-                        if (window.confirm(`Excluir o patrocinador "${sponsor.name}"?`)) {
+                        const ok = await confirm({
+                          title: `Excluir o patrocinador "${sponsor.name}"?`,
+                          confirmLabel: "Excluir",
+                          danger: true,
+                        });
+                        if (ok) {
                           const result = await deleteSponsor(sponsor.id, championshipId);
-                          if (!result.ok) alert(result.error);
+                          if (!result.ok) toast.error(result.error);
                         }
                       }}
                     >

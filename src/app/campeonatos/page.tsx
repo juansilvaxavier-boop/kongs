@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Card, EmptyState, FileInput, Input, Label, PageHeader, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
-import { getUserPermissions, isAdmin } from "@/lib/auth/roles";
+import { getAccessContext } from "@/lib/auth/roles";
 import { createChampionship } from "./actions";
 import { ChampionshipList } from "./championship-list";
 
@@ -13,14 +13,14 @@ export default async function CampeonatosPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const admin = await isAdmin(supabase);
-  const permissions = admin ? [] : await getUserPermissions(supabase);
+  const [{ isAdmin: admin, permissions }, { data: championships }] = await Promise.all([
+    getAccessContext(supabase),
+    supabase
+      .from("championships")
+      .select("id, name, created_at, logo_url")
+      .order("created_at", { ascending: false }),
+  ]);
   const canCreate = admin || permissions.includes("manage_championships");
-
-  const { data: championships } = await supabase
-    .from("championships")
-    .select("id, name, created_at, logo_url")
-    .order("created_at", { ascending: false });
 
   return (
     <div>

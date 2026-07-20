@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { useToast } from "@/components/toast-provider";
 import { SumulaPdfButton } from "@/components/sumula-pdf-button";
 import { PreSumulaPanel, type CaptainSignature } from "@/components/pre-sumula-panel";
 import {
@@ -46,6 +47,7 @@ function TeamSumulaColumn({
   const teamGoals = goalEvents.filter((g) => playerIds.has(g.player_id));
   const teamCards = cardEvents.filter((c) => playerIds.has(c.player_id));
   const playerName = (id: string) => allPlayers.find((p) => p.id === id)?.name ?? "?";
+  const toast = useToast();
 
   return (
     <Card className="p-3">
@@ -71,7 +73,7 @@ function TeamSumulaColumn({
                     className="text-xs text-muted underline hover:text-danger"
                     onClick={async () => {
                       const result = await sumulaDeleteGoal(token, gameId, goal.id);
-                      if (!result.ok) alert(result.error);
+                      if (!result.ok) toast.error(result.error);
                     }}
                   >
                     remover
@@ -118,7 +120,7 @@ function TeamSumulaColumn({
                     className="text-xs text-muted underline hover:text-danger"
                     onClick={async () => {
                       const result = await sumulaDeleteCard(token, gameId, card.id);
-                      if (!result.ok) alert(result.error);
+                      if (!result.ok) toast.error(result.error);
                     }}
                   >
                     remover

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "./toast-provider";
 import { Button } from "./ui";
 
 export function ExportImageButton({
@@ -11,6 +12,7 @@ export function ExportImageButton({
   fileName: string;
 }) {
   const [pending, setPending] = useState(false);
+  const toast = useToast();
 
   return (
     <Button
@@ -20,7 +22,7 @@ export function ExportImageButton({
       onClick={async () => {
         const el = document.getElementById(targetId);
         if (!el) {
-          alert("Não foi possível encontrar o conteúdo para exportar.");
+          toast.error("Não foi possível encontrar o conteúdo para exportar.");
           return;
         }
 
@@ -33,7 +35,7 @@ export function ExportImageButton({
           link.href = canvas.toDataURL("image/png");
           link.click();
         } catch {
-          alert("Não foi possível gerar a imagem. Tente novamente.");
+          toast.error("Não foi possível gerar a imagem. Tente novamente.");
         } finally {
           setPending(false);
         }

@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BrandMark } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { SwitchProfileLink } from "@/components/switch-profile-link";
-import { getUserPermissions, isAdmin } from "@/lib/auth/roles";
+import { getAccessContext } from "@/lib/auth/roles";
 import { SidebarNav } from "./sidebar-nav";
 
 export default async function InicioLayout({
@@ -17,9 +17,7 @@ export default async function InicioLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const admin = await isAdmin(supabase);
-  const permissions = admin ? [] : await getUserPermissions(supabase);
-  const canManage = admin || permissions.length > 0;
+  const { canManage } = await getAccessContext(supabase);
 
   return (
     <div className="pitch-lines flex min-h-dvh flex-1 flex-col">

@@ -3,16 +3,7 @@
 import { useState } from "react";
 import { Card, EmptyState, Select } from "@/components/ui";
 import { PlayerCard } from "@/components/player-card";
-
-type Attributes = {
-  ovr: number;
-  ritmo: number;
-  finalizacao: number;
-  passe: number;
-  drible: number;
-  defesa: number;
-  fisico: number;
-};
+import type { PlayerAttributes as Attributes } from "@/lib/gamification";
 
 export type ComparablePlayer = {
   id: string;

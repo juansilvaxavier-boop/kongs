@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Card, EmptyState, Select } from "@/components/ui";
 
 export type ComparableTeam = {
@@ -32,8 +33,9 @@ function TeamHeader({ team }: { team: ComparableTeam }) {
   return (
     <div className="flex flex-col items-center gap-2">
       {team.teamCrestUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={team.teamCrestUrl} alt="" className="h-16 w-16 rounded-full object-cover" />
+        <span className="relative h-16 w-16 shrink-0">
+          <Image src={team.teamCrestUrl} alt="" fill loading="eager" sizes="64px" className="rounded-full object-cover" />
+        </span>
       ) : (
         <span className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-2 text-lg font-bold text-muted">
           {team.teamName.slice(0, 2).toUpperCase()}

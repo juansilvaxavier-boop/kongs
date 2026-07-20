@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "./toast-provider";
 import { Button } from "./ui";
 
 type Player = { id: string; name: string; team_id: string | null };
@@ -46,6 +47,7 @@ export function SumulaPdfButton({
   cardEvents: CardEvent[];
 }) {
   const [pending, setPending] = useState(false);
+  const toast = useToast();
 
   return (
     <Button
@@ -83,7 +85,7 @@ export function SumulaPdfButton({
 
           doc.save(`sumula-${teamAName}-x-${teamBName}.pdf`);
         } catch {
-          alert("Não foi possível gerar o PDF. Tente novamente.");
+          toast.error("Não foi possível gerar o PDF. Tente novamente.");
         } finally {
           setPending(false);
         }

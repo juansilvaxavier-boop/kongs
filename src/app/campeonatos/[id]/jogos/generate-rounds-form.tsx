@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card, Input, Label } from "@/components/ui";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { generateRoundRobinForTotalRounds } from "@/lib/round-robin";
 import { generateRounds, type GeneratedGamePreview } from "./actions";
 
@@ -44,6 +46,8 @@ export function GenerateRoundsForm({
   const [revealed, setRevealed] = useState<GeneratedGamePreview[]>([]);
   const fullPreviewRef = useRef<GeneratedGamePreview[]>([]);
   const skippedRef = useRef(false);
+  const confirm = useConfirm();
+  const toast = useToast();
 
   const eligiblePools = poolSizes.filter((size) => size >= 2);
   const totalGames = eligiblePools.reduce(
@@ -55,9 +59,12 @@ export function GenerateRoundsForm({
     .map((size) => ({ size, gamesPerTeam: gamesPerTeamRange(size, totalRounds) }));
 
   async function handleGenerate() {
-    if (
-      !window.confirm(`Isso vai criar ${totalGames} jogos em ${totalRounds} rodada(s). Continuar?`)
-    ) {
+    const ok = await confirm({
+      title: "Gerar as rodadas?",
+      description: `Isso vai criar ${totalGames} jogos em ${totalRounds} rodada(s).`,
+      confirmLabel: "Gerar",
+    });
+    if (!ok) {
       return;
     }
 
@@ -67,7 +74,7 @@ export function GenerateRoundsForm({
     const result = await generateRounds(championshipId, formData);
     setPending(false);
     if (!result.ok) {
-      alert(result.error);
+      toast.error(result.error);
       return;
     }
     const preview = result.data;

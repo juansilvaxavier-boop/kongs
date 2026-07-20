@@ -1,15 +1,7 @@
+import Image from "next/image";
 import { PlayerCard } from "@/components/player-card";
 import type { Formation } from "@/lib/lineup";
-
-type Attributes = {
-  ovr: number;
-  ritmo: number;
-  finalizacao: number;
-  passe: number;
-  drible: number;
-  defesa: number;
-  fisico: number;
-};
+import type { PlayerAttributes as Attributes } from "@/lib/gamification";
 
 export type PitchPlayer = {
   id: string;
@@ -48,8 +40,9 @@ export function MiniPitch({
       <div className="mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           {crestUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={crestUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
+            <span className="relative h-6 w-6 shrink-0">
+              <Image src={crestUrl} alt="" fill loading="eager" sizes="24px" className="rounded-full object-cover" />
+            </span>
           ) : null}
           <span className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
             {teamName}

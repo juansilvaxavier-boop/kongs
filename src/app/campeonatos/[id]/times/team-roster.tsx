@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Badge, Button, Card, FileInput, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import {
   createPlayer,
@@ -40,6 +42,8 @@ export function TeamRoster({
 }) {
   const [creatingCoach, setCreatingCoach] = useState(false);
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
+  const confirm = useConfirm();
+  const toast = useToast();
 
   return (
     <div className="space-y-5 border-t border-border bg-surface-2/40 p-4">
@@ -255,9 +259,14 @@ export function TeamRoster({
                             </Button>
                             <form
                               action={async () => {
-                                if (window.confirm(`Excluir o jogador "${player.name}"?`)) {
+                                const ok = await confirm({
+                                  title: `Excluir o jogador "${player.name}"?`,
+                                  confirmLabel: "Excluir",
+                                  danger: true,
+                                });
+                                if (ok) {
                                   const result = await deletePlayer(player.id, championshipId);
-                                  if (!result.ok) alert(result.error);
+                                  if (!result.ok) toast.error(result.error);
                                 }
                               }}
                             >

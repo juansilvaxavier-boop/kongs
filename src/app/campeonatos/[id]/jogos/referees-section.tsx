@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Button, Card, Input, Label } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { createReferee, deleteReferee, updateReferee } from "./actions";
 
 type Referee = { id: string; name: string; cpf: string | null };
@@ -18,6 +20,8 @@ export function RefereesSection({
   averageRatingByReferee?: Record<string, RatingSummary>;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const confirm = useConfirm();
+  const toast = useToast();
 
   return (
     <details className="mb-6 rounded-xl border border-border bg-surface/80 p-5 shadow-lg shadow-black/20 backdrop-blur">
@@ -89,9 +93,14 @@ export function RefereesSection({
                       </Button>
                       <form
                         action={async () => {
-                          if (window.confirm(`Excluir o árbitro "${referee.name}"?`)) {
+                          const ok = await confirm({
+                            title: `Excluir o árbitro "${referee.name}"?`,
+                            confirmLabel: "Excluir",
+                            danger: true,
+                          });
+                          if (ok) {
                             const result = await deleteReferee(referee.id, championshipId);
-                            if (!result.ok) alert(result.error);
+                            if (!result.ok) toast.error(result.error);
                           }
                         }}
                       >

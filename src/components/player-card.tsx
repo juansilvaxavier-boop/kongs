@@ -1,14 +1,5 @@
-import { computeRarity, type Rarity } from "@/lib/gamification";
-
-type Attributes = {
-  ovr: number;
-  ritmo: number;
-  finalizacao: number;
-  passe: number;
-  drible: number;
-  defesa: number;
-  fisico: number;
-};
+import Image from "next/image";
+import { computeRarity, type PlayerAttributes as Attributes, type Rarity } from "@/lib/gamification";
 
 const CARD_WIDTH_PX = { sm: 128, md: 160, lg: 224 };
 const CARD_CORNER_PX = { sm: 8, md: 10, lg: 14 };
@@ -126,23 +117,24 @@ export function PlayerCard({
           </span>
         </div>
         {crestUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={crestUrl}
-            alt=""
-            className={`${crestSizes[size]} rounded-full object-cover`}
-          />
+          <span className={`relative shrink-0 ${crestSizes[size]}`}>
+            <Image src={crestUrl} alt="" fill loading="eager" sizes="40px" className="rounded-full object-cover" />
+          </span>
         )}
       </div>
 
       <div className="mt-1 flex justify-center">
         {photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={photoUrl}
-            alt=""
-            className={`${photoSizes[size]} rounded-full border-2 border-current/30 object-cover`}
-          />
+          <span className={`relative ${photoSizes[size]}`}>
+            <Image
+              src={photoUrl}
+              alt=""
+              fill
+              loading="eager"
+              sizes="112px"
+              className="rounded-full border-2 border-current/30 object-cover"
+            />
+          </span>
         ) : (
           <span
             className={`flex ${photoSizes[size]} items-center justify-center rounded-full border-2 border-current/30 bg-black/10 font-display font-bold`}

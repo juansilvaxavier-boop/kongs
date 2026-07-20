@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import { deleteOwnPlayer, updateOwnPlayer } from "./actions";
 
@@ -15,6 +17,8 @@ type Player = {
 
 export function OwnPlayerTable({ players }: { players: Player[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const confirm = useConfirm();
+  const toast = useToast();
 
   if (players.length === 0) {
     return <EmptyState>Nenhum jogador cadastrado ainda.</EmptyState>;
@@ -100,11 +104,14 @@ export function OwnPlayerTable({ players }: { players: Player[] }) {
                       </Button>
                       <form
                         action={async () => {
-                          if (
-                            window.confirm(`Excluir o jogador "${player.name}"?`)
-                          ) {
+                          const ok = await confirm({
+                            title: `Excluir o jogador "${player.name}"?`,
+                            confirmLabel: "Excluir",
+                            danger: true,
+                          });
+                          if (ok) {
                             const result = await deleteOwnPlayer(player.id);
-                            if (!result.ok) alert(result.error);
+                            if (!result.ok) toast.error(result.error);
                           }
                         }}
                       >

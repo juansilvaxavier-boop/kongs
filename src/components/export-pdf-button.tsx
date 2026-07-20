@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useToast } from "./toast-provider";
 import { Button } from "./ui";
 
 export function ExportPdfButton({
@@ -15,6 +16,7 @@ export function ExportPdfButton({
   rows: (string | number)[][];
 }) {
   const [pending, setPending] = useState(false);
+  const toast = useToast();
 
   return (
     <Button
@@ -36,7 +38,7 @@ export function ExportPdfButton({
           });
           doc.save(`${fileName}.pdf`);
         } catch {
-          alert("Não foi possível gerar o PDF. Tente novamente.");
+          toast.error("Não foi possível gerar o PDF. Tente novamente.");
         } finally {
           setPending(false);
         }

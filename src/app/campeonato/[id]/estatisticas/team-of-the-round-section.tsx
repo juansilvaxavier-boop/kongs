@@ -4,16 +4,7 @@ import { useState } from "react";
 import { Badge, EmptyState, Select } from "@/components/ui";
 import { PlayerCard } from "@/components/player-card";
 import { computeTeamOfTheRound, type RoundOvrEntry } from "@/lib/team-of-the-round";
-
-type Attributes = {
-  ovr: number;
-  ritmo: number;
-  finalizacao: number;
-  passe: number;
-  drible: number;
-  defesa: number;
-  fisico: number;
-};
+import type { PlayerAttributes as Attributes } from "@/lib/gamification";
 
 export type RoundPlayerInfo = {
   name: string;

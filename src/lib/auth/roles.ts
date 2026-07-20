@@ -27,6 +27,23 @@ export async function getUserPermissions(
   return (data ?? []).map((row) => row.permission as Permission);
 }
 
+export type AccessContext = {
+  isAdmin: boolean;
+  permissions: Permission[];
+  canManage: boolean;
+};
+
+// Admin ou permissão granular concedida — o par usado em todo lugar
+// que decide se alguém pode entrar no painel de gestão (/campeonatos)
+// ou ver o botão de troca de perfil.
+export async function getAccessContext(
+  supabase: SupabaseClient<Database>
+): Promise<AccessContext> {
+  const admin = await isAdmin(supabase);
+  const permissions = admin ? [] : await getUserPermissions(supabase);
+  return { isAdmin: admin, permissions, canManage: admin || permissions.length > 0 };
+}
+
 export async function getOwnedTeam(
   supabase: SupabaseClient<Database>,
   userId: string

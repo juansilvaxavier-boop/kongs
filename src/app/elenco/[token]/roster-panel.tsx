@@ -1,9 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Badge, Button, Card, EmptyState, FileInput, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import {
   rosterAddPlayer,
@@ -105,6 +108,8 @@ export function RosterPanel({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const atCap = playerCount >= MAX_PLAYERS;
+  const confirm = useConfirm();
+  const toast = useToast();
 
   function saveProgress() {
     setSaved(true);
@@ -112,11 +117,12 @@ export function RosterPanel({
   }
 
   async function handleSubmit() {
-    if (
-      !window.confirm(
-        "Depois de enviar, não será mais possível alterar os dados do elenco. Confirma o envio?"
-      )
-    ) {
+    const ok = await confirm({
+      title: "Confirmar envio do elenco?",
+      description: "Depois de enviar, não será mais possível alterar os dados do elenco.",
+      confirmLabel: "Enviar",
+    });
+    if (!ok) {
       return;
     }
     setSubmitting(true);
@@ -135,8 +141,9 @@ export function RosterPanel({
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
         <div className="flex items-center gap-3">
           {crestUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={crestUrl} alt="" className="h-10 w-10 rounded-full object-cover" />
+            <span className="relative h-10 w-10 shrink-0">
+              <Image src={crestUrl} alt="" fill loading="eager" sizes="40px" className="rounded-full object-cover" />
+            </span>
           ) : null}
           <div>
             <p className="font-display text-base font-bold text-foreground">{teamName}</p>
@@ -274,12 +281,17 @@ export function RosterPanel({
                               </Button>
                               <form
                                 action={async () => {
-                                  if (window.confirm(`Excluir o jogador "${player.name}"?`)) {
+                                  const ok = await confirm({
+                                    title: `Excluir o jogador "${player.name}"?`,
+                                    confirmLabel: "Excluir",
+                                    danger: true,
+                                  });
+                                  if (ok) {
                                     const result = await rosterDeletePlayer(token, player.id);
                                     if (result.ok) {
                                       router.refresh();
                                     } else {
-                                      alert(result.error);
+                                      toast.error(result.error);
                                     }
                                   }
                                 }}

@@ -13,24 +13,14 @@ export default async function TimesPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: canManage } = await supabase.rpc("can_manage_teams_games", {
-    p_championship_id: id,
-  });
-  if (!canManage) {
-    return (
-      <div>
-        <PageHeader eyebrow="Elenco de clubes" title="Times" />
-        <EmptyState>Você não tem permissão para gerenciar times, jogos e árbitros.</EmptyState>
-      </div>
-    );
-  }
-
   const [
+    { data: canManage },
     { data: championship },
     { data: teams },
     { data: coaches },
     { data: players },
   ] = await Promise.all([
+    supabase.rpc("can_manage_teams_games", { p_championship_id: id }),
     supabase
       .from("championships")
       .select("format, team_count, group_count")
@@ -52,6 +42,15 @@ export default async function TimesPage({
       .eq("championship_id", id)
       .order("name"),
   ]);
+
+  if (!canManage) {
+    return (
+      <div>
+        <PageHeader eyebrow="Elenco de clubes" title="Times" />
+        <EmptyState>Você não tem permissão para gerenciar times, jogos e árbitros.</EmptyState>
+      </div>
+    );
+  }
 
   const createTeamWithId = createTeam.bind(null, id);
   const showGroups = championship?.format === "copa";

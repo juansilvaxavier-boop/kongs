@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 type Player = { id: string; name: string; team_id: string | null };
@@ -154,8 +155,16 @@ function TeamColumn({
     <div className={`flex flex-col gap-4 ${alignClass}`}>
       <div className={`flex items-center gap-4 ${align === "right" ? "flex-row-reverse" : ""}`}>
         {crestUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={crestUrl} alt="" className="h-20 w-20 shrink-0 rounded-full object-cover sm:h-28 sm:w-28" />
+          <span className="relative h-20 w-20 shrink-0 sm:h-28 sm:w-28">
+            <Image
+              src={crestUrl}
+              alt=""
+              fill
+              loading="eager"
+              sizes="(min-width: 640px) 112px, 80px"
+              className="rounded-full object-cover"
+            />
+          </span>
         ) : (
           <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full bg-white/10 text-2xl font-bold sm:h-28 sm:w-28">
             {name.slice(0, 2).toUpperCase()}

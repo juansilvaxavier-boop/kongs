@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button, Card } from "@/components/ui";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { resetSorteio, sortearGrupos, type SorteioReveal } from "./actions";
 
 function sleep(ms: number) {
@@ -17,19 +19,22 @@ export function SortearGruposButton({ championshipId }: { championshipId: string
   const [revealed, setRevealed] = useState<SorteioReveal[]>([]);
   const [groupOrder, setGroupOrder] = useState<string[]>([]);
   const [resetting, setResetting] = useState(false);
+  const confirm = useConfirm();
+  const toast = useToast();
 
   async function startDraw() {
-    if (
-      !window.confirm(
-        "Sortear os grupos agora vai substituir o grupo de todos os times cadastrados. Continuar?"
-      )
-    ) {
+    const ok = await confirm({
+      title: "Sortear os grupos?",
+      description: "Isso vai substituir o grupo de todos os times cadastrados.",
+      confirmLabel: "Sortear",
+    });
+    if (!ok) {
       return;
     }
 
     const result = await sortearGrupos(championshipId);
     if (!result.ok) {
-      alert(result.error);
+      toast.error(result.error);
       return;
     }
 
@@ -55,17 +60,19 @@ export function SortearGruposButton({ championshipId }: { championshipId: string
   }
 
   async function handleReset() {
-    if (
-      !window.confirm(
-        "Isso remove o grupo de todos os times cadastrados, voltando ao estado anterior ao sorteio. Continuar?"
-      )
-    ) {
+    const ok = await confirm({
+      title: "Resetar o sorteio?",
+      description: "Isso remove o grupo de todos os times cadastrados, voltando ao estado anterior ao sorteio.",
+      confirmLabel: "Resetar",
+      danger: true,
+    });
+    if (!ok) {
       return;
     }
     setResetting(true);
     const result = await resetSorteio(championshipId);
     if (!result.ok) {
-      alert(result.error);
+      toast.error(result.error);
     } else {
       router.refresh();
     }

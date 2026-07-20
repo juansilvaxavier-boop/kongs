@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Rajdhani } from "next/font/google";
 import { ServiceWorkerRegister } from "@/components/service-worker-register";
+import { ToastProvider } from "@/components/toast-provider";
+import { ConfirmProvider } from "@/components/confirm-provider";
 import "./globals.css";
 
 const bodyFont = Inter({
@@ -47,7 +49,9 @@ export default function RootLayout({
           }}
         />
         <ServiceWorkerRegister />
-        {children}
+        <ToastProvider>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </ToastProvider>
       </body>
     </html>
   );

@@ -20,19 +20,8 @@ export default async function JogosPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: canManage } = await supabase.rpc("can_manage_teams_games", {
-    p_championship_id: id,
-  });
-  if (!canManage) {
-    return (
-      <div>
-        <PageHeader eyebrow="Tabela de jogos" title="Jogos" />
-        <EmptyState>Você não tem permissão para gerenciar times, jogos e árbitros.</EmptyState>
-      </div>
-    );
-  }
-
   const [
+    { data: canManage },
     { data: championship },
     { data: gamesData },
     { data: teams },
@@ -46,6 +35,7 @@ export default async function JogosPage({
     { data: refereeRatings },
   ] =
     await Promise.all([
+      supabase.rpc("can_manage_teams_games", { p_championship_id: id }),
       supabase
         .from("championships")
         .select("has_knockout_stage, format")
@@ -98,6 +88,15 @@ export default async function JogosPage({
         .select("referee_id, rating")
         .eq("championship_id", id),
     ]);
+
+  if (!canManage) {
+    return (
+      <div>
+        <PageHeader eyebrow="Tabela de jogos" title="Jogos" />
+        <EmptyState>Você não tem permissão para gerenciar times, jogos e árbitros.</EmptyState>
+      </div>
+    );
+  }
 
   const ratingTotalsByReferee = new Map<string, { sum: number; count: number }>();
   for (const row of refereeRatings ?? []) {

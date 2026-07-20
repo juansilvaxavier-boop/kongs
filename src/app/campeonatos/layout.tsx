@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { getUserPermissions, isAdmin } from "@/lib/auth/roles";
+import { getAccessContext } from "@/lib/auth/roles";
 import { resolveAuthenticatedDestination, resolveRegularDestination } from "@/lib/auth/destination";
 import { BrandMark } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -19,12 +19,13 @@ export default async function CampeonatosLayout({
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
-  const admin = await isAdmin(supabase);
-  const permissions = admin ? [] : await getUserPermissions(supabase);
-  if (!admin && permissions.length === 0) {
+  const [{ isAdmin: admin, canManage }, regularDestination] = await Promise.all([
+    getAccessContext(supabase),
+    resolveRegularDestination(supabase),
+  ]);
+  if (!canManage) {
     redirect(await resolveAuthenticatedDestination(supabase));
   }
-  const regularDestination = await resolveRegularDestination(supabase);
 
   return (
     <div className="pitch-lines flex min-h-dvh flex-1 flex-col">

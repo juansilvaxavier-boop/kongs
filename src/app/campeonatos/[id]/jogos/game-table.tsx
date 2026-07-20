@@ -3,6 +3,8 @@
 import { Fragment, useState } from "react";
 import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { deleteAllGames, deleteGame, updateGame } from "./actions";
 import { GameDateField } from "./game-date-field";
 import { SumulaPanel } from "./sumula-panel";
@@ -76,6 +78,8 @@ export function GameTable({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [eventingId, setEventingId] = useState<string | null>(null);
+  const confirm = useConfirm();
+  const toast = useToast();
   const teamName = (teamId: string) =>
     teams.find((t) => t.id === teamId)?.name ?? "?";
   const venueName = (venueId: string | null) =>
@@ -92,13 +96,16 @@ export function GameTable({
     <div className="mb-3 flex justify-end">
       <form
         action={async () => {
-          if (
-            window.confirm(
-              `Excluir todos os ${games.length} jogos deste campeonato? Os gols e cartões lançados também serão apagados. Essa ação não pode ser desfeita.`
-            )
-          ) {
+          const ok = await confirm({
+            title: `Excluir todos os ${games.length} jogos deste campeonato?`,
+            description:
+              "Os gols e cartões lançados também serão apagados. Essa ação não pode ser desfeita.",
+            confirmLabel: "Excluir tudo",
+            danger: true,
+          });
+          if (ok) {
             const result = await deleteAllGames(championshipId);
-            if (!result.ok) alert(result.error);
+            if (!result.ok) toast.error(result.error);
           }
         }}
       >
@@ -292,15 +299,16 @@ export function GameTable({
                       </Button>
                       <form
                         action={async () => {
-                          if (
-                            window.confirm(
-                              `Excluir o jogo "${teamName(game.team_a_id)} x ${teamName(
-                                game.team_b_id
-                              )}"?`
-                            )
-                          ) {
+                          const ok = await confirm({
+                            title: `Excluir o jogo "${teamName(game.team_a_id)} x ${teamName(
+                              game.team_b_id
+                            )}"?`,
+                            confirmLabel: "Excluir",
+                            danger: true,
+                          });
+                          if (ok) {
                             const result = await deleteGame(game.id, championshipId);
-                            if (!result.ok) alert(result.error);
+                            if (!result.ok) toast.error(result.error);
                           }
                         }}
                       >

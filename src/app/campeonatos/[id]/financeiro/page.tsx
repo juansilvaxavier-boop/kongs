@@ -14,9 +14,22 @@ export default async function FinanceiroPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: canManage } = await supabase.rpc("can_manage_finance", {
-    p_championship_id: id,
-  });
+  const [{ data: canManage }, { data: entries }, { data: teams }, { data: games }] =
+    await Promise.all([
+      supabase.rpc("can_manage_finance", { p_championship_id: id }),
+      supabase
+        .from("financial_entries")
+        .select("id, type, category, description, amount, team_id, paid, entry_date")
+        .eq("championship_id", id)
+        .order("entry_date", { ascending: false }),
+      supabase.from("teams").select("id, name").eq("championship_id", id).order("name"),
+      supabase
+        .from("games")
+        .select("id, referee_paid, referee_payment_amount")
+        .eq("championship_id", id)
+        .not("referee_payment_amount", "is", null),
+    ]);
+
   if (!canManage) {
     return (
       <div>
@@ -25,20 +38,6 @@ export default async function FinanceiroPage({
       </div>
     );
   }
-
-  const [{ data: entries }, { data: teams }, { data: games }] = await Promise.all([
-    supabase
-      .from("financial_entries")
-      .select("id, type, category, description, amount, team_id, paid, entry_date")
-      .eq("championship_id", id)
-      .order("entry_date", { ascending: false }),
-    supabase.from("teams").select("id, name").eq("championship_id", id).order("name"),
-    supabase
-      .from("games")
-      .select("id, referee_paid, referee_payment_amount")
-      .eq("championship_id", id)
-      .not("referee_payment_amount", "is", null),
-  ]);
 
   const manualReceitasPagas = (entries ?? [])
     .filter((e) => e.type === "receita" && e.paid)

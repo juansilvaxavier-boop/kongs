@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { Button, Card, Input, Label } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { useConfirm } from "@/components/confirm-provider";
+import { useToast } from "@/components/toast-provider";
 import { createVenue, deleteVenue, updateVenue } from "./actions";
 
 type Venue = { id: string; name: string; address: string | null };
@@ -15,6 +17,8 @@ export function VenuesSection({
   venues: Venue[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const confirm = useConfirm();
+  const toast = useToast();
 
   return (
     <details className="mb-6 rounded-xl border border-border bg-surface/80 p-5 shadow-lg shadow-black/20 backdrop-blur">
@@ -76,9 +80,14 @@ export function VenuesSection({
                       </Button>
                       <form
                         action={async () => {
-                          if (window.confirm(`Excluir o local "${venue.name}"?`)) {
+                          const ok = await confirm({
+                            title: `Excluir o local "${venue.name}"?`,
+                            confirmLabel: "Excluir",
+                            danger: true,
+                          });
+                          if (ok) {
                             const result = await deleteVenue(venue.id, championshipId);
-                            if (!result.ok) alert(result.error);
+                            if (!result.ok) toast.error(result.error);
                           }
                         }}
                       >

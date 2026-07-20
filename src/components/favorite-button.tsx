@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { toggleFavorite, type FavoriteKind } from "@/app/favoritos/actions";
+import { useToast } from "./toast-provider";
 
 export function FavoriteButton({
   kind,
@@ -18,6 +19,7 @@ export function FavoriteButton({
 }) {
   const [favorited, setFavorited] = useState(initialFavorited);
   const [pending, setPending] = useState(false);
+  const toast = useToast();
 
   const sizeClasses = size === "sm" ? "h-7 w-7 text-base" : "h-9 w-9 text-lg";
 
@@ -33,7 +35,7 @@ export function FavoriteButton({
         if (result.ok) {
           setFavorited(result.data);
         } else {
-          alert(result.error);
+          toast.error(result.error);
         }
         setPending(false);
       }}
