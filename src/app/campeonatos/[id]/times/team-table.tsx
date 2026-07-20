@@ -6,6 +6,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { deleteTeam, updateTeam } from "./actions";
 import { TeamRoster } from "./team-roster";
 import { TeamRosterLinkPanel } from "./team-roster-link-panel";
+import { RosterPdfButton } from "./roster-pdf-button";
 
 type Coach = { id: string; name: string };
 type Team = {
@@ -180,6 +181,12 @@ export function TeamTable({
                         >
                           Elenco
                         </Button>
+                        <RosterPdfButton
+                          teamName={team.name}
+                          crestUrl={team.crest_url}
+                          coachName={coachName(team.coach_id)}
+                          players={players.filter((p) => p.team_id === team.id)}
+                        />
                         <Button
                           variant="secondary"
                           onClick={() => setLinkingId(team.id)}
