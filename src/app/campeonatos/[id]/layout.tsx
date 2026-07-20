@@ -19,16 +19,10 @@ export default async function ChampionshipLayout({
   if (!user) redirect("/login");
 
   const [{ data: championship }, { data: championships }] = await Promise.all([
-    supabase
-      .from("championships")
-      .select("id, name, logo_url")
-      .eq("id", id)
-      .eq("owner_id", user.id)
-      .maybeSingle(),
+    supabase.from("championships").select("id, name, logo_url").eq("id", id).maybeSingle(),
     supabase
       .from("championships")
       .select("id, name")
-      .eq("owner_id", user.id)
       .order("created_at", { ascending: false }),
   ]);
 

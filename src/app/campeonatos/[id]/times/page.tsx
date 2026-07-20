@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, FileInput, Input, Label, PageHeader, Select } from "@/components/ui";
+import { Card, EmptyState, FileInput, Input, Label, PageHeader, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { generateGroupLabels } from "@/lib/groups";
 import { createTeam } from "./actions";
@@ -12,6 +12,18 @@ export default async function TimesPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+
+  const { data: canManage } = await supabase.rpc("can_manage_teams_games", {
+    p_championship_id: id,
+  });
+  if (!canManage) {
+    return (
+      <div>
+        <PageHeader eyebrow="Elenco de clubes" title="Times" />
+        <EmptyState>Você não tem permissão para gerenciar times, jogos e árbitros.</EmptyState>
+      </div>
+    );
+  }
 
   const [
     { data: championship },

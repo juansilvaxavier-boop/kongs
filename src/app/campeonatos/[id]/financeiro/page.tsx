@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { Card, PageHeader } from "@/components/ui";
+import { Card, EmptyState, PageHeader } from "@/components/ui";
 import { FinancialTable } from "./financial-table";
 
 function formatCurrency(value: number) {
@@ -13,6 +13,18 @@ export default async function FinanceiroPage({
 }) {
   const { id } = await params;
   const supabase = await createClient();
+
+  const { data: canManage } = await supabase.rpc("can_manage_finance", {
+    p_championship_id: id,
+  });
+  if (!canManage) {
+    return (
+      <div>
+        <PageHeader eyebrow="Controle financeiro" title="Financeiro" />
+        <EmptyState>Você não tem permissão para gerenciar o financeiro deste campeonato.</EmptyState>
+      </div>
+    );
+  }
 
   const [{ data: entries }, { data: teams }, { data: games }] = await Promise.all([
     supabase

@@ -20,6 +20,18 @@ export default async function JogosPage({
   const { id } = await params;
   const supabase = await createClient();
 
+  const { data: canManage } = await supabase.rpc("can_manage_teams_games", {
+    p_championship_id: id,
+  });
+  if (!canManage) {
+    return (
+      <div>
+        <PageHeader eyebrow="Tabela de jogos" title="Jogos" />
+        <EmptyState>Você não tem permissão para gerenciar times, jogos e árbitros.</EmptyState>
+      </div>
+    );
+  }
+
   const [
     { data: championship },
     { data: gamesData },

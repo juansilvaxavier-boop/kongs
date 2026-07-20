@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { isAdmin } from "@/lib/auth/roles";
+import { getUserPermissions, isAdmin } from "@/lib/auth/roles";
 import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
 import { BrandMark } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -18,7 +18,9 @@ export default async function CampeonatosLayout({
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
-  if (!(await isAdmin(supabase))) {
+  const admin = await isAdmin(supabase);
+  const permissions = admin ? [] : await getUserPermissions(supabase);
+  if (!admin && permissions.length === 0) {
     redirect(await resolveAuthenticatedDestination(supabase));
   }
 
@@ -41,7 +43,7 @@ export default async function CampeonatosLayout({
         </div>
       </header>
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:gap-8">
-        <AdminSidebarNav />
+        <AdminSidebarNav isAdmin={admin} />
         <div className="min-w-0 flex-1">{children}</div>
       </main>
     </div>

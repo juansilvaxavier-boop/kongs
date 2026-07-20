@@ -1,10 +1,30 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/types";
 
+export type Permission =
+  | "manage_championships"
+  | "manage_teams_games"
+  | "manage_finance"
+  | "manage_sponsors";
+
+export const PERMISSION_LABELS: Record<Permission, string> = {
+  manage_championships: "Campeonatos",
+  manage_teams_games: "Times, jogos e árbitros",
+  manage_finance: "Financeiro",
+  manage_sponsors: "Patrocinadores",
+};
+
 export async function isAdmin(supabase: SupabaseClient<Database>) {
   const { data, error } = await supabase.rpc("is_admin");
   if (error) return false;
   return data === true;
+}
+
+export async function getUserPermissions(
+  supabase: SupabaseClient<Database>
+): Promise<Permission[]> {
+  const { data } = await supabase.from("user_permissions").select("permission");
+  return (data ?? []).map((row) => row.permission as Permission);
 }
 
 export async function getOwnedTeam(

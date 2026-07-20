@@ -1102,6 +1102,24 @@ export type Database = {
           },
         ]
       }
+      user_permissions: {
+        Row: {
+          created_at: string
+          permission: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          permission: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          permission?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1167,6 +1185,7 @@ export type Database = {
           first_name: string | null
           last_name: string | null
           last_sign_in_at: string | null
+          permissions: string[] | null
           persona: string | null
           phone: string | null
           role: string | null
@@ -1174,6 +1193,14 @@ export type Database = {
         }[]
       }
       admin_process_game_ovr: { Args: { p_game_id: string }; Returns: undefined }
+      admin_set_user_admin: {
+        Args: { p_is_admin: boolean; p_user_id: string }
+        Returns: undefined
+      }
+      admin_set_user_permission: {
+        Args: { p_granted: boolean; p_permission: string; p_user_id: string }
+        Returns: undefined
+      }
       base_attributes_for_position: {
         Args: { p_position: string }
         Returns: {
@@ -1186,6 +1213,22 @@ export type Database = {
           ritmo: number
         }[]
       }
+      can_manage_championships: {
+        Args: { p_championship_id: string }
+        Returns: boolean
+      }
+      can_manage_finance: {
+        Args: { p_championship_id: string }
+        Returns: boolean
+      }
+      can_manage_sponsors: {
+        Args: { p_championship_id: string }
+        Returns: boolean
+      }
+      can_manage_teams_games: {
+        Args: { p_championship_id: string }
+        Returns: boolean
+      }
       get_or_create_championship_sumula_token: {
         Args: { p_championship_id: string }
         Returns: string
@@ -1194,6 +1237,7 @@ export type Database = {
         Args: { p_team_id: string }
         Returns: string
       }
+      has_permission: { Args: { p_permission: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_championship_admin: {
         Args: { p_championship_id: string }

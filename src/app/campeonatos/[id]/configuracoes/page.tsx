@@ -1,6 +1,15 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Card, FileInput, Input, Label, PageHeader, Select, Textarea } from "@/components/ui";
+import {
+  Card,
+  EmptyState,
+  FileInput,
+  Input,
+  Label,
+  PageHeader,
+  Select,
+  Textarea,
+} from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { updateChampionshipSettings } from "./actions";
 import { SponsorsSection } from "./sponsors-section";
@@ -13,22 +22,29 @@ export default async function ConfiguracoesPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: championship }, { data: sponsors }, { data: sponsorMetrics }] =
-    await Promise.all([
-      supabase
-        .from("championships")
-        .select(
-          "format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text, logo_url"
-        )
-        .eq("id", id)
-        .maybeSingle(),
-      supabase
-        .from("sponsors")
-        .select("id, name, logo_url, link_url")
-        .eq("championship_id", id)
-        .order("created_at"),
-      supabase.rpc("sponsor_metrics", { p_championship_id: id }),
-    ]);
+  const [
+    { data: championship },
+    { data: sponsors },
+    { data: sponsorMetrics },
+    { data: canManageChampionship },
+    { data: canManageSponsors },
+  ] = await Promise.all([
+    supabase
+      .from("championships")
+      .select(
+        "format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text, logo_url"
+      )
+      .eq("id", id)
+      .maybeSingle(),
+    supabase
+      .from("sponsors")
+      .select("id, name, logo_url, link_url")
+      .eq("championship_id", id)
+      .order("created_at"),
+    supabase.rpc("sponsor_metrics", { p_championship_id: id }),
+    supabase.rpc("can_manage_championships", { p_championship_id: id }),
+    supabase.rpc("can_manage_sponsors", { p_championship_id: id }),
+  ]);
 
   const metricsBySponsor = Object.fromEntries(
     (sponsorMetrics ?? []).map((row) => [row.sponsor_id, { views: row.views, clicks: row.clicks }])
@@ -38,10 +54,20 @@ export default async function ConfiguracoesPage({
 
   const updateSettingsWithId = updateChampionshipSettings.bind(null, id);
 
+  if (!canManageChampionship && !canManageSponsors) {
+    return (
+      <div>
+        <PageHeader eyebrow="Regras e formato" title="Configurações" />
+        <EmptyState>Você não tem permissão para acessar as configurações deste campeonato.</EmptyState>
+      </div>
+    );
+  }
+
   return (
     <div>
       <PageHeader eyebrow="Regras e formato" title="Configurações" />
 
+      {canManageChampionship && (
       <Card className="max-w-xl p-5">
         <ActionForm action={updateSettingsWithId} className="flex flex-col gap-5">
           <div>
@@ -146,7 +172,9 @@ export default async function ConfiguracoesPage({
           </SubmitButton>
         </ActionForm>
       </Card>
+      )}
 
+      {canManageSponsors && (
       <div className="mt-6">
         <SponsorsSection
           championshipId={id}
@@ -154,6 +182,7 @@ export default async function ConfiguracoesPage({
           metricsBySponsor={metricsBySponsor}
         />
       </div>
+      )}
     </div>
   );
 }

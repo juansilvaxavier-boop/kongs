@@ -5,18 +5,18 @@ import { usePathname } from "next/navigation";
 import { signOut } from "@/app/login/actions";
 import { Button } from "@/components/ui";
 
-const TABS = [
-  { href: "/campeonatos", label: "Campeonatos" },
-  { href: "/campeonatos/usuarios", label: "Usuários" },
-  { href: "/campeonatos/configuracoes", label: "Configurações" },
-];
-
-export function AdminSidebarNav() {
+export function AdminSidebarNav({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
+
+  const tabs = [
+    { href: "/campeonatos", label: "Campeonatos" },
+    ...(isAdmin ? [{ href: "/campeonatos/usuarios", label: "Usuários" }] : []),
+    { href: "/campeonatos/configuracoes", label: "Configurações" },
+  ];
 
   return (
     <nav className="no-scrollbar -mx-4 flex items-center gap-1 overflow-x-auto px-4 sm:mx-0 sm:px-0 md:w-48 md:shrink-0 md:items-stretch md:flex-col md:overflow-visible">
-      {TABS.map((tab) => {
+      {tabs.map((tab) => {
         const active = pathname === tab.href;
         return (
           <Link
