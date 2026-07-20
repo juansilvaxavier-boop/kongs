@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { Badge, Button, Card, Input } from "@/components/ui";
+import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import { useConfirm } from "@/components/confirm-provider";
 import { useToast } from "@/components/toast-provider";
 import { PERMISSION_LABELS, type Permission } from "@/lib/auth/roles";
-import { setUserAdmin, setUserPermission } from "./actions";
+import { applyCustomRole, setUserAdmin, setUserPermission } from "./actions";
+import type { CustomRole } from "./custom-roles-section";
 
 const PERMISSIONS: Permission[] = [
   "manage_championships",
@@ -129,12 +130,64 @@ function PermissionCheckboxes({ row, isAdmin }: { row: UserRow; isAdmin: boolean
   );
 }
 
+function ApplyRoleSelect({ userId, roles }: { userId: string; roles: CustomRole[] }) {
+  const [roleId, setRoleId] = useState("");
+  const [pending, setPending] = useState(false);
+  const confirm = useConfirm();
+  const toast = useToast();
+
+  if (roles.length === 0) return null;
+
+  return (
+    <div className="mt-2 flex items-center gap-2">
+      <Select
+        value={roleId}
+        onChange={(event) => setRoleId(event.target.value)}
+        className="max-w-[10rem] text-xs"
+      >
+        <option value="">Aplicar cargo…</option>
+        {roles.map((role) => (
+          <option key={role.id} value={role.id}>
+            {role.name}
+          </option>
+        ))}
+      </Select>
+      <Button
+        variant="secondary"
+        disabled={!roleId || pending}
+        onClick={async () => {
+          const role = roles.find((r) => r.id === roleId);
+          const ok = await confirm({
+            title: `Aplicar o cargo "${role?.name}" a este usuário?`,
+            description: "Isso substitui as permissões atuais do usuário pelas deste cargo.",
+            confirmLabel: "Aplicar",
+          });
+          if (!ok) return;
+          setPending(true);
+          const result = await applyCustomRole(userId, roleId);
+          setPending(false);
+          if (!result.ok) {
+            toast.error(result.error);
+            return;
+          }
+          toast.success("Cargo aplicado.");
+          setRoleId("");
+        }}
+      >
+        {pending ? "Aplicando…" : "Aplicar"}
+      </Button>
+    </div>
+  );
+}
+
 export function UsersTable({
   users,
   currentUserId,
+  roles,
 }: {
   users: UserRow[];
   currentUserId: string;
+  roles: CustomRole[];
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
@@ -203,6 +256,7 @@ export function UsersTable({
                   Permissões
                 </p>
                 <PermissionCheckboxes row={row} isAdmin={isAdmin} />
+                {!isAdmin && <ApplyRoleSelect userId={row.user_id} roles={roles} />}
               </div>
             </Card>
           );
@@ -234,12 +288,16 @@ export function UsersTable({
                   <td className="px-4 py-3 font-medium text-foreground">
                     <div className="flex items-center gap-2">
                       {row.avatar_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={row.avatar_url}
-                          alt=""
-                          className="h-7 w-7 rounded-full object-cover"
-                        />
+                        <span className="relative h-7 w-7 shrink-0">
+                          <Image
+                            src={row.avatar_url}
+                            alt=""
+                            fill
+                            loading="eager"
+                            sizes="28px"
+                            className="rounded-full object-cover"
+                          />
+                        </span>
                       ) : null}
                       <span>{name || "—"}</span>
                       {isSelf && <Badge>Você</Badge>}
@@ -256,6 +314,7 @@ export function UsersTable({
                   </td>
                   <td className="px-4 py-3">
                     <PermissionCheckboxes row={row} isAdmin={isAdmin} />
+                    {!isAdmin && <ApplyRoleSelect userId={row.user_id} roles={roles} />}
                   </td>
                 </tr>
               );

@@ -8,6 +8,8 @@ type Game = {
   date: string | null;
   score_a: number | null;
   score_b: number | null;
+  penalty_score_a?: number | null;
+  penalty_score_b?: number | null;
   played: boolean;
 };
 

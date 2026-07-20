@@ -33,3 +33,41 @@ export async function setUserPermission(
     revalidatePath("/campeonatos/usuarios");
   });
 }
+
+export async function createCustomRole(
+  name: string,
+  permissions: Permission[]
+): Promise<ActionResult> {
+  return runAction(async () => {
+    if (!name.trim()) throw new Error("Informe um nome para o cargo.");
+    if (permissions.length === 0) throw new Error("Selecione ao menos uma permissão.");
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("custom_roles")
+      .insert({ name: name.trim(), permissions });
+    if (error) throw new Error(error.message);
+    revalidatePath("/campeonatos/usuarios");
+  });
+}
+
+export async function deleteCustomRole(roleId: string): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.from("custom_roles").delete().eq("id", roleId);
+    if (error) throw new Error(error.message);
+    revalidatePath("/campeonatos/usuarios");
+  });
+}
+
+export async function applyCustomRole(userId: string, roleId: string): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("admin_apply_custom_role", {
+      p_user_id: userId,
+      p_role_id: roleId,
+    });
+    if (error) throw new Error(error.message);
+    revalidatePath("/campeonatos/usuarios");
+  });
+}

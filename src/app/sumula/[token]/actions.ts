@@ -132,6 +132,25 @@ export async function sumulaSetPlayed(
   });
 }
 
+export async function sumulaSetPenaltyScore(
+  token: string,
+  gameId: string,
+  penaltyScoreA: number | null,
+  penaltyScoreB: number | null
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("sumula_set_penalty_score", {
+      p_token: token,
+      p_game_id: gameId,
+      p_penalty_score_a: penaltyScoreA,
+      p_penalty_score_b: penaltyScoreB,
+    });
+    if (error) throw new Error(error.message);
+    revalidatePath(`/sumula/${token}/${gameId}`);
+  });
+}
+
 export async function sumulaToggleLineup(
   token: string,
   gameId: string,

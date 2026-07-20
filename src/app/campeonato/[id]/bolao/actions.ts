@@ -120,3 +120,61 @@ export async function upsertGroupPrediction(
     revalidatePath(`/campeonato/${championshipId}/bolao`);
   });
 }
+
+export async function upsertTopscorerPrediction(
+  championshipId: string,
+  formData: FormData
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Você precisa entrar na sua conta para dar seu palpite.");
+
+    const playerId = String(formData.get("player_id") || "");
+    if (!playerId) throw new Error("Selecione um jogador.");
+
+    const { error } = await supabase.from("bolao_topscorer_predictions").upsert(
+      {
+        championship_id: championshipId,
+        user_id: user.id,
+        player_id: playerId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "championship_id,user_id" }
+    );
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/campeonato/${championshipId}/bolao`);
+  });
+}
+
+export async function upsertChampionPrediction(
+  championshipId: string,
+  formData: FormData
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw new Error("Você precisa entrar na sua conta para dar seu palpite.");
+
+    const teamId = String(formData.get("team_id") || "");
+    if (!teamId) throw new Error("Selecione um time.");
+
+    const { error } = await supabase.from("bolao_champion_predictions").upsert(
+      {
+        championship_id: championshipId,
+        user_id: user.id,
+        team_id: teamId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "championship_id,user_id" }
+    );
+    if (error) throw new Error(error.message);
+
+    revalidatePath(`/campeonato/${championshipId}/bolao`);
+  });
+}

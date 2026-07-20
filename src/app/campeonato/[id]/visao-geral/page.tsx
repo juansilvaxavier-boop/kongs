@@ -1,11 +1,14 @@
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Card, EmptyState, PageHeader } from "@/components/ui";
 import { computeTopScorers } from "@/lib/stats";
 import { computeStandings } from "@/lib/standings";
 import { computeStreaks } from "@/lib/streaks";
+import { computeChampionTeamId } from "@/lib/champion";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import { CommentsSection } from "../comments-section";
+import { ChampionCertificate } from "@/components/champion-certificate";
 import {
   OverviewHighlights,
   type PositionHighlight,
@@ -25,6 +28,7 @@ export default async function VisaoGeralPage({
   } = await supabase.auth.getUser();
 
   const [
+    { data: championship },
     { data: teams },
     { data: comments },
     { data: games },
@@ -32,6 +36,11 @@ export default async function VisaoGeralPage({
     { data: players },
     { data: goals },
   ] = await Promise.all([
+    supabase
+      .from("championships")
+      .select("name, format, has_knockout_stage")
+      .eq("id", id)
+      .maybeSingle(),
     supabase
       .from("teams")
       .select("id, name, crest_url")
@@ -44,7 +53,9 @@ export default async function VisaoGeralPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("games")
-      .select("id, team_a_id, team_b_id, played, score_a, score_b, date, created_at")
+      .select(
+        "id, round, team_a_id, team_b_id, played, score_a, score_b, penalty_score_a, penalty_score_b, date, created_at"
+      )
       .eq("championship_id", id),
     supabase.from("card_events").select("game_id").eq("championship_id", id),
     supabase
@@ -140,8 +151,24 @@ export default async function VisaoGeralPage({
     };
   });
 
+  const championTeamId = computeChampionTeamId(
+    championship?.has_knockout_stage ?? false,
+    championship?.format ?? "liga",
+    teams ?? [],
+    games ?? []
+  );
+  const championTeam = (teams ?? []).find((t) => t.id === championTeamId) ?? null;
+
   return (
     <div className="space-y-10">
+      {championTeam && (
+        <ChampionCertificate
+          championshipName={championship?.name ?? ""}
+          teamName={championTeam.name}
+          teamCrestUrl={championTeam.crest_url}
+        />
+      )}
+
       <div>
         <PageHeader eyebrow="Destaques" title="Visão geral do campeonato" />
         <OverviewHighlights
@@ -163,12 +190,16 @@ export default async function VisaoGeralPage({
               <Link key={team.id} href={`/campeonato/${id}/time/${team.id}`}>
                 <Card className="flex items-center gap-3 p-4 transition hover:border-accent/50">
                   {team.crest_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={team.crest_url}
-                      alt=""
-                      className="h-10 w-10 rounded-full object-cover"
-                    />
+                    <span className="relative h-10 w-10 shrink-0">
+                      <Image
+                        src={team.crest_url}
+                        alt=""
+                        fill
+                        loading="eager"
+                        sizes="40px"
+                        className="rounded-full object-cover"
+                      />
+                    </span>
                   ) : (
                     <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-sm font-bold text-muted">
                       {team.name.slice(0, 2).toUpperCase()}

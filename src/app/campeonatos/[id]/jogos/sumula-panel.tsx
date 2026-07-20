@@ -6,13 +6,14 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useToast } from "@/components/toast-provider";
 import { SumulaPdfButton } from "@/components/sumula-pdf-button";
 import { PreSumulaPanel, type CaptainSignature } from "@/components/pre-sumula-panel";
+import { PenaltyShootoutPanel } from "@/components/penalty-shootout-panel";
 import {
   createCardEvent,
   createGoalEvent,
   deleteCardEvent,
   deleteGoalEvent,
 } from "./events-actions";
-import { setGamePlayed } from "./actions";
+import { setGamePenaltyScore, setGamePlayed } from "./actions";
 import { signCaptain, toggleLineupPlayer } from "./lineup-actions";
 
 type Player = { id: string; name: string; team_id: string | null };
@@ -171,6 +172,8 @@ export function SumulaPanel({
   teamBName,
   scoreA,
   scoreB,
+  penaltyScoreA,
+  penaltyScoreB,
   played,
   players,
   goalEvents,
@@ -187,6 +190,8 @@ export function SumulaPanel({
   teamBName: string;
   scoreA: number | null;
   scoreB: number | null;
+  penaltyScoreA: number | null;
+  penaltyScoreB: number | null;
   played: boolean;
   players: Player[];
   goalEvents: GoalEvent[];
@@ -226,6 +231,16 @@ export function SumulaPanel({
           signCaptain(gameId, championshipId, teamId, captainName, signatureDataUrl)
         }
       />
+
+      {played && scoreA !== null && scoreB !== null && scoreA === scoreB && (
+        <PenaltyShootoutPanel
+          teamAName={teamAName}
+          teamBName={teamBName}
+          penaltyScoreA={penaltyScoreA}
+          penaltyScoreB={penaltyScoreB}
+          onSave={(a, b) => setGamePenaltyScore(gameId, championshipId, a, b)}
+        />
+      )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 p-3">
         <div>

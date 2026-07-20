@@ -182,6 +182,46 @@ export async function setGamePlayed(
   });
 }
 
+export async function setGamePenaltyScore(
+  id: string,
+  championshipId: string,
+  penaltyScoreA: number | null,
+  penaltyScoreB: number | null
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+
+    if (penaltyScoreA !== null && penaltyScoreB !== null) {
+      const { data: game, error: gameError } = await supabase
+        .from("games")
+        .select("played, score_a, score_b")
+        .eq("id", id)
+        .eq("championship_id", championshipId)
+        .maybeSingle();
+      if (gameError) throw new Error(gameError.message);
+      if (!game) throw new Error("Jogo não encontrado ou sem permissão para editar.");
+      if (!game.played) {
+        throw new Error("Marque o jogo como realizado antes de lançar os pênaltis.");
+      }
+      if (game.score_a !== game.score_b) {
+        throw new Error("Pênaltis só podem ser lançados quando o jogo termina empatado.");
+      }
+      if (penaltyScoreA === penaltyScoreB) {
+        throw new Error("A disputa de pênaltis não pode terminar empatada.");
+      }
+    }
+
+    const { error } = await supabase
+      .from("games")
+      .update({ penalty_score_a: penaltyScoreA, penalty_score_b: penaltyScoreB })
+      .eq("id", id)
+      .eq("championship_id", championshipId);
+    if (error) throw new Error(error.message);
+
+    revalidateChampionship(championshipId);
+  });
+}
+
 export async function getChampionshipSumulaLink(championshipId: string): Promise<ActionResult<string>> {
   return runAction(async () => {
     const supabase = await createClient();

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { computeBolaoStandings, computeGroupPredictionPoints } from "./bolao";
+import {
+  computeBolaoStandings,
+  computeChampionPredictionPoints,
+  computeGroupPredictionPoints,
+  computeTopscorerPredictionPoints,
+} from "./bolao";
 
 describe("computeBolaoStandings", () => {
   it("awards 3 points for an exact score prediction", () => {
@@ -113,5 +118,61 @@ describe("computeGroupPredictionPoints", () => {
       { userId: "u1", points: 10, exactCount: 2 },
       { userId: "u2", points: 0, exactCount: 0 },
     ]);
+  });
+});
+
+describe("computeTopscorerPredictionPoints", () => {
+  it("returns nothing while the topscorer isn't decided yet", () => {
+    const rows = computeTopscorerPredictionPoints(
+      [{ userId: "u1", playerId: "p1" }],
+      []
+    );
+    expect(rows).toEqual([]);
+  });
+
+  it("awards 10 points to whoever picked the topscorer", () => {
+    const rows = computeTopscorerPredictionPoints(
+      [
+        { userId: "u1", playerId: "p1" },
+        { userId: "u2", playerId: "p2" },
+      ],
+      ["p1"]
+    );
+    expect(rows).toEqual([{ userId: "u1", points: 10 }]);
+  });
+
+  it("counts a tie for the topscorer as a correct guess for either pick", () => {
+    const rows = computeTopscorerPredictionPoints(
+      [
+        { userId: "u1", playerId: "p1" },
+        { userId: "u2", playerId: "p2" },
+      ],
+      ["p1", "p2"]
+    );
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { userId: "u1", points: 10 },
+        { userId: "u2", points: 10 },
+      ])
+    );
+    expect(rows).toHaveLength(2);
+  });
+});
+
+describe("computeChampionPredictionPoints", () => {
+  it("returns nothing while the champion isn't decided yet", () => {
+    const rows = computeChampionPredictionPoints([{ userId: "u1", teamId: "t1" }], null);
+    expect(rows).toEqual([]);
+  });
+
+  it("awards 10 points to whoever picked the champion", () => {
+    const rows = computeChampionPredictionPoints(
+      [
+        { userId: "u1", teamId: "t1" },
+        { userId: "u2", teamId: "t2" },
+      ],
+      "t2"
+    );
+    expect(rows).toEqual([{ userId: "u2", points: 10 }]);
   });
 });

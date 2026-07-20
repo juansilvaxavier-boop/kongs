@@ -7,12 +7,21 @@ import { TeamCell } from "@/components/team-cell";
 import { naturalCompare } from "@/lib/datetime";
 import {
   computeBolaoStandings,
+  computeChampionPredictionPoints,
   computeGroupPredictionPoints,
+  computeTopscorerPredictionPoints,
   type FinishedGroupStanding,
 } from "@/lib/bolao";
 import { computeStandings } from "@/lib/standings";
+import { computeChampionTeamId } from "@/lib/champion";
+import { computeTopScorers } from "@/lib/stats";
 import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
-import { upsertGroupPrediction, upsertPrediction } from "./actions";
+import {
+  upsertChampionPrediction,
+  upsertGroupPrediction,
+  upsertPrediction,
+  upsertTopscorerPrediction,
+} from "./actions";
 
 export default async function BolaoPage({
   params,
@@ -32,8 +41,16 @@ export default async function BolaoPage({
     { data: gamesData },
     { data: predictions },
     { data: groupPredictions },
+    { data: players },
+    { data: goals },
+    { data: topscorerPredictions },
+    { data: championPredictions },
   ] = await Promise.all([
-    supabase.from("championships").select("format").eq("id", id).maybeSingle(),
+    supabase
+      .from("championships")
+      .select("format, has_knockout_stage")
+      .eq("id", id)
+      .maybeSingle(),
     supabase
       .from("teams")
       .select("id, name, crest_url, group_name")
@@ -41,7 +58,9 @@ export default async function BolaoPage({
       .order("name"),
     supabase
       .from("games")
-      .select("id, round, team_a_id, team_b_id, date, played, score_a, score_b")
+      .select(
+        "id, round, team_a_id, team_b_id, date, played, score_a, score_b, penalty_score_a, penalty_score_b"
+      )
       .eq("championship_id", id),
     supabase
       .from("bolao_predictions")
@@ -50,6 +69,16 @@ export default async function BolaoPage({
     supabase
       .from("bolao_group_predictions")
       .select("id, group_name, position, team_id, user_id")
+      .eq("championship_id", id),
+    supabase.from("players").select("id, name, team_id").eq("championship_id", id),
+    supabase.from("goal_events").select("player_id").eq("championship_id", id),
+    supabase
+      .from("bolao_topscorer_predictions")
+      .select("id, player_id, user_id")
+      .eq("championship_id", id),
+    supabase
+      .from("bolao_champion_predictions")
+      .select("id, team_id, user_id")
       .eq("championship_id", id),
   ]);
 
@@ -61,6 +90,8 @@ export default async function BolaoPage({
     ...new Set([
       ...(predictions ?? []).map((p) => p.user_id),
       ...(groupPredictions ?? []).map((p) => p.user_id),
+      ...(topscorerPredictions ?? []).map((p) => p.user_id),
+      ...(championPredictions ?? []).map((p) => p.user_id),
     ]),
   ];
   const { data: profiles } =
@@ -120,32 +151,83 @@ export default async function BolaoPage({
     finishedGroups
   );
 
+  const seasonStarted = games.some((g) => g.played);
+  const seasonOver = games.length > 0 && games.every((g) => g.played);
+
+  const allPlayers = players ?? [];
+  const topScorers = computeTopScorers(allPlayers, goals ?? [], teams ?? []);
+  const topScorerPlayerIds =
+    seasonOver && topScorers.length > 0
+      ? topScorers.filter((row) => row.goals === topScorers[0].goals).map((row) => row.playerId)
+      : [];
+
+  const championTeamId = computeChampionTeamId(
+    championship?.has_knockout_stage ?? false,
+    format,
+    teams ?? [],
+    games
+  );
+
+  const topscorerStandings = computeTopscorerPredictionPoints(
+    (topscorerPredictions ?? []).map((p) => ({ userId: p.user_id, playerId: p.player_id })),
+    topScorerPlayerIds
+  );
+  const championStandings = computeChampionPredictionPoints(
+    (championPredictions ?? []).map((p) => ({ userId: p.user_id, teamId: p.team_id })),
+    championTeamId
+  );
+
   const merged = new Map<
     string,
-    { points: number; exactCount: number; correctCount: number; groupExactCount: number }
+    {
+      points: number;
+      exactCount: number;
+      correctCount: number;
+      groupExactCount: number;
+      topscorerHit: boolean;
+      championHit: boolean;
+    }
   >();
+  const emptyRow = () => ({
+    points: 0,
+    exactCount: 0,
+    correctCount: 0,
+    groupExactCount: 0,
+    topscorerHit: false,
+    championHit: false,
+  });
   for (const row of scoreStandings) {
-    merged.set(row.userId, {
-      points: row.points,
-      exactCount: row.exactCount,
-      correctCount: row.correctCount,
-      groupExactCount: 0,
-    });
+    const entry = merged.get(row.userId) ?? emptyRow();
+    entry.points += row.points;
+    entry.exactCount += row.exactCount;
+    entry.correctCount += row.correctCount;
+    merged.set(row.userId, entry);
   }
   for (const row of groupStandings) {
-    const entry = merged.get(row.userId) ?? {
-      points: 0,
-      exactCount: 0,
-      correctCount: 0,
-      groupExactCount: 0,
-    };
+    const entry = merged.get(row.userId) ?? emptyRow();
     entry.points += row.points;
     entry.groupExactCount += row.exactCount;
+    merged.set(row.userId, entry);
+  }
+  for (const row of topscorerStandings) {
+    const entry = merged.get(row.userId) ?? emptyRow();
+    entry.points += row.points;
+    entry.topscorerHit = true;
+    merged.set(row.userId, entry);
+  }
+  for (const row of championStandings) {
+    const entry = merged.get(row.userId) ?? emptyRow();
+    entry.points += row.points;
+    entry.championHit = true;
     merged.set(row.userId, entry);
   }
   const standings = [...merged.entries()]
     .map(([userId, v]) => ({ userId, ...v }))
     .sort((a, b) => b.points - a.points || b.exactCount - a.exactCount);
+
+  const myTopscorerPrediction = (topscorerPredictions ?? []).find((p) => p.user_id === user?.id);
+  const myChampionPrediction = (championPredictions ?? []).find((p) => p.user_id === user?.id);
+  const playerName = (playerId: string) => allPlayers.find((p) => p.id === playerId)?.name ?? "?";
 
   const myGroupPicks = new Map<string, Map<number, string>>();
   for (const p of groupPredictions ?? []) {
@@ -344,6 +426,120 @@ export default async function BolaoPage({
         </div>
       )}
 
+      {allPlayers.length > 0 && (
+        <div>
+          <h2 className="mb-1 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+            Palpite de artilheiro
+          </h2>
+          <p className="mb-3 text-sm text-muted">
+            Palpite quem será o artilheiro do campeonato. Acertar vale 10 pontos no ranking geral.
+          </p>
+          <Card className="p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <span className="text-sm text-muted">
+                {seasonOver ? "Campeonato encerrado" : seasonStarted ? "Em andamento" : "Aguardando início"}
+              </span>
+              <Badge tone={seasonOver ? "success" : seasonStarted ? "warning" : "default"}>
+                {seasonOver ? "Encerrado" : seasonStarted ? "Em andamento" : "Aguardando início"}
+              </Badge>
+            </div>
+
+            {!user ? (
+              <p className="text-sm text-muted">Entre na sua conta para dar seu palpite.</p>
+            ) : seasonStarted ? (
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <span className="text-foreground">
+                  {myTopscorerPrediction
+                    ? playerName(myTopscorerPrediction.player_id)
+                    : "Você não deu palpite."}
+                </span>
+                {seasonOver && myTopscorerPrediction && (
+                  <Badge tone={topScorerPlayerIds.includes(myTopscorerPrediction.player_id) ? "success" : "warning"}>
+                    {topScorerPlayerIds.includes(myTopscorerPrediction.player_id) ? "Acertou" : "Errou"}
+                  </Badge>
+                )}
+              </div>
+            ) : (
+              <ActionForm
+                action={(formData) => upsertTopscorerPrediction(id, formData)}
+                className="flex flex-wrap items-end gap-3"
+                successMessage="Palpite salvo."
+              >
+                <Select
+                  name="player_id"
+                  defaultValue={myTopscorerPrediction?.player_id ?? ""}
+                  className="max-w-xs"
+                >
+                  <option value="">Selecione um jogador</option>
+                  {allPlayers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </Select>
+                <SubmitButton pendingText="Salvando…">Salvar palpite</SubmitButton>
+              </ActionForm>
+            )}
+          </Card>
+        </div>
+      )}
+
+      {teams && teams.length > 1 && (
+        <div>
+          <h2 className="mb-1 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+            Palpite de campeão
+          </h2>
+          <p className="mb-3 text-sm text-muted">
+            Palpite qual time será o campeão. Acertar vale 10 pontos no ranking geral.
+          </p>
+          <Card className="p-4">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <span className="text-sm text-muted">
+                {championTeamId ? "Campeão definido" : seasonStarted ? "Em andamento" : "Aguardando início"}
+              </span>
+              <Badge tone={championTeamId ? "success" : seasonStarted ? "warning" : "default"}>
+                {championTeamId ? "Definido" : seasonStarted ? "Em andamento" : "Aguardando início"}
+              </Badge>
+            </div>
+
+            {!user ? (
+              <p className="text-sm text-muted">Entre na sua conta para dar seu palpite.</p>
+            ) : seasonStarted ? (
+              <div className="flex items-center justify-between gap-2 text-sm">
+                <span className="text-foreground">
+                  {myChampionPrediction ? teamName(myChampionPrediction.team_id) : "Você não deu palpite."}
+                </span>
+                {championTeamId && myChampionPrediction && (
+                  <Badge tone={myChampionPrediction.team_id === championTeamId ? "success" : "warning"}>
+                    {myChampionPrediction.team_id === championTeamId ? "Acertou" : "Errou"}
+                  </Badge>
+                )}
+              </div>
+            ) : (
+              <ActionForm
+                action={(formData) => upsertChampionPrediction(id, formData)}
+                className="flex flex-wrap items-end gap-3"
+                successMessage="Palpite salvo."
+              >
+                <Select
+                  name="team_id"
+                  defaultValue={myChampionPrediction?.team_id ?? ""}
+                  className="max-w-xs"
+                >
+                  <option value="">Selecione um time</option>
+                  {(teams ?? []).map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.name}
+                    </option>
+                  ))}
+                </Select>
+                <SubmitButton pendingText="Salvando…">Salvar palpite</SubmitButton>
+              </ActionForm>
+            )}
+          </Card>
+        </div>
+      )}
+
       <div>
         <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
           Ranking do bolão
@@ -360,6 +556,8 @@ export default async function BolaoPage({
                   <th className="px-4 py-3 text-center">Cravadas</th>
                   <th className="px-4 py-3 text-center">Acertos</th>
                   <th className="px-4 py-3 text-center">Posições</th>
+                  <th className="px-4 py-3 text-center">Artilheiro</th>
+                  <th className="px-4 py-3 text-center">Campeão</th>
                   <th className="px-4 py-3 text-center">Pontos</th>
                 </tr>
               </thead>
@@ -396,6 +594,8 @@ export default async function BolaoPage({
                       <td className="px-4 py-3 text-center text-foreground">{row.exactCount}</td>
                       <td className="px-4 py-3 text-center text-foreground">{row.correctCount}</td>
                       <td className="px-4 py-3 text-center text-foreground">{row.groupExactCount}</td>
+                      <td className="px-4 py-3 text-center text-foreground">{row.topscorerHit ? "✓" : "—"}</td>
+                      <td className="px-4 py-3 text-center text-foreground">{row.championHit ? "✓" : "—"}</td>
                       <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
                         {row.points}
                       </td>

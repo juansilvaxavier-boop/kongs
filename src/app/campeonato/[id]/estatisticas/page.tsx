@@ -5,6 +5,8 @@ import { ExportTableButtons } from "@/components/export-table-buttons";
 import { computeDiscipline, computeTopScorers } from "@/lib/stats";
 import { computeSuspensions } from "@/lib/discipline";
 import { computeStandings } from "@/lib/standings";
+import { computeStreaks } from "@/lib/streaks";
+import { computeStandingsByRound } from "@/lib/round-standings";
 import { naturalCompare } from "@/lib/datetime";
 import { TeamFilter } from "../team-filter";
 import { PlayerComparator, type ComparablePlayer } from "./player-comparator";
@@ -52,7 +54,7 @@ export default async function EstatisticasPublicasPage({
       .eq("championship_id", id),
     supabase
       .from("games")
-      .select("id, team_a_id, team_b_id, date, round, played, score_a, score_b")
+      .select("id, team_a_id, team_b_id, date, created_at, round, played, score_a, score_b")
       .eq("championship_id", id),
   ]);
 
@@ -154,6 +156,30 @@ export default async function EstatisticasPublicasPage({
     gc: row.gc,
     sg: row.sg,
   }));
+
+  const streaks = computeStreaks(
+    teams ?? [],
+    (games ?? []).map((g) => ({
+      team_a_id: g.team_a_id,
+      team_b_id: g.team_b_id,
+      score_a: g.score_a,
+      score_b: g.score_b,
+      played: g.played,
+      orderKey: g.date ?? g.created_at,
+    }))
+  ).sort((a, b) => b.unbeatenStreak - a.unbeatenStreak || b.winStreak - a.winStreak);
+
+  const roundSnapshots = computeStandingsByRound(
+    teams ?? [],
+    (games ?? []).map((g) => ({
+      team_a_id: g.team_a_id,
+      team_b_id: g.team_b_id,
+      score_a: g.score_a,
+      score_b: g.score_b,
+      played: g.played,
+      round: g.round,
+    }))
+  );
 
   return (
     <div className="space-y-10">
@@ -318,6 +344,117 @@ export default async function EstatisticasPublicasPage({
                     </td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </Card>
+        )}
+      </div>
+
+      <div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-foreground">
+            Sequências
+          </h2>
+          {streaks.length > 0 && (
+            <ExportTableButtons
+              fileName={`sequencias-${id}`}
+              title="Sequências"
+              columns={["Time", "Invencibilidade", "Vitórias seguidas", "Jogos sem sofrer gol", "Jejum de gols"]}
+              rows={streaks.map((row) => [
+                row.teamName,
+                row.unbeatenStreak,
+                row.winStreak,
+                row.cleanSheetStreak,
+                row.scoringDroughtStreak,
+              ])}
+            />
+          )}
+        </div>
+        {streaks.length === 0 ? (
+          <EmptyState>Nenhum jogo realizado ainda.</EmptyState>
+        ) : (
+          <Card className="overflow-x-auto">
+            <table className="w-full min-w-[36rem] text-sm">
+              <thead>
+                <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
+                  <th className="px-4 py-3">Time</th>
+                  <th className="px-4 py-3 text-center">Invencibilidade</th>
+                  <th className="px-4 py-3 text-center">Vitórias seguidas</th>
+                  <th className="px-4 py-3 text-center">Sem sofrer gol</th>
+                  <th className="px-4 py-3 text-center">Jejum de gols</th>
+                </tr>
+              </thead>
+              <tbody>
+                {streaks.map((row) => (
+                  <tr key={row.teamId} className="border-b border-border last:border-0">
+                    <td className="px-4 py-3 font-medium text-foreground">
+                      <TeamCell name={row.teamName} crestUrl={row.teamCrestUrl} />
+                    </td>
+                    <td className="px-4 py-3 text-center font-display font-semibold text-accent">
+                      {row.unbeatenStreak}
+                    </td>
+                    <td className="px-4 py-3 text-center text-foreground">{row.winStreak}</td>
+                    <td className="px-4 py-3 text-center text-foreground">{row.cleanSheetStreak}</td>
+                    <td className="px-4 py-3 text-center text-muted">{row.scoringDroughtStreak}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </Card>
+        )}
+      </div>
+
+      <div>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-display text-lg font-bold uppercase tracking-wide text-foreground">
+            Comparador de rodadas
+          </h2>
+          {roundSnapshots.length > 0 && (
+            <ExportTableButtons
+              fileName={`comparador-rodadas-${id}`}
+              title="Comparador de rodadas"
+              columns={["Time", ...roundSnapshots.map((s) => s.round)]}
+              rows={(teams ?? []).map((team) => [
+                team.name,
+                ...roundSnapshots.map((s) => s.positionByTeamId[team.id] ?? "—"),
+              ])}
+            />
+          )}
+        </div>
+        {roundSnapshots.length === 0 ? (
+          <EmptyState>A evolução aparece aqui após a primeira rodada com jogos realizados.</EmptyState>
+        ) : (
+          <Card className="overflow-x-auto">
+            <table className="w-full min-w-[36rem] text-sm">
+              <thead>
+                <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
+                  <th className="px-4 py-3">Time</th>
+                  {roundSnapshots.map((snapshot) => (
+                    <th key={snapshot.round} className="px-4 py-3 text-center">
+                      {snapshot.round}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(teams ?? [])
+                  .slice()
+                  .sort((a, b) => {
+                    const last = roundSnapshots[roundSnapshots.length - 1];
+                    return (last.positionByTeamId[a.id] ?? 999) - (last.positionByTeamId[b.id] ?? 999);
+                  })
+                  .map((team) => (
+                    <tr key={team.id} className="border-b border-border last:border-0">
+                      <td className="px-4 py-3 font-medium text-foreground">
+                        <TeamCell name={team.name} crestUrl={team.crest_url} />
+                      </td>
+                      {roundSnapshots.map((snapshot) => (
+                        <td key={snapshot.round} className="px-4 py-3 text-center text-foreground">
+                          {snapshot.positionByTeamId[team.id] ?? "—"}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </Card>

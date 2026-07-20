@@ -27,6 +27,8 @@ type Game = {
   date: string | null;
   score_a: number | null;
   score_b: number | null;
+  penalty_score_a: number | null;
+  penalty_score_b: number | null;
   played: boolean;
   venue_id: string | null;
   referee_id: string | null;
@@ -334,6 +336,8 @@ export function GameTable({
                     teamBName={teamName(game.team_b_id)}
                     scoreA={game.score_a}
                     scoreB={game.score_b}
+                    penaltyScoreA={game.penalty_score_a}
+                    penaltyScoreB={game.penalty_score_b}
                     played={game.played}
                     players={players}
                     goalEvents={goalEvents}

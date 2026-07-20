@@ -104,3 +104,43 @@ export function computeGroupPredictionPoints(
     .map(([userId, t]) => ({ userId, points: t.points, exactCount: t.exact }))
     .sort((a, b) => b.points - a.points);
 }
+
+const TOPSCORER_POINTS = 10;
+const CHAMPION_POINTS = 10;
+
+export type BolaoTopscorerPrediction = { userId: string; playerId: string };
+export type BolaoChampionPrediction = { userId: string; teamId: string };
+export type BolaoSinglePickStandingRow = { userId: string; points: number };
+
+/**
+ * `topScorerPlayerIds` traz os ids de todos os jogadores empatados na
+ * artilharia (ou vazio/undefined se o campeonato ainda não terminou —
+ * nesse caso ninguém pontua ainda). Empatar com qualquer um dos
+ * líderes conta como acerto.
+ */
+export function computeTopscorerPredictionPoints(
+  predictions: BolaoTopscorerPrediction[],
+  topScorerPlayerIds: string[]
+): BolaoSinglePickStandingRow[] {
+  if (topScorerPlayerIds.length === 0) return [];
+  const leaders = new Set(topScorerPlayerIds);
+
+  return predictions
+    .filter((p) => leaders.has(p.playerId))
+    .map((p) => ({ userId: p.userId, points: TOPSCORER_POINTS }))
+    .sort((a, b) => b.points - a.points);
+}
+
+/** `championTeamId` é null enquanto o campeonato não tiver um campeão
+ * decidido (ver `computeChampionTeamId`). */
+export function computeChampionPredictionPoints(
+  predictions: BolaoChampionPrediction[],
+  championTeamId: string | null
+): BolaoSinglePickStandingRow[] {
+  if (!championTeamId) return [];
+
+  return predictions
+    .filter((p) => p.teamId === championTeamId)
+    .map((p) => ({ userId: p.userId, points: CHAMPION_POINTS }))
+    .sort((a, b) => b.points - a.points);
+}

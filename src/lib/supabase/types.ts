@@ -50,6 +50,48 @@ export type Database = {
         }
         Relationships: []
       }
+      bolao_champion_predictions: {
+        Row: {
+          championship_id: string
+          created_at: string
+          id: string
+          team_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          id?: string
+          team_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          id?: string
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolao_champion_predictions_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolao_champion_predictions_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bolao_group_predictions: {
         Row: {
           championship_id: string
@@ -142,6 +184,48 @@ export type Database = {
             columns: ["game_id"]
             isOneToOne: false
             referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bolao_topscorer_predictions: {
+        Row: {
+          championship_id: string
+          created_at: string
+          id: string
+          player_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          championship_id: string
+          created_at?: string
+          id?: string
+          player_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          championship_id?: string
+          created_at?: string
+          id?: string
+          player_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolao_topscorer_predictions_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolao_topscorer_predictions_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
         ]
@@ -350,6 +434,27 @@ export type Database = {
           },
         ]
       }
+      custom_roles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          permissions: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          permissions: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          permissions?: string[]
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
@@ -534,6 +639,8 @@ export type Database = {
           id: string
           mvp_player_id: string | null
           ovr_processed_at: string | null
+          penalty_score_a: number | null
+          penalty_score_b: number | null
           played: boolean
           referee_id: string | null
           referee_paid: boolean
@@ -552,6 +659,8 @@ export type Database = {
           id?: string
           mvp_player_id?: string | null
           ovr_processed_at?: string | null
+          penalty_score_a?: number | null
+          penalty_score_b?: number | null
           played?: boolean
           referee_id?: string | null
           referee_paid?: boolean
@@ -570,6 +679,8 @@ export type Database = {
           id?: string
           mvp_player_id?: string | null
           ovr_processed_at?: string | null
+          penalty_score_a?: number | null
+          penalty_score_b?: number | null
           played?: boolean
           referee_id?: string | null
           referee_paid?: boolean
@@ -1260,6 +1371,10 @@ export type Database = {
     }
     Functions: {
       accept_team_invite: { Args: { p_invite_id: string }; Returns: undefined }
+      admin_apply_custom_role: {
+        Args: { p_role_id: string; p_user_id: string }
+        Returns: undefined
+      }
       admin_list_audit_log: {
         Args: {
           p_action?: string
@@ -1492,6 +1607,8 @@ export type Database = {
         Returns: {
           championship_id: string
           game_id: string
+          penalty_score_a: number
+          penalty_score_b: number
           played: boolean
           round: string
           score_a: number
@@ -1514,6 +1631,15 @@ export type Database = {
           team_a_name: string
           team_b_name: string
         }[]
+      }
+      sumula_set_penalty_score: {
+        Args: {
+          p_game_id: string
+          p_penalty_score_a: number | null
+          p_penalty_score_b: number | null
+          p_token: string
+        }
+        Returns: undefined
       }
       sumula_set_played: {
         Args: { p_game_id: string; p_played: boolean; p_token: string }

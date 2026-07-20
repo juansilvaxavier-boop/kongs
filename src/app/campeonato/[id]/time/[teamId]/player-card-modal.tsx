@@ -6,8 +6,28 @@ import { PlayerCard } from "@/components/player-card";
 import { ExportImageButton } from "@/components/export-image-button";
 import { computeOvrEvolution } from "@/lib/ovr-evolution";
 import type { Achievement } from "@/lib/achievements";
-import type { PlayerAttributes as Attributes } from "@/lib/gamification";
+import { computeRarity, type PlayerAttributes as Attributes, type Rarity } from "@/lib/gamification";
 import { OvrEvolutionChart } from "./ovr-chart";
+
+const RARITY_ORDER: Record<Rarity, number> = { bronze: 0, prata: 1, ouro: 2, legend: 3 };
+const RARITY_LABEL: Record<Rarity, string> = {
+  bronze: "Bronze",
+  prata: "Prata",
+  ouro: "Ouro",
+  legend: "Legend",
+};
+const RARITY_RING: Record<Rarity, string> = {
+  bronze: "bg-[#a2652f]",
+  prata: "bg-[#c8d2dc]",
+  ouro: "bg-[#dcab35]",
+  legend: "bg-[#c9a94e]",
+};
+const RARITY_GLOW: Record<Rarity, string> = {
+  bronze: "shadow-[0_0_50px_16px_rgba(162,101,47,0.55)]",
+  prata: "shadow-[0_0_50px_16px_rgba(200,210,220,0.55)]",
+  ouro: "shadow-[0_0_50px_16px_rgba(220,171,53,0.6)]",
+  legend: "shadow-[0_0_50px_16px_rgba(201,169,78,0.7)]",
+};
 
 const ACHIEVEMENT_STYLES: Record<string, string> = {
   artilheiro: "border-amber-400/60 bg-amber-400/10 text-amber-500",
@@ -52,12 +72,28 @@ export function PlayerCardModal({
   onClose: () => void;
 }) {
   const [revealed, setRevealed] = useState(false);
+  const [celebrating, setCelebrating] = useState(false);
   const evolutionPoints = computeOvrEvolution(history, attributes.ovr);
+
+  const currentRarity = computeRarity(attributes.ovr);
+  const previousOvr =
+    evolutionPoints.length >= 2 ? evolutionPoints[evolutionPoints.length - 2].ovr : attributes.ovr;
+  const rankedUp = RARITY_ORDER[currentRarity] > RARITY_ORDER[computeRarity(previousOvr)];
 
   useEffect(() => {
     const timer = setTimeout(() => setRevealed(true), 550);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!revealed || !rankedUp) return;
+    const showTimer = setTimeout(() => setCelebrating(true), 0);
+    const hideTimer = setTimeout(() => setCelebrating(false), 2600);
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+    };
+  }, [revealed, rankedUp]);
 
   return (
     <div
@@ -68,21 +104,33 @@ export function PlayerCardModal({
         className="flex max-h-[90vh] w-full max-w-sm flex-col items-center gap-4 overflow-y-auto"
         onClick={(event) => event.stopPropagation()}
       >
-        <div
-          id={`player-card-export-${name}`}
-          className={`bg-background p-3 transition-all duration-700 ease-out ${
-            revealed ? "rotate-0 scale-100 opacity-100" : "scale-75 rotate-6 opacity-0"
-          }`}
-        >
-          <PlayerCard
-            name={name}
-            position={position}
-            number={number}
-            photoUrl={photoUrl}
-            crestUrl={crestUrl}
-            attributes={attributes}
-            size="lg"
-          />
+        <div className="relative">
+          {celebrating && (
+            <>
+              <span
+                className={`pointer-events-none absolute inset-0 animate-ping rounded-full opacity-30 ${RARITY_RING[currentRarity]}`}
+              />
+              <p className="pointer-events-none absolute -top-9 left-1/2 z-10 -translate-x-1/2 animate-bounce whitespace-nowrap rounded-full bg-accent px-3 py-1 text-xs font-bold uppercase tracking-wide text-white shadow-lg">
+                🎉 Subiu para {RARITY_LABEL[currentRarity]}!
+              </p>
+            </>
+          )}
+          <div
+            id={`player-card-export-${name}`}
+            className={`bg-background p-3 transition-all duration-700 ease-out ${
+              revealed ? "rotate-0 scale-100 opacity-100" : "scale-75 rotate-6 opacity-0"
+            } ${celebrating ? RARITY_GLOW[currentRarity] : ""}`}
+          >
+            <PlayerCard
+              name={name}
+              position={position}
+              number={number}
+              photoUrl={photoUrl}
+              crestUrl={crestUrl}
+              attributes={attributes}
+              size="lg"
+            />
+          </div>
         </div>
 
         {revealed && (
