@@ -170,6 +170,8 @@ export default async function VisaoGeralPage({
       <div>
         <PageHeader eyebrow="Destaques" title="Visão geral do campeonato" />
         <OverviewHighlights
+          playedGamesCount={playedGames.length}
+          totalGoals={totalGoals}
           avgGoalsPerGame={avgGoalsPerGame}
           avgCardsPerGame={avgCardsPerGame}
           topScorers={topScorers}

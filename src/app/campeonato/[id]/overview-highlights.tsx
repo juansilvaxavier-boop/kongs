@@ -21,6 +21,15 @@ export type TeamGoalsRow = {
   goals: number;
 };
 
+function KpiCard({ label, value }: { label: string; value: string }) {
+  return (
+    <Card className="p-4">
+      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+      <p className="mt-1 font-display text-2xl font-bold text-accent sm:text-3xl">{value}</p>
+    </Card>
+  );
+}
+
 function TeamGoalsTable({
   rows,
   label,
@@ -31,7 +40,7 @@ function TeamGoalsTable({
   if (rows.length === 0) return <EmptyState>Nenhum jogo realizado ainda.</EmptyState>;
   return (
     <Card className="overflow-x-auto">
-      <table className="w-full min-w-[22rem] text-sm">
+      <table className="w-full min-w-[20rem] text-sm">
         <tbody>
           {rows.map((row, index) => (
             <tr key={row.teamId} className="border-b border-border last:border-0">
@@ -76,7 +85,7 @@ const STREAK_DEFINITIONS: {
   },
 ];
 
-function StreaksSection({ streaks }: { streaks: TeamStreaks[] }) {
+function StreaksCard({ streaks }: { streaks: TeamStreaks[] }) {
   const highlights = STREAK_DEFINITIONS.map((def) => {
     const leader = [...streaks]
       .filter((s) => s[def.key] >= 2)
@@ -89,31 +98,32 @@ function StreaksSection({ streaks }: { streaks: TeamStreaks[] }) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <Card className="divide-y divide-border">
       {highlights.map((highlight) => (
-        <Card key={highlight.key} className="p-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            {highlight.icon} {highlight.label}
-          </p>
-          <div className="mt-2">
-            <TeamCell
-              name={highlight.leader!.teamName}
-              crestUrl={highlight.leader!.teamCrestUrl}
-            />
+        <div key={highlight.key} className="flex items-center justify-between gap-3 p-4">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+              {highlight.icon} {highlight.label}
+            </p>
+            <div className="mt-1">
+              <TeamCell name={highlight.leader!.teamName} crestUrl={highlight.leader!.teamCrestUrl} />
+            </div>
           </div>
-          <p className="mt-2 font-display text-2xl font-bold text-accent">
-            {highlight.leader![highlight.key]}{" "}
-            <span className="text-sm font-semibold text-muted">
+          <p className="shrink-0 text-right font-display text-xl font-bold text-accent">
+            {highlight.leader![highlight.key]}
+            <span className="block text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
               {highlight.unit(highlight.leader![highlight.key])}
             </span>
           </p>
-        </Card>
+        </div>
       ))}
-    </div>
+    </Card>
   );
 }
 
 export function OverviewHighlights({
+  playedGamesCount,
+  totalGoals,
   avgGoalsPerGame,
   avgCardsPerGame,
   topScorers,
@@ -122,6 +132,8 @@ export function OverviewHighlights({
   bestDefenses,
   streaks,
 }: {
+  playedGamesCount: number;
+  totalGoals: number;
   avgGoalsPerGame: number | null;
   avgCardsPerGame: number | null;
   topScorers: ScorerRow[];
@@ -132,26 +144,56 @@ export function OverviewHighlights({
 }) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Card className="p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Média de gols por jogo
-          </p>
-          <p className="mt-1 font-display text-3xl font-bold text-accent">
-            {avgGoalsPerGame === null ? "—" : avgGoalsPerGame.toFixed(1)}
-          </p>
-        </Card>
-        <Card className="p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
-            Média de cartões por jogo
-          </p>
-          <p className="mt-1 font-display text-3xl font-bold text-accent">
-            {avgCardsPerGame === null ? "—" : avgCardsPerGame.toFixed(1)}
-          </p>
-        </Card>
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <KpiCard label="Jogos disputados" value={String(playedGamesCount)} />
+        <KpiCard label="Gols marcados" value={String(totalGoals)} />
+        <KpiCard
+          label="Gols por jogo"
+          value={avgGoalsPerGame === null ? "—" : avgGoalsPerGame.toFixed(1)}
+        />
+        <KpiCard
+          label="Cartões por jogo"
+          value={avgCardsPerGame === null ? "—" : avgCardsPerGame.toFixed(1)}
+        />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <div>
+          <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+            Top 3 artilheiros
+          </h3>
+          {topScorers.length === 0 ? (
+            <EmptyState>Nenhum gol lançado ainda.</EmptyState>
+          ) : (
+            <Card className="overflow-x-auto">
+              <table className="w-full min-w-[20rem] text-sm">
+                <tbody>
+                  {topScorers.map((row, index) => (
+                    <tr key={row.playerId} className="border-b border-border last:border-0">
+                      <td className="w-10 px-4 py-3 text-muted">{index + 1}</td>
+                      <td className="px-4 py-3 font-medium text-foreground">{row.playerName}</td>
+                      <td className="px-4 py-3 text-muted">
+                        <TeamCell name={row.teamName} crestUrl={row.teamCrestUrl} />
+                      </td>
+                      <td className="px-4 py-3 text-right font-display text-base font-semibold text-accent">
+                        {row.goals} {row.goals === 1 ? "gol" : "gols"}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+          )}
+        </div>
+        <div>
+          <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+            Sequências
+          </h3>
+          <StreaksCard streaks={streaks} />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
           <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
             Top 3 melhores ataques
@@ -168,47 +210,12 @@ export function OverviewHighlights({
 
       <div>
         <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
-          Sequências
-        </h3>
-        <StreaksSection streaks={streaks} />
-      </div>
-
-      <div>
-        <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
-          Top 3 artilheiros
-        </h3>
-        {topScorers.length === 0 ? (
-          <EmptyState>Nenhum gol lançado ainda.</EmptyState>
-        ) : (
-          <Card className="overflow-x-auto">
-            <table className="w-full min-w-[22rem] text-sm">
-              <tbody>
-                {topScorers.map((row, index) => (
-                  <tr key={row.playerId} className="border-b border-border last:border-0">
-                    <td className="w-10 px-4 py-3 text-muted">{index + 1}</td>
-                    <td className="px-4 py-3 font-medium text-foreground">{row.playerName}</td>
-                    <td className="px-4 py-3 text-muted">
-                      <TeamCell name={row.teamName} crestUrl={row.teamCrestUrl} />
-                    </td>
-                    <td className="px-4 py-3 text-right font-display text-base font-semibold text-accent">
-                      {row.goals} {row.goals === 1 ? "gol" : "gols"}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
-        )}
-      </div>
-
-      <div>
-        <h3 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
           Melhores por posição (overall)
         </h3>
         {positionHighlights.every((entry) => !entry.player) ? (
           <EmptyState>Nenhum jogador cadastrado ainda.</EmptyState>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             {positionHighlights.map((entry) => (
               <Card key={entry.position} className="p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted">
