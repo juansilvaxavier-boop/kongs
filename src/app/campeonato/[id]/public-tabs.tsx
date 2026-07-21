@@ -5,6 +5,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 
 const TABS = [
   { slug: "visao-geral", label: "Visão Geral" },
+  { slug: "times", label: "Times" },
   { slug: "classificacao", label: "Classificação" },
   { slug: "partidas", label: "Partidas" },
   { slug: "estatisticas", label: "Estatísticas" },

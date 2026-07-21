@@ -1,7 +1,5 @@
-import Link from "next/link";
-import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { Card, EmptyState, PageHeader } from "@/components/ui";
+import { PageHeader } from "@/components/ui";
 import { computeTopScorers } from "@/lib/stats";
 import { computeStandings } from "@/lib/standings";
 import { computeStreaks } from "@/lib/streaks";
@@ -180,39 +178,6 @@ export default async function VisaoGeralPage({
           bestDefenses={bestDefenses}
           streaks={streaks}
         />
-      </div>
-
-      <div>
-        <PageHeader eyebrow="Clubes" title="Times" />
-        {teams && teams.length > 0 ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {teams.map((team) => (
-              <Link key={team.id} href={`/campeonato/${id}/time/${team.id}`}>
-                <Card className="flex items-center gap-3 p-4 transition hover:border-accent/50">
-                  {team.crest_url ? (
-                    <span className="relative h-10 w-10 shrink-0">
-                      <Image
-                        src={team.crest_url}
-                        alt=""
-                        fill
-                        loading="eager"
-                        sizes="40px"
-                        className="rounded-full object-cover"
-                      />
-                    </span>
-                  ) : (
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-surface-2 text-sm font-bold text-muted">
-                      {team.name.slice(0, 2).toUpperCase()}
-                    </span>
-                  )}
-                  <span className="font-medium text-foreground">{team.name}</span>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        ) : (
-          <EmptyState>Nenhum time cadastrado ainda.</EmptyState>
-        )}
       </div>
 
       <CommentsSection
