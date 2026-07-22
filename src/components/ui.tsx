@@ -1,4 +1,8 @@
+"use client";
+
 import { type ButtonHTMLAttributes, type InputHTMLAttributes, type SelectHTMLAttributes, type TextareaHTMLAttributes, type ReactNode } from "react";
+import { MAX_UPLOAD_BYTES } from "@/lib/uploads";
+import { useToast } from "@/components/toast-provider";
 
 function cn(...classes: Array<string | false | undefined>) {
   return classes.filter(Boolean).join(" ");
@@ -111,8 +115,12 @@ export function Input({
 
 export function FileInput({
   className,
+  onChange,
+  maxBytes = MAX_UPLOAD_BYTES,
   ...props
-}: InputHTMLAttributes<HTMLInputElement>) {
+}: InputHTMLAttributes<HTMLInputElement> & { maxBytes?: number }) {
+  const toast = useToast();
+
   return (
     <input
       type="file"
@@ -120,6 +128,21 @@ export function FileInput({
         "block w-full text-sm text-muted file:mr-3 file:rounded-lg file:border file:border-border file:bg-surface-2 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-foreground",
         className
       )}
+      onChange={(event) => {
+        const file = event.target.files?.[0];
+        // Requisições a Server Actions são rejeitadas pela Vercel a ~4.5MB
+        // antes mesmo do código da action rodar, travando o formulário com
+        // um erro genérico sem mensagem útil — barramos o arquivo aqui,
+        // ainda no cliente, para o usuário ver um aviso claro.
+        if (file && file.size > maxBytes) {
+          event.target.value = "";
+          toast.error(
+            `Arquivo muito grande (máximo ${Math.round(maxBytes / (1024 * 1024))}MB). Escolha uma imagem menor.`
+          );
+          return;
+        }
+        onChange?.(event);
+      }}
       {...props}
     />
   );

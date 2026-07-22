@@ -1,4 +1,12 @@
-const DEFAULT_MAX_BYTES = 15 * 1024 * 1024;
+// Vercel limita o corpo de requisições a Server Actions a ~4.5MB na camada
+// de plataforma, antes mesmo do código da action rodar — um arquivo maior
+// nunca chega a cair no `validateImageFile` abaixo, e o upload quebra com
+// um erro genérico e sem mensagem útil ("Server Components render").
+// Por isso o limite real de upload precisa ficar com folga abaixo disso,
+// e o FileInput (ui.tsx) barra o arquivo já no cliente antes de enviar.
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
+const DEFAULT_MAX_BYTES = MAX_UPLOAD_BYTES;
 
 const IMAGE_MIME_BY_EXTENSION: Record<string, string> = {
   jpg: "image/jpeg",
