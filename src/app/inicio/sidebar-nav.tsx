@@ -1,8 +1,8 @@
 "use client";
 
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar, type SidebarSponsor } from "@/components/app-sidebar";
 
-export function SidebarNav() {
+export function SidebarNav({ sponsors }: { sponsors?: SidebarSponsor[] }) {
   return (
     <AppSidebar
       homeHref="/inicio"
@@ -15,6 +15,7 @@ export function SidebarNav() {
         { href: "/inicio/perfil", label: "Perfil" },
         { href: "/inicio/configuracoes", label: "Configurações" },
       ]}
+      sponsors={sponsors}
     />
   );
 }

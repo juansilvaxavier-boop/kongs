@@ -6,6 +6,12 @@ import { signOut } from "@/app/login/actions";
 import { BrandMark } from "@/components/ui";
 
 export type SidebarLink = { href: string; label: string };
+export type SidebarSponsor = {
+  id: string;
+  name: string;
+  logo_url: string | null;
+  link_url: string | null;
+};
 
 function NavLink({ href, label, active }: SidebarLink & { active: boolean }) {
   return (
@@ -30,14 +36,17 @@ export function AppSidebar({
   homeLabel,
   links,
   bottomLinks = [],
+  sponsors = [],
 }: {
   homeHref: string;
   homeLabel: string;
   links: SidebarLink[];
   bottomLinks?: SidebarLink[];
+  sponsors?: SidebarSponsor[];
 }) {
   const pathname = usePathname();
   const allLinks = [...links, ...bottomLinks];
+  const sponsorsWithLogo = sponsors.filter((s) => s.logo_url);
 
   return (
     <>
@@ -57,8 +66,31 @@ export function AppSidebar({
         </form>
       </nav>
 
+      {sponsorsWithLogo.length > 0 && (
+        <div className="no-scrollbar -mx-4 mb-4 flex items-center gap-3 overflow-x-auto border-b border-border px-4 pb-3 md:hidden">
+          {sponsorsWithLogo.map((sponsor) => {
+            const logo = (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={sponsor.logo_url!}
+                alt={sponsor.name}
+                title={sponsor.name}
+                className="h-8 w-8 shrink-0 rounded object-contain"
+              />
+            );
+            return sponsor.link_url ? (
+              <a key={sponsor.id} href={sponsor.link_url} target="_blank" rel="noopener noreferrer nofollow">
+                {logo}
+              </a>
+            ) : (
+              <span key={sponsor.id}>{logo}</span>
+            );
+          })}
+        </div>
+      )}
+
       <aside className="sticky top-20 hidden h-[calc(100dvh-6rem)] w-56 shrink-0 flex-col justify-between rounded-xl border border-border bg-surface/80 p-4 shadow-lg shadow-black/20 backdrop-blur md:flex">
-        <div className="flex flex-col gap-6">
+        <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto">
           <Link href={homeHref} className="flex items-center gap-2 px-1">
             <BrandMark />
             <span className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
@@ -70,9 +102,42 @@ export function AppSidebar({
               <NavLink key={link.href} {...link} active={pathname === link.href} />
             ))}
           </nav>
+
+          {sponsorsWithLogo.length > 0 && (
+            <div className="border-t border-border pt-4">
+              <p className="mb-2 px-1 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
+                Patrocinadores
+              </p>
+              <div className="flex flex-wrap gap-2 px-1">
+                {sponsorsWithLogo.map((sponsor) => {
+                  const logo = (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={sponsor.logo_url!}
+                      alt={sponsor.name}
+                      title={sponsor.name}
+                      className="h-9 w-9 rounded object-contain opacity-90 grayscale transition hover:opacity-100 hover:grayscale-0"
+                    />
+                  );
+                  return sponsor.link_url ? (
+                    <a
+                      key={sponsor.id}
+                      href={sponsor.link_url}
+                      target="_blank"
+                      rel="noopener noreferrer nofollow"
+                    >
+                      {logo}
+                    </a>
+                  ) : (
+                    <span key={sponsor.id}>{logo}</span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-col gap-1 border-t border-border pt-3">
+        <div className="flex shrink-0 flex-col gap-1 border-t border-border pt-3">
           {bottomLinks.map((link) => (
             <NavLink key={link.href} {...link} active={pathname === link.href} />
           ))}

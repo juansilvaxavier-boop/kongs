@@ -81,7 +81,7 @@ export default async function PublicChampionshipLayout({
           hasSponsors ? "pb-24" : ""
         }`}
       >
-        {user && <SidebarNav />}
+        {user && <SidebarNav sponsors={sponsors ?? []} />}
         <div className="min-w-0 flex-1">
           <PublicChampionshipTabs id={id} />
           {children}
