@@ -68,6 +68,7 @@ export function TeamTable({
           <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
             <th className="px-4 py-3">Time</th>
             <th className="px-4 py-3">Grupo</th>
+            <th className="px-4 py-3">Nº de jogadores</th>
             <th className="px-4 py-3">Técnico</th>
             <th className="px-4 py-3">Dono do time</th>
             <th className="w-56 px-4 py-3 text-right">Ações</th>
@@ -78,7 +79,7 @@ export function TeamTable({
             return (
               <tr key={team.id} className="border-b border-border last:border-0">
                 {editingId === team.id ? (
-                  <td colSpan={5} className="px-4 py-3">
+                  <td colSpan={6} className="px-4 py-3">
                     <ActionForm
                       action={(formData) => updateTeam(team.id, championshipId, formData)}
                       onSuccess={() => setEditingId(null)}
@@ -137,7 +138,7 @@ export function TeamTable({
                     </ActionForm>
                   </td>
                 ) : linkingId === team.id ? (
-                  <td colSpan={5} className="px-4 py-3">
+                  <td colSpan={6} className="px-4 py-3">
                     <div className="flex flex-col gap-2">
                       <TeamRosterLinkPanel teamId={team.id} />
                       <div>
@@ -172,6 +173,9 @@ export function TeamTable({
                     </td>
                     <td className="px-4 py-3 text-muted">
                       {team.group_name ?? "—"}
+                    </td>
+                    <td className="px-4 py-3 text-muted">
+                      {players.filter((p) => p.team_id === team.id).length}
                     </td>
                     <td className="px-4 py-3 text-muted">
                       {coachName(team.coach_id)}
@@ -329,6 +333,7 @@ export function TeamTable({
             <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted">
               <span>Grupo: {team.group_name ?? "—"}</span>
               <span>Técnico: {coachName(team.coach_id)}</span>
+              <span>Jogadores: {players.filter((p) => p.team_id === team.id).length}</span>
             </div>
 
             <div className="flex flex-wrap gap-2">

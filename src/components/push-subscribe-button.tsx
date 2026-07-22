@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { subscribeToPush } from "@/app/campeonato/[id]/actions";
-import { Button } from "./ui";
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
@@ -36,10 +35,12 @@ export function PushSubscribeButton({ championshipId }: { championshipId: string
   if (!supported || subscribed) return null;
 
   return (
-    <Button
+    <button
       type="button"
-      variant="secondary"
+      title="Ativar notificações"
+      aria-label="Ativar notificações"
       disabled={pending}
+      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2 text-muted transition hover:border-accent/60 hover:text-foreground disabled:opacity-60 sm:px-3"
       onClick={async () => {
         setPending(true);
         try {
@@ -69,7 +70,13 @@ export function PushSubscribeButton({ championshipId }: { championshipId: string
         }
       }}
     >
-      {pending ? "Ativando..." : "🔔 Ativar notificações"}
-    </Button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]">
+        <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+        <path d="M13.7 21a2 2 0 0 1-3.4 0" />
+      </svg>
+      <span className="hidden text-sm font-medium sm:inline">
+        {pending ? "Ativando…" : "Notificações"}
+      </span>
+    </button>
   );
 }

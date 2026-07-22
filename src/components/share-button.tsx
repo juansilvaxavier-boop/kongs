@@ -1,17 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { useToast } from "./toast-provider";
-import { Button } from "./ui";
 
 export function ShareButton({ title }: { title: string }) {
-  const [label, setLabel] = useState("Compartilhar");
   const toast = useToast();
 
   return (
-    <Button
+    <button
       type="button"
-      variant="secondary"
+      title="Compartilhar"
+      aria-label="Compartilhar"
+      className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2 text-muted transition hover:border-accent/60 hover:text-foreground sm:px-3"
       onClick={async () => {
         const url = window.location.href;
         if (navigator.share) {
@@ -24,14 +23,19 @@ export function ShareButton({ title }: { title: string }) {
         }
         try {
           await navigator.clipboard.writeText(url);
-          setLabel("Link copiado!");
-          setTimeout(() => setLabel("Compartilhar"), 2000);
+          toast.success("Link copiado!");
         } catch {
           toast.error(`Não foi possível copiar automaticamente. Link: ${url}`);
         }
       }}
     >
-      {label}
-    </Button>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="h-[18px] w-[18px]">
+        <circle cx="18" cy="5" r="2.5" />
+        <circle cx="6" cy="12" r="2.5" />
+        <circle cx="18" cy="19" r="2.5" />
+        <path d="M8.2 10.8 15.8 6.7M8.2 13.2l7.6 4.1" />
+      </svg>
+      <span className="hidden text-sm font-medium sm:inline">Compartilhar</span>
+    </button>
   );
 }

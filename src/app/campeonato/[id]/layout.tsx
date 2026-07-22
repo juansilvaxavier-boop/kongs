@@ -6,7 +6,7 @@ import { ShareButton } from "@/components/share-button";
 import { SocialLinks } from "@/components/social-links";
 import { SponsorsFooter } from "@/components/sponsors-footer";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { BrandMark, Button } from "@/components/ui";
+import { BrandMark } from "@/components/ui";
 import { SidebarNav } from "@/app/inicio/sidebar-nav";
 import { PublicChampionshipTabs } from "./public-tabs";
 
@@ -56,17 +56,19 @@ export default async function PublicChampionshipLayout({
               {championship.name}
             </span>
           </Link>
-          <div className="flex items-center gap-3">
-            <span className="hidden text-xs uppercase tracking-wide text-muted sm:inline">
-              Página pública
-            </span>
+          <div className="flex flex-wrap items-center justify-end gap-2">
             <SocialLinks />
             <ThemeToggle />
             {user && (
-              <Link href="/favoritos">
-                <Button type="button" variant="secondary" title="Meus favoritos">
-                  ★ Favoritos
-                </Button>
+              <Link
+                href="/favoritos"
+                title="Meus favoritos"
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-surface-2 px-2 text-muted transition hover:border-accent/60 hover:text-foreground sm:px-3"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]">
+                  <path d="m12 2 2.9 6.26L21.5 9l-5 4.87L17.8 21 12 17.77 6.2 21l1.3-7.13-5-4.87 6.6-.74Z" />
+                </svg>
+                <span className="hidden text-sm font-medium sm:inline">Favoritos</span>
               </Link>
             )}
             <PushSubscribeButton championshipId={id} />

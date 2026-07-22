@@ -21,11 +21,10 @@ export default async function VisaoGeralPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const [
+    {
+      data: { user },
+    },
     { data: championship },
     { data: teams },
     { data: comments },
@@ -34,6 +33,7 @@ export default async function VisaoGeralPage({
     { data: players },
     { data: goals },
   ] = await Promise.all([
+    supabase.auth.getUser(),
     supabase
       .from("championships")
       .select("name, format, has_knockout_stage")
@@ -64,20 +64,20 @@ export default async function VisaoGeralPage({
   ]);
 
   const commenterIds = [...new Set((comments ?? []).map((c) => c.user_id))];
-  const { data: commentProfiles } =
+  const allPlayers = players ?? [];
+  const playerIds = allPlayers.map((p) => p.id);
+
+  const [{ data: commentProfiles }, { data: attributesRows }] = await Promise.all([
     commenterIds.length > 0
-      ? await supabase
+      ? supabase
           .from("profiles")
           .select("user_id, first_name, last_name, avatar_url, persona")
           .in("user_id", commenterIds)
-      : { data: [] };
-
-  const allPlayers = players ?? [];
-  const playerIds = allPlayers.map((p) => p.id);
-  const { data: attributesRows } =
+      : Promise.resolve({ data: [] }),
     playerIds.length > 0
-      ? await supabase.from("player_attributes").select("player_id, ovr").in("player_id", playerIds)
-      : { data: [] };
+      ? supabase.from("player_attributes").select("player_id, ovr").in("player_id", playerIds)
+      : Promise.resolve({ data: [] }),
+  ]);
 
   const playedGames = (games ?? []).filter((g) => g.played);
   const totalGoals = playedGames.reduce(
