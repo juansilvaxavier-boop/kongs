@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Badge, Button, Card, FileInput, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
@@ -44,6 +45,22 @@ export function TeamRoster({
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const confirm = useConfirm();
   const toast = useToast();
+  const router = useRouter();
+
+  async function handleDeletePlayer(player: Player) {
+    const ok = await confirm({
+      title: `Excluir o jogador "${player.name}"?`,
+      confirmLabel: "Excluir",
+      danger: true,
+    });
+    if (!ok) return;
+    const result = await deletePlayer(player.id, championshipId);
+    if (!result.ok) {
+      toast.error(result.error);
+    } else {
+      router.refresh();
+    }
+  }
 
   return (
     <div className="space-y-5 border-t border-border bg-surface-2/40 p-4">
@@ -257,23 +274,13 @@ export function TeamRoster({
                             >
                               Editar
                             </Button>
-                            <form
-                              action={async () => {
-                                const ok = await confirm({
-                                  title: `Excluir o jogador "${player.name}"?`,
-                                  confirmLabel: "Excluir",
-                                  danger: true,
-                                });
-                                if (ok) {
-                                  const result = await deletePlayer(player.id, championshipId);
-                                  if (!result.ok) toast.error(result.error);
-                                }
-                              }}
+                            <Button
+                              type="button"
+                              variant="danger"
+                              onClick={() => handleDeletePlayer(player)}
                             >
-                              <Button type="submit" variant="danger">
-                                Excluir
-                              </Button>
-                            </form>
+                              Excluir
+                            </Button>
                           </div>
                         </td>
                       </>

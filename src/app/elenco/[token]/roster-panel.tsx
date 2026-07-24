@@ -116,6 +116,21 @@ export function RosterPanel({
     window.setTimeout(() => setSaved(false), 3000);
   }
 
+  async function handleDeletePlayer(player: Player) {
+    const ok = await confirm({
+      title: `Excluir o jogador "${player.name}"?`,
+      confirmLabel: "Excluir",
+      danger: true,
+    });
+    if (!ok) return;
+    const result = await rosterDeletePlayer(token, player.id);
+    if (result.ok) {
+      router.refresh();
+    } else {
+      toast.error(result.error);
+    }
+  }
+
   async function handleSubmit() {
     const ok = await confirm({
       title: "Confirmar envio do elenco?",
@@ -279,27 +294,13 @@ export function RosterPanel({
                               <Button variant="secondary" onClick={() => setEditingId(player.id)}>
                                 Editar
                               </Button>
-                              <form
-                                action={async () => {
-                                  const ok = await confirm({
-                                    title: `Excluir o jogador "${player.name}"?`,
-                                    confirmLabel: "Excluir",
-                                    danger: true,
-                                  });
-                                  if (ok) {
-                                    const result = await rosterDeletePlayer(token, player.id);
-                                    if (result.ok) {
-                                      router.refresh();
-                                    } else {
-                                      toast.error(result.error);
-                                    }
-                                  }
-                                }}
+                              <Button
+                                type="button"
+                                variant="danger"
+                                onClick={() => handleDeletePlayer(player)}
                               >
-                                <Button type="submit" variant="danger">
-                                  Excluir
-                                </Button>
-                              </form>
+                                Excluir
+                              </Button>
                             </div>
                           </td>
                         )}
