@@ -55,7 +55,7 @@ export function BolaoTab({
         </div>
       ) : (
         <ActionForm
-          action={(formData) => upsertPrediction(championshipId, gameId, formData)}
+          action={upsertPrediction.bind(null, championshipId, gameId)}
           className="flex flex-wrap items-end gap-3"
           successMessage="Palpite salvo."
         >

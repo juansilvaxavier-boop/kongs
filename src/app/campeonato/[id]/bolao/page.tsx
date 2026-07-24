@@ -306,7 +306,7 @@ export default async function BolaoPage({
                     </div>
                   ) : user ? (
                     <ActionForm
-                      action={(formData) => upsertPrediction(id, game.id, formData)}
+                      action={upsertPrediction.bind(null, id, game.id)}
                       className="flex flex-wrap items-end gap-3"
                       successMessage="Palpite salvo."
                     >
@@ -396,7 +396,7 @@ export default async function BolaoPage({
                     </ul>
                   ) : (
                     <ActionForm
-                      action={(formData) => upsertGroupPrediction(id, group.groupName, formData)}
+                      action={upsertGroupPrediction.bind(null, id, group.groupName)}
                       successMessage="Palpite salvo."
                     >
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -461,7 +461,7 @@ export default async function BolaoPage({
               </div>
             ) : (
               <ActionForm
-                action={(formData) => upsertTopscorerPrediction(id, formData)}
+                action={upsertTopscorerPrediction.bind(null, id)}
                 className="flex flex-wrap items-end gap-3"
                 successMessage="Palpite salvo."
               >
@@ -517,7 +517,7 @@ export default async function BolaoPage({
               </div>
             ) : (
               <ActionForm
-                action={(formData) => upsertChampionPrediction(id, formData)}
+                action={upsertChampionPrediction.bind(null, id)}
                 className="flex flex-wrap items-end gap-3"
                 successMessage="Palpite salvo."
               >
