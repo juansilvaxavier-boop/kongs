@@ -6,6 +6,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { TeamCell } from "@/components/team-cell";
 import { naturalCompare } from "@/lib/datetime";
 import {
+  computeBolaoPredictionTier,
   computeBolaoStandings,
   computeChampionPredictionPoints,
   computeGroupPredictionPoints,
@@ -74,11 +75,11 @@ export default async function BolaoPage({
     supabase.from("goal_events").select("player_id").eq("championship_id", id),
     supabase
       .from("bolao_topscorer_predictions")
-      .select("id, player_id, user_id")
+      .select("id, player_id, user_id, points")
       .eq("championship_id", id),
     supabase
       .from("bolao_champion_predictions")
-      .select("id, team_id, user_id")
+      .select("id, team_id, user_id, points")
       .eq("championship_id", id),
   ]);
 
@@ -153,6 +154,10 @@ export default async function BolaoPage({
 
   const seasonStarted = games.some((g) => g.played);
   const seasonOver = games.length > 0 && games.every((g) => g.played);
+  const currentPredictionTier = computeBolaoPredictionTier(
+    championship?.has_knockout_stage ?? false,
+    games
+  );
 
   const allPlayers = players ?? [];
   const topScorers = computeTopScorers(allPlayers, goals ?? [], teams ?? []);
@@ -169,11 +174,19 @@ export default async function BolaoPage({
   );
 
   const topscorerStandings = computeTopscorerPredictionPoints(
-    (topscorerPredictions ?? []).map((p) => ({ userId: p.user_id, playerId: p.player_id })),
+    (topscorerPredictions ?? []).map((p) => ({
+      userId: p.user_id,
+      playerId: p.player_id,
+      points: p.points,
+    })),
     topScorerPlayerIds
   );
   const championStandings = computeChampionPredictionPoints(
-    (championPredictions ?? []).map((p) => ({ userId: p.user_id, teamId: p.team_id })),
+    (championPredictions ?? []).map((p) => ({
+      userId: p.user_id,
+      teamId: p.team_id,
+      points: p.points,
+    })),
     championTeamId
   );
 
@@ -432,12 +445,16 @@ export default async function BolaoPage({
             Palpite de artilheiro
           </h2>
           <p className="mb-3 text-sm text-muted">
-            Palpite quem será o artilheiro do campeonato. Acertar vale 10 pontos no ranking geral.
+            Palpite quem será o artilheiro do campeonato. Dá pra palpitar (ou trocar o palpite) até
+            o campeonato terminar, mas quanto mais cedo, mais pontos: 10 antes de começar, 5 na fase
+            de grupos/liga, 3 já no mata-mata.
           </p>
           <Card className="p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <span className="text-sm text-muted">
-                {seasonOver ? "Campeonato encerrado" : seasonStarted ? "Em andamento" : "Aguardando início"}
+                {seasonOver
+                  ? "Campeonato encerrado"
+                  : `Palpite agora vale ${currentPredictionTier} pontos`}
               </span>
               <Badge tone={seasonOver ? "success" : seasonStarted ? "warning" : "default"}>
                 {seasonOver ? "Encerrado" : seasonStarted ? "Em andamento" : "Aguardando início"}
@@ -446,14 +463,14 @@ export default async function BolaoPage({
 
             {!user ? (
               <p className="text-sm text-muted">Entre na sua conta para dar seu palpite.</p>
-            ) : seasonStarted ? (
+            ) : seasonOver ? (
               <div className="flex items-center justify-between gap-2 text-sm">
                 <span className="text-foreground">
                   {myTopscorerPrediction
                     ? playerName(myTopscorerPrediction.player_id)
                     : "Você não deu palpite."}
                 </span>
-                {seasonOver && myTopscorerPrediction && (
+                {myTopscorerPrediction && (
                   <Badge tone={topScorerPlayerIds.includes(myTopscorerPrediction.player_id) ? "success" : "warning"}>
                     {topScorerPlayerIds.includes(myTopscorerPrediction.player_id) ? "Acertou" : "Errou"}
                   </Badge>
@@ -477,7 +494,9 @@ export default async function BolaoPage({
                     </option>
                   ))}
                 </Select>
-                <SubmitButton pendingText="Salvando…">Salvar palpite</SubmitButton>
+                <SubmitButton pendingText="Salvando…">
+                  {myTopscorerPrediction ? "Atualizar palpite" : "Salvar palpite"}
+                </SubmitButton>
               </ActionForm>
             )}
           </Card>
@@ -490,12 +509,16 @@ export default async function BolaoPage({
             Palpite de campeão
           </h2>
           <p className="mb-3 text-sm text-muted">
-            Palpite qual time será o campeão. Acertar vale 10 pontos no ranking geral.
+            Palpite qual time será o campeão. Dá pra palpitar (ou trocar o palpite) até o
+            campeonato terminar, mas quanto mais cedo, mais pontos: 10 antes de começar, 5 na fase
+            de grupos/liga, 3 já no mata-mata.
           </p>
           <Card className="p-4">
             <div className="mb-3 flex items-center justify-between gap-2">
               <span className="text-sm text-muted">
-                {championTeamId ? "Campeão definido" : seasonStarted ? "Em andamento" : "Aguardando início"}
+                {seasonOver
+                  ? "Campeão definido"
+                  : `Palpite agora vale ${currentPredictionTier} pontos`}
               </span>
               <Badge tone={championTeamId ? "success" : seasonStarted ? "warning" : "default"}>
                 {championTeamId ? "Definido" : seasonStarted ? "Em andamento" : "Aguardando início"}
@@ -504,7 +527,7 @@ export default async function BolaoPage({
 
             {!user ? (
               <p className="text-sm text-muted">Entre na sua conta para dar seu palpite.</p>
-            ) : seasonStarted ? (
+            ) : seasonOver ? (
               <div className="flex items-center justify-between gap-2 text-sm">
                 <span className="text-foreground">
                   {myChampionPrediction ? teamName(myChampionPrediction.team_id) : "Você não deu palpite."}
@@ -533,7 +556,9 @@ export default async function BolaoPage({
                     </option>
                   ))}
                 </Select>
-                <SubmitButton pendingText="Salvando…">Salvar palpite</SubmitButton>
+                <SubmitButton pendingText="Salvando…">
+                  {myChampionPrediction ? "Atualizar palpite" : "Salvar palpite"}
+                </SubmitButton>
               </ActionForm>
             )}
           </Card>

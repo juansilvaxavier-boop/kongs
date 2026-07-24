@@ -55,6 +55,7 @@ export type Database = {
           championship_id: string
           created_at: string
           id: string
+          points: number
           team_id: string
           updated_at: string
           user_id: string
@@ -63,6 +64,7 @@ export type Database = {
           championship_id: string
           created_at?: string
           id?: string
+          points?: number
           team_id: string
           updated_at?: string
           user_id: string
@@ -71,6 +73,7 @@ export type Database = {
           championship_id?: string
           created_at?: string
           id?: string
+          points?: number
           team_id?: string
           updated_at?: string
           user_id?: string
@@ -194,6 +197,7 @@ export type Database = {
           created_at: string
           id: string
           player_id: string
+          points: number
           updated_at: string
           user_id: string
         }
@@ -202,6 +206,7 @@ export type Database = {
           created_at?: string
           id?: string
           player_id: string
+          points?: number
           updated_at?: string
           user_id: string
         }
@@ -210,6 +215,7 @@ export type Database = {
           created_at?: string
           id?: string
           player_id?: string
+          points?: number
           updated_at?: string
           user_id?: string
         }

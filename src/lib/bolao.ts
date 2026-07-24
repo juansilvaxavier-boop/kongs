@@ -105,18 +105,17 @@ export function computeGroupPredictionPoints(
     .sort((a, b) => b.points - a.points);
 }
 
-const TOPSCORER_POINTS = 10;
-const CHAMPION_POINTS = 10;
-
-export type BolaoTopscorerPrediction = { userId: string; playerId: string };
-export type BolaoChampionPrediction = { userId: string; teamId: string };
+export type BolaoTopscorerPrediction = { userId: string; playerId: string; points: number };
+export type BolaoChampionPrediction = { userId: string; teamId: string; points: number };
 export type BolaoSinglePickStandingRow = { userId: string; points: number };
 
 /**
  * `topScorerPlayerIds` traz os ids de todos os jogadores empatados na
  * artilharia (ou vazio/undefined se o campeonato ainda não terminou —
  * nesse caso ninguém pontua ainda). Empatar com qualquer um dos
- * líderes conta como acerto.
+ * líderes conta como acerto. Os pontos vêm de cada palpite (travados no
+ * momento em que foram feitos/alterados — ver `computeBolaoPredictionTier`),
+ * não de um valor fixo.
  */
 export function computeTopscorerPredictionPoints(
   predictions: BolaoTopscorerPrediction[],
@@ -127,7 +126,7 @@ export function computeTopscorerPredictionPoints(
 
   return predictions
     .filter((p) => leaders.has(p.playerId))
-    .map((p) => ({ userId: p.userId, points: TOPSCORER_POINTS }))
+    .map((p) => ({ userId: p.userId, points: p.points }))
     .sort((a, b) => b.points - a.points);
 }
 
@@ -141,6 +140,36 @@ export function computeChampionPredictionPoints(
 
   return predictions
     .filter((p) => p.teamId === championTeamId)
-    .map((p) => ({ userId: p.userId, points: CHAMPION_POINTS }))
+    .map((p) => ({ userId: p.userId, points: p.points }))
     .sort((a, b) => b.points - a.points);
+}
+
+export type BolaoPredictionTier = 10 | 5 | 3;
+
+const GROUP_ROUND_PATTERN = /Rodada \d+$/;
+
+/**
+ * Quanto vale um palpite de artilheiro/campeão feito (ou alterado) agora:
+ * 10 pontos antes de qualquer jogo, 5 pontos já com a fase de grupos/liga
+ * rolando, 3 pontos já com o mata-mata começado (só se o campeonato tiver
+ * fase eliminatória — `hasKnockoutStage`). O valor é travado no momento do
+ * palpite, não recalculado depois — por isso quem palpita cedo garante
+ * mais pontos mesmo que só confirme o resultado bem mais tarde.
+ *
+ * Jogos da fase de grupos/liga são reconhecidos pelo nome da rodada
+ * terminar em "Rodada N" (como o gerador automático de rodadas nomeia,
+ * com ou sem prefixo de grupo — ex.: "Grupo A - Rodada 2"); qualquer outro
+ * nome de rodada (ex.: "Semifinal", "Final") é considerado mata-mata.
+ */
+export function computeBolaoPredictionTier(
+  hasKnockoutStage: boolean,
+  games: { round: string; played: boolean }[]
+): BolaoPredictionTier {
+  const anyPlayed = games.some((g) => g.played);
+  if (!anyPlayed) return 10;
+
+  const knockoutStarted = games.some((g) => g.played && !GROUP_ROUND_PATTERN.test(g.round));
+  if (hasKnockoutStage && knockoutStarted) return 3;
+
+  return 5;
 }

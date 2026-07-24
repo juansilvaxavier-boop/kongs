@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  computeBolaoPredictionTier,
   computeBolaoStandings,
   computeChampionPredictionPoints,
   computeGroupPredictionPoints,
@@ -124,28 +125,45 @@ describe("computeGroupPredictionPoints", () => {
 describe("computeTopscorerPredictionPoints", () => {
   it("returns nothing while the topscorer isn't decided yet", () => {
     const rows = computeTopscorerPredictionPoints(
-      [{ userId: "u1", playerId: "p1" }],
+      [{ userId: "u1", playerId: "p1", points: 10 }],
       []
     );
     expect(rows).toEqual([]);
   });
 
-  it("awards 10 points to whoever picked the topscorer", () => {
+  it("awards whoever picked the topscorer their stored points", () => {
     const rows = computeTopscorerPredictionPoints(
       [
-        { userId: "u1", playerId: "p1" },
-        { userId: "u2", playerId: "p2" },
+        { userId: "u1", playerId: "p1", points: 10 },
+        { userId: "u2", playerId: "p2", points: 10 },
       ],
       ["p1"]
     );
     expect(rows).toEqual([{ userId: "u1", points: 10 }]);
   });
 
+  it("uses each prediction's own stored points (locked in when it was made)", () => {
+    const rows = computeTopscorerPredictionPoints(
+      [
+        { userId: "u1", playerId: "p1", points: 10 },
+        { userId: "u2", playerId: "p1", points: 3 },
+      ],
+      ["p1"]
+    );
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { userId: "u1", points: 10 },
+        { userId: "u2", points: 3 },
+      ])
+    );
+    expect(rows).toHaveLength(2);
+  });
+
   it("counts a tie for the topscorer as a correct guess for either pick", () => {
     const rows = computeTopscorerPredictionPoints(
       [
-        { userId: "u1", playerId: "p1" },
-        { userId: "u2", playerId: "p2" },
+        { userId: "u1", playerId: "p1", points: 10 },
+        { userId: "u2", playerId: "p2", points: 10 },
       ],
       ["p1", "p2"]
     );
@@ -161,18 +179,56 @@ describe("computeTopscorerPredictionPoints", () => {
 
 describe("computeChampionPredictionPoints", () => {
   it("returns nothing while the champion isn't decided yet", () => {
-    const rows = computeChampionPredictionPoints([{ userId: "u1", teamId: "t1" }], null);
+    const rows = computeChampionPredictionPoints([{ userId: "u1", teamId: "t1", points: 10 }], null);
     expect(rows).toEqual([]);
   });
 
-  it("awards 10 points to whoever picked the champion", () => {
+  it("awards whoever picked the champion their stored points", () => {
     const rows = computeChampionPredictionPoints(
       [
-        { userId: "u1", teamId: "t1" },
-        { userId: "u2", teamId: "t2" },
+        { userId: "u1", teamId: "t1", points: 10 },
+        { userId: "u2", teamId: "t2", points: 5 },
       ],
       "t2"
     );
-    expect(rows).toEqual([{ userId: "u2", points: 10 }]);
+    expect(rows).toEqual([{ userId: "u2", points: 5 }]);
+  });
+});
+
+describe("computeBolaoPredictionTier", () => {
+  it("is worth 10 points before any game is played", () => {
+    expect(computeBolaoPredictionTier(true, [])).toBe(10);
+    expect(computeBolaoPredictionTier(true, [{ round: "Rodada 1", played: false }])).toBe(10);
+  });
+
+  it("is worth 5 points once games start, with no knockout stage", () => {
+    expect(computeBolaoPredictionTier(false, [{ round: "Rodada 1", played: true }])).toBe(5);
+  });
+
+  it("is worth 5 points during the group/league stage of a championship with knockout", () => {
+    expect(
+      computeBolaoPredictionTier(true, [
+        { round: "Grupo A - Rodada 1", played: true },
+        { round: "Semifinal", played: false },
+      ])
+    ).toBe(5);
+  });
+
+  it("is worth 3 points once the knockout stage has started", () => {
+    expect(
+      computeBolaoPredictionTier(true, [
+        { round: "Rodada 1", played: true },
+        { round: "Semifinal", played: true },
+      ])
+    ).toBe(3);
+  });
+
+  it("never drops to 3 points for a championship without a knockout stage", () => {
+    expect(
+      computeBolaoPredictionTier(false, [
+        { round: "Rodada 1", played: true },
+        { round: "Final", played: true },
+      ])
+    ).toBe(5);
   });
 });

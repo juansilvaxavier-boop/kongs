@@ -3,6 +3,22 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { runAction, type ActionResult } from "@/lib/action-result";
+import { computeBolaoPredictionTier } from "@/lib/bolao";
+
+async function currentBolaoPredictionTier(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  championshipId: string
+) {
+  const [{ data: championship }, { data: games }] = await Promise.all([
+    supabase
+      .from("championships")
+      .select("has_knockout_stage")
+      .eq("id", championshipId)
+      .maybeSingle(),
+    supabase.from("games").select("round, played").eq("championship_id", championshipId),
+  ]);
+  return computeBolaoPredictionTier(championship?.has_knockout_stage ?? false, games ?? []);
+}
 
 export async function upsertPrediction(
   championshipId: string,
@@ -135,11 +151,14 @@ export async function upsertTopscorerPrediction(
     const playerId = String(formData.get("player_id") || "");
     if (!playerId) throw new Error("Selecione um jogador.");
 
+    const points = await currentBolaoPredictionTier(supabase, championshipId);
+
     const { error } = await supabase.from("bolao_topscorer_predictions").upsert(
       {
         championship_id: championshipId,
         user_id: user.id,
         player_id: playerId,
+        points,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "championship_id,user_id" }
@@ -164,11 +183,14 @@ export async function upsertChampionPrediction(
     const teamId = String(formData.get("team_id") || "");
     if (!teamId) throw new Error("Selecione um time.");
 
+    const points = await currentBolaoPredictionTier(supabase, championshipId);
+
     const { error } = await supabase.from("bolao_champion_predictions").upsert(
       {
         championship_id: championshipId,
         user_id: user.id,
         team_id: teamId,
+        points,
         updated_at: new Date().toISOString(),
       },
       { onConflict: "championship_id,user_id" }
