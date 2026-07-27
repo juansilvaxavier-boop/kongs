@@ -24,10 +24,15 @@ export async function GET(request: Request) {
 
   const supabase = await createClient();
 
+  // Link de recuperação de senha: sempre manda para a tela de nova senha,
+  // mesmo que o `next` não tenha vindo (ou tenha sido descartado) — nunca
+  // deixa a recuperação cair no destino padrão de usuário logado.
+  const recoveryNext = type === "recovery" ? "/redefinir-senha" : null;
+
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const next = explicitNext ?? (await resolveAuthenticatedDestination(supabase));
+      const next = recoveryNext ?? explicitNext ?? (await resolveAuthenticatedDestination(supabase));
       return NextResponse.redirect(`${origin}${next}`);
     }
   } else if (tokenHash && type) {
@@ -36,7 +41,7 @@ export async function GET(request: Request) {
     // configurado no painel — tratamos os dois formatos aqui.
     const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
     if (!error) {
-      const next = explicitNext ?? (await resolveAuthenticatedDestination(supabase));
+      const next = recoveryNext ?? explicitNext ?? (await resolveAuthenticatedDestination(supabase));
       return NextResponse.redirect(`${origin}${next}`);
     }
   }
