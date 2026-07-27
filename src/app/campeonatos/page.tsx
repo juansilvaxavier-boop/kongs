@@ -18,6 +18,7 @@ export default async function CampeonatosPage() {
     supabase
       .from("championships")
       .select("id, name, created_at, logo_url")
+      .eq("kind", "campeonato")
       .order("created_at", { ascending: false }),
   ]);
   const canCreate = admin || permissions.includes("manage_championships");

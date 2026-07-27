@@ -10,6 +10,7 @@ export default async function CampeonatosPublicosPage() {
   const { data: championships } = await supabase
     .from("championships")
     .select("id, name, format, has_knockout_stage, created_at, logo_url")
+    .eq("kind", "campeonato")
     .order("created_at", { ascending: false });
 
   return (

@@ -376,6 +376,7 @@ export type Database = {
           group_count: number | null
           has_knockout_stage: boolean
           id: string
+          kind: string
           logo_url: string | null
           name: string
           owner_id: string
@@ -389,6 +390,7 @@ export type Database = {
           group_count?: number | null
           has_knockout_stage?: boolean
           id?: string
+          kind?: string
           logo_url?: string | null
           name: string
           owner_id: string
@@ -402,6 +404,7 @@ export type Database = {
           group_count?: number | null
           has_knockout_stage?: boolean
           id?: string
+          kind?: string
           logo_url?: string | null
           name?: string
           owner_id?: string
@@ -495,6 +498,7 @@ export type Database = {
           entry_date: string
           id: string
           paid_amount: number
+          player_id: string | null
           team_id: string | null
           type: string
         }
@@ -507,6 +511,7 @@ export type Database = {
           entry_date?: string
           id?: string
           paid_amount?: number
+          player_id?: string | null
           team_id?: string | null
           type: string
         }
@@ -519,6 +524,7 @@ export type Database = {
           entry_date?: string
           id?: string
           paid_amount?: number
+          player_id?: string | null
           team_id?: string | null
           type?: string
         }
@@ -528,6 +534,13 @@ export type Database = {
             columns: ["championship_id"]
             isOneToOne: false
             referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_entries_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
             referencedColumns: ["id"]
           },
           {
@@ -901,9 +914,11 @@ export type Database = {
           id: string
           name: string
           number: number | null
+          payment_plan: string | null
           photo_url: string | null
           position: string | null
           team_id: string | null
+          user_id: string | null
         }
         Insert: {
           birth_date?: string | null
@@ -914,9 +929,11 @@ export type Database = {
           id?: string
           name: string
           number?: number | null
+          payment_plan?: string | null
           photo_url?: string | null
           position?: string | null
           team_id?: string | null
+          user_id?: string | null
         }
         Update: {
           birth_date?: string | null
@@ -927,9 +944,11 @@ export type Database = {
           id?: string
           name?: string
           number?: number | null
+          payment_plan?: string | null
           photo_url?: string | null
           position?: string | null
           team_id?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -951,6 +970,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          cpf: string | null
           created_at: string
           first_name: string | null
           last_name: string | null
@@ -961,6 +981,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          cpf?: string | null
           created_at?: string
           first_name?: string | null
           last_name?: string | null
@@ -971,6 +992,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          cpf?: string | null
           created_at?: string
           first_name?: string | null
           last_name?: string | null
@@ -1011,6 +1033,132 @@ export type Database = {
             foreignKeyName: "push_subscriptions_championship_id_fkey"
             columns: ["championship_id"]
             isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      racha_session_confirmations: {
+        Row: {
+          championship_id: string
+          confirmed: boolean
+          confirmed_at: string | null
+          player_id: string
+          session_id: string
+        }
+        Insert: {
+          championship_id: string
+          confirmed?: boolean
+          confirmed_at?: string | null
+          player_id: string
+          session_id: string
+        }
+        Update: {
+          championship_id?: string
+          confirmed?: boolean
+          confirmed_at?: string | null
+          player_id?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "racha_session_confirmations_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "racha_session_confirmations_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "racha_session_confirmations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "racha_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      racha_sessions: {
+        Row: {
+          championship_id: string
+          clock_accumulated_seconds: number
+          clock_started_at: string | null
+          clock_status: string
+          created_at: string
+          game_id: string | null
+          id: string
+          session_date: string
+          status: string
+        }
+        Insert: {
+          championship_id: string
+          clock_accumulated_seconds?: number
+          clock_started_at?: string | null
+          clock_status?: string
+          created_at?: string
+          game_id?: string | null
+          id?: string
+          session_date?: string
+          status?: string
+        }
+        Update: {
+          championship_id?: string
+          clock_accumulated_seconds?: number
+          clock_started_at?: string | null
+          clock_status?: string
+          created_at?: string
+          game_id?: string | null
+          id?: string
+          session_date?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "racha_sessions_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: false
+            referencedRelation: "championships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "racha_sessions_game_id_fkey"
+            columns: ["game_id"]
+            isOneToOne: false
+            referencedRelation: "games"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      racha_settings: {
+        Row: {
+          championship_id: string
+          daily_price: number
+          monthly_price: number
+          updated_at: string
+        }
+        Insert: {
+          championship_id: string
+          daily_price?: number
+          monthly_price?: number
+          updated_at?: string
+        }
+        Update: {
+          championship_id?: string
+          daily_price?: number
+          monthly_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "racha_settings_championship_id_fkey"
+            columns: ["championship_id"]
+            isOneToOne: true
             referencedRelation: "championships"
             referencedColumns: ["id"]
           },
@@ -1449,6 +1597,10 @@ export type Database = {
           ritmo: number
         }[]
       }
+      bolao_prediction_tier: {
+        Args: { p_championship_id: string }
+        Returns: number
+      }
       can_manage_championships: {
         Args: { p_championship_id: string }
         Returns: boolean
@@ -1480,6 +1632,10 @@ export type Database = {
         Returns: boolean
       }
       process_game_ovr: { Args: { p_game_id: string }; Returns: undefined }
+      racha_confirm_attendance: {
+        Args: { p_confirmed: boolean; p_session_id: string }
+        Returns: undefined
+      }
       regenerate_championship_sumula_token: {
         Args: { p_championship_id: string }
         Returns: string
