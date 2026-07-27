@@ -2,18 +2,7 @@ import { NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
-
-// Só aceita um caminho relativo dentro do próprio app — bloqueia
-// truques de host confusion como "next=@evil.com/x" ou "next=//evil.com"
-// que, concatenados com `origin`, fariam o navegador redirecionar para
-// um domínio externo.
-function safeNextPath(next: string | null): string | null {
-  if (!next) return null;
-  if (!next.startsWith("/") || next.startsWith("//") || next.includes("@")) {
-    return null;
-  }
-  return next;
-}
+import { safeNextPath } from "@/lib/auth/safe-next-path";
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
