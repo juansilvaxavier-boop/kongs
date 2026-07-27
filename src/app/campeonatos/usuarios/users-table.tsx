@@ -3,10 +3,16 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
+import { PasswordInput } from "@/components/password-input";
 import { useConfirm } from "@/components/confirm-provider";
 import { useToast } from "@/components/toast-provider";
 import { PERMISSION_LABELS, type Permission } from "@/lib/auth/roles";
-import { applyCustomRole, setUserAdmin, setUserPermission } from "./actions";
+import {
+  adminResetUserPassword,
+  applyCustomRole,
+  setUserAdmin,
+  setUserPermission,
+} from "./actions";
 import type { CustomRole } from "./custom-roles-section";
 
 const PERMISSIONS: Permission[] = [
@@ -180,6 +186,71 @@ function ApplyRoleSelect({ userId, roles }: { userId: string; roles: CustomRole[
   );
 }
 
+function ResetPasswordControl({ userId, name }: { userId: string; name: string }) {
+  const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const confirm = useConfirm();
+  const toast = useToast();
+
+  if (!open) {
+    return (
+      <Button variant="secondary" onClick={() => setOpen(true)}>
+        Redefinir senha
+      </Button>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <PasswordInput
+        placeholder="Nova senha (mín. 6 caracteres)"
+        value={password}
+        minLength={6}
+        onChange={(event) => setPassword(event.target.value)}
+        className="max-w-[14rem] text-xs"
+      />
+      <div className="flex gap-2">
+        <Button
+          disabled={password.length < 6 || pending}
+          onClick={async () => {
+            const ok = await confirm({
+              title: `Redefinir a senha de "${name}"?`,
+              description:
+                "O usuário será desconectado de todas as sessões ativas e precisará usar a nova senha no próximo login.",
+              confirmLabel: "Redefinir",
+              danger: true,
+            });
+            if (!ok) return;
+            setPending(true);
+            const result = await adminResetUserPassword(userId, password);
+            setPending(false);
+            if (!result.ok) {
+              toast.error(result.error);
+              return;
+            }
+            toast.success("Senha redefinida.");
+            setPassword("");
+            setOpen(false);
+          }}
+        >
+          {pending ? "Salvando…" : "Confirmar"}
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => {
+            setPassword("");
+            setOpen(false);
+          }}
+        >
+          Cancelar
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function UsersTable({
   users,
   currentUserId,
@@ -258,6 +329,10 @@ export function UsersTable({
                 <PermissionCheckboxes row={row} isAdmin={isAdmin} />
                 {!isAdmin && <ApplyRoleSelect userId={row.user_id} roles={roles} />}
               </div>
+              <div className="mt-3 border-t border-border pt-3">
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Senha</p>
+                <ResetPasswordControl userId={row.user_id} name={name || row.email || "usuário"} />
+              </div>
             </Card>
           );
         })}
@@ -275,6 +350,7 @@ export function UsersTable({
               <th className="px-4 py-3">Último acesso</th>
               <th className="px-4 py-3">Admin</th>
               <th className="px-4 py-3">Permissões</th>
+              <th className="px-4 py-3">Senha</th>
             </tr>
           </thead>
           <tbody>
@@ -315,6 +391,9 @@ export function UsersTable({
                   <td className="px-4 py-3">
                     <PermissionCheckboxes row={row} isAdmin={isAdmin} />
                     {!isAdmin && <ApplyRoleSelect userId={row.user_id} roles={roles} />}
+                  </td>
+                  <td className="px-4 py-3">
+                    <ResetPasswordControl userId={row.user_id} name={name || row.email || "usuário"} />
                   </td>
                 </tr>
               );

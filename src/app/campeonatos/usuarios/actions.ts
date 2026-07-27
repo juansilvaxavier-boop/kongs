@@ -71,3 +71,17 @@ export async function applyCustomRole(userId: string, roleId: string): Promise<A
     revalidatePath("/campeonatos/usuarios");
   });
 }
+
+export async function adminResetUserPassword(
+  userId: string,
+  newPassword: string
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("admin_reset_user_password", {
+      p_user_id: userId,
+      p_new_password: newPassword,
+    });
+    if (error) throw new Error(error.message);
+  });
+}

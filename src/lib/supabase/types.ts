@@ -1425,6 +1425,10 @@ export type Database = {
         Args: { p_game_id: string }
         Returns: undefined
       }
+      admin_reset_user_password: {
+        Args: { p_new_password: string; p_user_id: string }
+        Returns: undefined
+      }
       admin_set_user_admin: {
         Args: { p_is_admin: boolean; p_user_id: string }
         Returns: undefined
