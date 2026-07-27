@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { Card, EmptyState, PageHeader } from "@/components/ui";
+import { computeFinancialTotals } from "@/lib/financial";
 import { FinancialTable } from "./financial-table";
 
 function formatCurrency(value: number) {
@@ -19,7 +20,7 @@ export default async function FinanceiroPage({
       supabase.rpc("can_manage_finance", { p_championship_id: id }),
       supabase
         .from("financial_entries")
-        .select("id, type, category, description, amount, team_id, paid, entry_date")
+        .select("id, type, category, description, amount, team_id, paid_amount, entry_date")
         .eq("championship_id", id)
         .order("entry_date", { ascending: false }),
       supabase.from("teams").select("id, name").eq("championship_id", id).order("name"),
@@ -39,16 +40,6 @@ export default async function FinanceiroPage({
     );
   }
 
-  const manualReceitasPagas = (entries ?? [])
-    .filter((e) => e.type === "receita" && e.paid)
-    .reduce((sum, e) => sum + e.amount, 0);
-  const manualDespesasPagas = (entries ?? [])
-    .filter((e) => e.type === "despesa" && e.paid)
-    .reduce((sum, e) => sum + e.amount, 0);
-  const manualPendencias = (entries ?? [])
-    .filter((e) => !e.paid)
-    .reduce((sum, e) => sum + e.amount, 0);
-
   const refereePagos = (games ?? [])
     .filter((g) => g.referee_paid)
     .reduce((sum, g) => sum + (g.referee_payment_amount ?? 0), 0);
@@ -56,10 +47,20 @@ export default async function FinanceiroPage({
     .filter((g) => !g.referee_paid)
     .reduce((sum, g) => sum + (g.referee_payment_amount ?? 0), 0);
 
-  const totalReceitas = manualReceitasPagas;
-  const totalDespesas = manualDespesasPagas + refereePagos;
-  const saldo = totalReceitas - totalDespesas;
-  const totalPendencias = manualPendencias + refereePendentes;
+  const {
+    receitas: totalReceitas,
+    despesas: totalDespesas,
+    saldo,
+    pendencias: totalPendencias,
+  } = computeFinancialTotals(
+    (entries ?? []).map((e) => ({
+      type: e.type as "receita" | "despesa",
+      amount: e.amount,
+      paid_amount: e.paid_amount,
+    })),
+    refereePagos,
+    refereePendentes
+  );
 
   return (
     <div>

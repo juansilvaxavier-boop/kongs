@@ -5,6 +5,10 @@ import { Badge, Button, Card, EmptyState, Input, Label, Select } from "@/compone
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
 import { useToast } from "@/components/toast-provider";
+import {
+  computeEntryPaymentStatus,
+  type FinancialPaymentStatus,
+} from "@/lib/financial";
 import { createFinancialEntry, deleteFinancialEntry, updateFinancialEntry } from "./actions";
 
 const CATEGORIES = [
@@ -17,6 +21,12 @@ const CATEGORIES = [
   "Outros",
 ];
 
+const STATUS_LABELS: Record<FinancialPaymentStatus, string> = {
+  pago: "Pago",
+  parcial: "Parcial",
+  pendente: "Pendente",
+};
+
 const PAGE_SIZE = 20;
 
 type Team = { id: string; name: string };
@@ -27,7 +37,7 @@ type FinancialEntry = {
   description: string | null;
   amount: number;
   team_id: string | null;
-  paid: boolean;
+  paid_amount: number;
   entry_date: string;
 };
 
@@ -47,6 +57,19 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
+function PaymentBadge({ amount, paidAmount }: { amount: number; paidAmount: number }) {
+  const status = computeEntryPaymentStatus(amount, paidAmount);
+  if (status === "pago") return <Badge tone="success">Pago</Badge>;
+  if (status === "parcial") {
+    return (
+      <Badge tone="warning">
+        Parcial · {formatCurrency(paidAmount)} de {formatCurrency(amount)}
+      </Badge>
+    );
+  }
+  return <Badge>Pendente</Badge>;
+}
+
 function EntryFields({
   entry,
   teams,
@@ -54,6 +77,10 @@ function EntryFields({
   entry?: FinancialEntry;
   teams: Team[];
 }) {
+  const [status, setStatus] = useState<FinancialPaymentStatus>(
+    entry ? computeEntryPaymentStatus(entry.amount, entry.paid_amount) : "pago"
+  );
+
   return (
     <>
       <div className="w-32">
@@ -107,15 +134,31 @@ function EntryFields({
           defaultValue={entry?.entry_date ?? new Date().toISOString().slice(0, 10)}
         />
       </div>
-      <label className="flex items-center gap-2 pb-2 text-sm text-muted">
-        <input
-          type="checkbox"
-          name="paid"
-          defaultChecked={entry?.paid ?? true}
-          className="h-4 w-4 rounded border-border accent-accent"
-        />
-        Pago
-      </label>
+      <div className="w-36">
+        <Label>Status do pagamento</Label>
+        <Select
+          name="payment_status"
+          value={status}
+          onChange={(event) => setStatus(event.target.value as FinancialPaymentStatus)}
+        >
+          <option value="pago">Pago</option>
+          <option value="parcial">Parcial</option>
+          <option value="pendente">Pendente</option>
+        </Select>
+      </div>
+      {status === "parcial" && (
+        <div className="w-32">
+          <Label>Valor pago (R$)</Label>
+          <Input
+            name="partial_amount"
+            type="number"
+            min={0}
+            step="0.01"
+            required
+            defaultValue={entry?.paid_amount ?? ""}
+          />
+        </div>
+      )}
     </>
   );
 }
@@ -157,24 +200,39 @@ export function FinancialTable({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [teamFilter, setTeamFilter] = useState("");
   const [page, setPage] = useState(0);
   const teamName = (teamId: string | null) => teams.find((t) => t.id === teamId)?.name ?? "—";
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return entries;
-    return entries.filter(
-      (entry) =>
+    return entries.filter((entry) => {
+      if (typeFilter && entry.type !== typeFilter) return false;
+      if (categoryFilter && entry.category !== categoryFilter) return false;
+      if (teamFilter && entry.team_id !== teamFilter) return false;
+      if (statusFilter && computeEntryPaymentStatus(entry.amount, entry.paid_amount) !== statusFilter) {
+        return false;
+      }
+      if (!q) return true;
+      return (
         entry.category.toLowerCase().includes(q) ||
         (entry.description ?? "").toLowerCase().includes(q) ||
         teamName(entry.team_id).toLowerCase().includes(q)
-    );
+      );
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, query, teams]);
+  }, [entries, query, typeFilter, statusFilter, categoryFilter, teamFilter, teams]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages - 1);
   const paginated = filtered.slice(currentPage * PAGE_SIZE, currentPage * PAGE_SIZE + PAGE_SIZE);
+
+  function resetPage() {
+    setPage(0);
+  }
 
   return (
     <Card className="overflow-x-auto">
@@ -182,20 +240,106 @@ export function FinancialTable({
         <h2 className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
           Lançamentos
         </h2>
-        <div className="flex items-center gap-2">
+        <Button variant="secondary" onClick={() => setCreating((v) => !v)}>
+          {creating ? "Cancelar" : "+ Novo lançamento"}
+        </Button>
+      </div>
+
+      <div className="flex flex-wrap items-end gap-2 border-b border-border bg-surface-2/30 px-4 py-3">
+        <div className="w-44">
+          <Label>Buscar</Label>
           <Input
-            placeholder="Buscar…"
+            placeholder="Categoria, descrição, time…"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
-              setPage(0);
+              resetPage();
             }}
-            className="w-40"
           />
-          <Button variant="secondary" onClick={() => setCreating((v) => !v)}>
-            {creating ? "Cancelar" : "+ Novo lançamento"}
-          </Button>
         </div>
+        <div className="w-32">
+          <Label>Tipo</Label>
+          <Select
+            value={typeFilter}
+            onChange={(event) => {
+              setTypeFilter(event.target.value);
+              resetPage();
+            }}
+          >
+            <option value="">Todos</option>
+            <option value="receita">Receita</option>
+            <option value="despesa">Despesa</option>
+          </Select>
+        </div>
+        <div className="w-32">
+          <Label>Status</Label>
+          <Select
+            value={statusFilter}
+            onChange={(event) => {
+              setStatusFilter(event.target.value);
+              resetPage();
+            }}
+          >
+            <option value="">Todos</option>
+            {(Object.keys(STATUS_LABELS) as FinancialPaymentStatus[]).map((status) => (
+              <option key={status} value={status}>
+                {STATUS_LABELS[status]}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="w-40">
+          <Label>Categoria</Label>
+          <Select
+            value={categoryFilter}
+            onChange={(event) => {
+              setCategoryFilter(event.target.value);
+              resetPage();
+            }}
+          >
+            <option value="">Todas</option>
+            {CATEGORIES.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </Select>
+        </div>
+        {teams.length > 0 && (
+          <div className="w-40">
+            <Label>Time</Label>
+            <Select
+              value={teamFilter}
+              onChange={(event) => {
+                setTeamFilter(event.target.value);
+                resetPage();
+              }}
+            >
+              <option value="">Todos</option>
+              {teams.map((team) => (
+                <option key={team.id} value={team.id}>
+                  {team.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
+        {(query || typeFilter || statusFilter || categoryFilter || teamFilter) && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setQuery("");
+              setTypeFilter("");
+              setStatusFilter("");
+              setCategoryFilter("");
+              setTeamFilter("");
+              resetPage();
+            }}
+          >
+            Limpar filtros
+          </Button>
+        )}
       </div>
 
       {creating && (
@@ -236,11 +380,7 @@ export function FinancialTable({
                 <Card key={entry.id} className="p-3">
                   <div className="mb-2 flex items-center justify-between">
                     <TypeBadge type={entry.type} />
-                    {entry.paid ? (
-                      <Badge tone="success">Pago</Badge>
-                    ) : (
-                      <Badge tone="warning">Pendente</Badge>
-                    )}
+                    <PaymentBadge amount={entry.amount} paidAmount={entry.paid_amount} />
                   </div>
                   <p className="font-medium text-foreground">{entry.category}</p>
                   {entry.description && <p className="text-xs text-muted">{entry.description}</p>}
@@ -308,11 +448,7 @@ export function FinancialTable({
                         {formatCurrency(entry.amount)}
                       </td>
                       <td className="px-4 py-3">
-                        {entry.paid ? (
-                          <Badge tone="success">Pago</Badge>
-                        ) : (
-                          <Badge tone="warning">Pendente</Badge>
-                        )}
+                        <PaymentBadge amount={entry.amount} paidAmount={entry.paid_amount} />
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex justify-end gap-2">

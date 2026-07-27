@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
 import { runAction, type ActionResult } from "@/lib/action-result";
+import { resolvePaidAmount, type FinancialPaymentStatus } from "@/lib/financial";
 
 function parseEntry(formData: FormData) {
   const type = String(formData.get("type") || "");
@@ -20,7 +21,13 @@ function parseEntry(formData: FormData) {
   const description = String(formData.get("description") || "").trim();
   const teamId = String(formData.get("team_id") || "").trim();
   const entryDate = String(formData.get("entry_date") || "").trim();
-  const paid = formData.get("paid") === "on";
+
+  const paymentStatus = String(formData.get("payment_status") || "") as FinancialPaymentStatus;
+  if (!["pago", "parcial", "pendente"].includes(paymentStatus)) {
+    throw new Error("Selecione o status do pagamento.");
+  }
+  const partialAmount = Number(formData.get("partial_amount"));
+  const paidAmount = resolvePaidAmount(paymentStatus, amount, partialAmount);
 
   return {
     type,
@@ -29,7 +36,7 @@ function parseEntry(formData: FormData) {
     description: description || null,
     team_id: teamId || null,
     entry_date: entryDate || undefined,
-    paid,
+    paid_amount: paidAmount,
   };
 }
 

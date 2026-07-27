@@ -494,7 +494,7 @@ export type Database = {
           description: string | null
           entry_date: string
           id: string
-          paid: boolean
+          paid_amount: number
           team_id: string | null
           type: string
         }
@@ -506,7 +506,7 @@ export type Database = {
           description?: string | null
           entry_date?: string
           id?: string
-          paid?: boolean
+          paid_amount?: number
           team_id?: string | null
           type: string
         }
@@ -518,7 +518,7 @@ export type Database = {
           description?: string | null
           entry_date?: string
           id?: string
-          paid?: boolean
+          paid_amount?: number
           team_id?: string | null
           type?: string
         }
