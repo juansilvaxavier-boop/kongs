@@ -23,12 +23,12 @@ export default async function TimesPage({
     supabase.rpc("can_manage_teams_games", { p_championship_id: id }),
     supabase
       .from("championships")
-      .select("format, team_count, group_count")
+      .select("name, format, team_count, group_count")
       .eq("id", id)
       .maybeSingle(),
     supabase
       .from("teams")
-      .select("id, name, coach_id, crest_url, owner_user_id, group_name")
+      .select("id, name, coach_id, crest_url, owner_user_id, group_name, contract_uploaded_at")
       .eq("championship_id", id)
       .order("name"),
     supabase
@@ -121,6 +121,7 @@ export default async function TimesPage({
 
       <TeamTable
         championshipId={id}
+        championshipName={championship?.name ?? ""}
         teams={teams ?? []}
         coaches={coaches ?? []}
         players={players ?? []}

@@ -19,6 +19,7 @@ type Team = {
   crest_url: string | null;
   owner_user_id: string | null;
   group_name: string | null;
+  contract_uploaded_at: string | null;
 };
 type Player = {
   id: string;
@@ -33,6 +34,7 @@ type Player = {
 
 export function TeamTable({
   championshipId,
+  championshipName,
   teams,
   coaches,
   players,
@@ -40,6 +42,7 @@ export function TeamTable({
   showGroups,
 }: {
   championshipId: string;
+  championshipName: string;
   teams: Team[];
   coaches: Coach[];
   players: Player[];
@@ -395,10 +398,14 @@ export function TeamTable({
             <div className="overflow-y-auto">
               <TeamRoster
                 championshipId={championshipId}
+                championshipName={championshipName}
                 teamId={expandedTeam.id}
+                teamName={expandedTeam.name}
+                crestUrl={expandedTeam.crest_url}
                 coachId={expandedTeam.coach_id}
                 coaches={coaches}
                 players={players.filter((p) => p.team_id === expandedTeam.id)}
+                contractUploadedAt={expandedTeam.contract_uploaded_at}
               />
             </div>
           </div>

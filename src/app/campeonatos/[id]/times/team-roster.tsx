@@ -7,6 +7,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
 import { useToast } from "@/components/toast-provider";
 import { PLAYER_POSITIONS } from "@/lib/positions";
+import { ContractPanel } from "./contract-panel";
 import {
   createPlayer,
   deletePlayer,
@@ -30,22 +31,31 @@ type Player = {
 
 export function TeamRoster({
   championshipId,
+  championshipName,
   teamId,
+  teamName,
+  crestUrl,
   coachId,
   coaches,
   players,
+  contractUploadedAt,
 }: {
   championshipId: string;
+  championshipName: string;
   teamId: string;
+  teamName: string;
+  crestUrl: string | null;
   coachId: string | null;
   coaches: Coach[];
   players: Player[];
+  contractUploadedAt: string | null;
 }) {
   const [creatingCoach, setCreatingCoach] = useState(false);
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const confirm = useConfirm();
   const toast = useToast();
   const router = useRouter();
+  const coachName = coaches.find((c) => c.id === coachId)?.name ?? null;
 
   async function handleDeletePlayer(player: Player) {
     const ok = await confirm({
@@ -64,6 +74,17 @@ export function TeamRoster({
 
   return (
     <div className="space-y-5 border-t border-border bg-surface-2/40 p-4">
+      <ContractPanel
+        championshipId={championshipId}
+        championshipName={championshipName}
+        teamId={teamId}
+        teamName={teamName}
+        crestUrl={crestUrl}
+        coachName={coachName}
+        players={players}
+        contractUploadedAt={contractUploadedAt}
+      />
+
       <div>
         <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
           Técnico

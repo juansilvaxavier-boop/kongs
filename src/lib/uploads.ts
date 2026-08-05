@@ -41,6 +41,15 @@ export function fileExtension(file: File, fallback = "jpg") {
   return extensionOf(file) || fallback;
 }
 
+export function validatePdfFile(file: File, maxBytes: number = DEFAULT_MAX_BYTES) {
+  if (extensionOf(file) !== "pdf") {
+    throw new Error("O arquivo precisa ser um PDF.");
+  }
+  if (file.size > maxBytes) {
+    throw new Error(`O arquivo precisa ter no máximo ${Math.round(maxBytes / (1024 * 1024))}MB.`);
+  }
+}
+
 /**
  * Content-Type a usar no upload para o Storage, derivado da extensão já
  * validada por `validateImageFile` — nunca do `file.type` enviado pelo

@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidateChampionship } from "@/lib/revalidate";
 import { getSiteUrl } from "@/lib/site-url";
-import { fileExtension, imageContentType, validateImageFile } from "@/lib/uploads";
+import { fileExtension, imageContentType, validateImageFile, validatePdfFile } from "@/lib/uploads";
 import { runAction, type ActionResult } from "@/lib/action-result";
 
 function parseCoachId(formData: FormData) {
@@ -158,6 +158,92 @@ export async function regenerateTeamRosterLink(teamId: string): Promise<ActionRe
     });
     if (error) throw new Error(error.message);
     return `${getSiteUrl()}/elenco/${data}`;
+  });
+}
+
+function parseContractFile(formData: FormData): File {
+  const file = formData.get("contract");
+  if (!(file instanceof File) || file.size === 0) {
+    throw new Error("Selecione o arquivo do contrato (PDF).");
+  }
+  validatePdfFile(file);
+  return file;
+}
+
+export async function uploadTeamContract(
+  teamId: string,
+  championshipId: string,
+  formData: FormData
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const file = parseContractFile(formData);
+    const path = `${teamId}/contrato.pdf`;
+
+    const { error: uploadError } = await supabase.storage.from("team-contracts").upload(path, file, {
+      upsert: true,
+      contentType: "application/pdf",
+    });
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data, error } = await supabase
+      .from("teams")
+      .update({ contract_storage_path: path, contract_uploaded_at: new Date().toISOString() })
+      .eq("id", teamId)
+      .select("id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error("Time não encontrado ou sem permissão para editar.");
+
+    revalidateChampionship(championshipId);
+  });
+}
+
+export async function deleteTeamContract(teamId: string, championshipId: string): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { data: team, error: fetchError } = await supabase
+      .from("teams")
+      .select("contract_storage_path")
+      .eq("id", teamId)
+      .maybeSingle();
+    if (fetchError) throw new Error(fetchError.message);
+    if (!team) throw new Error("Time não encontrado ou sem permissão para editar.");
+
+    if (team.contract_storage_path) {
+      const { error: removeError } = await supabase.storage
+        .from("team-contracts")
+        .remove([team.contract_storage_path]);
+      if (removeError) throw new Error(removeError.message);
+    }
+
+    const { error } = await supabase
+      .from("teams")
+      .update({ contract_storage_path: null, contract_uploaded_at: null })
+      .eq("id", teamId);
+    if (error) throw new Error(error.message);
+
+    revalidateChampionship(championshipId);
+  });
+}
+
+export async function getTeamContractSignedUrl(teamId: string): Promise<ActionResult<string>> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { data: team, error: fetchError } = await supabase
+      .from("teams")
+      .select("contract_storage_path")
+      .eq("id", teamId)
+      .maybeSingle();
+    if (fetchError) throw new Error(fetchError.message);
+    if (!team?.contract_storage_path) throw new Error("Este time ainda não tem contrato enviado.");
+
+    const { data, error } = await supabase.storage
+      .from("team-contracts")
+      .createSignedUrl(team.contract_storage_path, 300);
+    if (error) throw new Error(error.message);
+
+    return data.signedUrl;
   });
 }
 
