@@ -1,10 +1,12 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Badge, Button, Card, EmptyState, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
 import { useToast } from "@/components/toast-provider";
+import type { ActionResult } from "@/lib/action-result";
 import { deleteAllGames, deleteGame, updateGame } from "./actions";
 import { GameDateField } from "./game-date-field";
 import { SumulaPanel } from "./sumula-panel";
@@ -82,12 +84,28 @@ export function GameTable({
   const [eventingId, setEventingId] = useState<string | null>(null);
   const confirm = useConfirm();
   const toast = useToast();
+  const router = useRouter();
   const teamName = (teamId: string) =>
     teams.find((t) => t.id === teamId)?.name ?? "?";
   const venueName = (venueId: string | null) =>
     venueId ? venues.find((v) => v.id === venueId)?.name ?? null : null;
   const refereeName = (refereeId: string | null) =>
     refereeId ? referees.find((r) => r.id === refereeId)?.name ?? null : null;
+
+  async function runDelete(action: () => Promise<ActionResult>) {
+    try {
+      const result = await action();
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      router.refresh();
+    } catch {
+      // Ex.: referência de Server Action expirada após um novo deploy —
+      // sem isso o clique falha em silêncio, sem toast e sem atualizar a UI.
+      toast.error("Não foi possível concluir a exclusão. Atualize a página (F5) e tente novamente.");
+    }
+  }
 
   if (games.length === 0) {
     return <EmptyState>Nenhum jogo agendado ainda.</EmptyState>;
@@ -106,8 +124,7 @@ export function GameTable({
             danger: true,
           });
           if (ok) {
-            const result = await deleteAllGames(championshipId);
-            if (!result.ok) toast.error(result.error);
+            await runDelete(() => deleteAllGames(championshipId));
           }
         }}
       >
@@ -309,8 +326,7 @@ export function GameTable({
                             danger: true,
                           });
                           if (ok) {
-                            const result = await deleteGame(game.id, championshipId);
-                            if (!result.ok) toast.error(result.error);
+                            await runDelete(() => deleteGame(game.id, championshipId));
                           }
                         }}
                       >
