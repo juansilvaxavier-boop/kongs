@@ -1,10 +1,12 @@
 import Link from "next/link";
 import Image from "next/image";
+import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { TeamCell } from "@/components/team-cell";
 import { naturalCompare } from "@/lib/datetime";
+import { BolaoTabs } from "./bolao-tabs";
 import {
   computeBolaoPredictionTier,
   computeBolaoStandings,
@@ -250,114 +252,105 @@ export default async function BolaoPage({
     myGroupPicks.get(key)!.set(p.position, p.team_id);
   }
 
-  return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="mb-2 font-display text-2xl font-bold uppercase tracking-wide text-foreground">
-          Bolão
-        </h1>
-        <p className="text-sm text-muted">
-          Palpite o placar dos próximos jogos. Placar exato vale 3 pontos, acertar o vencedor (ou
-          o empate) sem cravar o placar vale 1 ponto.
-        </p>
-      </div>
-
-      {!user && (
-        <Card className="p-4 text-sm text-muted">
-          <Link href={`/login?redirectTo=/campeonato/${id}/bolao`} className="text-accent hover:underline">
-            Entre na sua conta
-          </Link>{" "}
-          para participar do bolão.
-        </Card>
-      )}
-
-      <div>
-        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
-          Seus palpites
-        </h2>
-        {games.length === 0 ? (
-          <EmptyState>Nenhum jogo agendado ainda.</EmptyState>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {games.map((game) => {
-              const mine = myPredictionByGameId.get(game.id);
-              const locked = game.played;
-              return (
-                <Card key={game.id} className="p-4">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                      <TeamCell name={teamName(game.team_a_id)} crestUrl={teamCrest(game.team_a_id)} />
-                      <span className="text-muted">x</span>
-                      <TeamCell name={teamName(game.team_b_id)} crestUrl={teamCrest(game.team_b_id)} />
+  const tabs: { id: string; label: string; content: ReactNode }[] = [
+    {
+      id: "jogos",
+      label: "Jogos",
+      content: (
+        <div>
+          <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+            Seus palpites
+          </h2>
+          {games.length === 0 ? (
+            <EmptyState>Nenhum jogo agendado ainda.</EmptyState>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {games.map((game) => {
+                const mine = myPredictionByGameId.get(game.id);
+                const locked = game.played;
+                return (
+                  <Card key={game.id} className="p-4">
+                    <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                        <TeamCell name={teamName(game.team_a_id)} crestUrl={teamCrest(game.team_a_id)} />
+                        <span className="text-muted">x</span>
+                        <TeamCell name={teamName(game.team_b_id)} crestUrl={teamCrest(game.team_b_id)} />
+                      </div>
+                      <Badge tone={locked ? "success" : "warning"}>
+                        {locked ? "Realizado" : "Agendado"}
+                      </Badge>
                     </div>
-                    <Badge tone={locked ? "success" : "warning"}>
-                      {locked ? "Realizado" : "Agendado"}
-                    </Badge>
-                  </div>
-                  <p className="mb-3 text-xs text-muted">
-                    {game.round}
-                    {game.date
-                      ? ` · ${new Date(game.date).toLocaleString("pt-BR", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        })}`
-                      : ""}
-                  </p>
+                    <p className="mb-3 text-xs text-muted">
+                      {game.round}
+                      {game.date
+                        ? ` · ${new Date(game.date).toLocaleString("pt-BR", {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}`
+                        : ""}
+                    </p>
 
-                  {locked ? (
-                    <div className="flex flex-wrap items-center gap-3 text-sm">
-                      <span className="font-display text-lg font-bold text-foreground">
-                        {game.score_a} - {game.score_b}
-                      </span>
-                      {mine ? (
-                        <span className="text-muted">
-                          Seu palpite: {mine.predicted_score_a} - {mine.predicted_score_b}
+                    {locked ? (
+                      <div className="flex flex-wrap items-center gap-3 text-sm">
+                        <span className="font-display text-lg font-bold text-foreground">
+                          {game.score_a} - {game.score_b}
                         </span>
-                      ) : (
-                        <span className="text-muted">Você não deu palpite neste jogo.</span>
-                      )}
-                    </div>
-                  ) : user ? (
-                    <ActionForm
-                      action={upsertPrediction.bind(null, id, game.id)}
-                      className="flex flex-wrap items-end gap-3"
-                      successMessage="Palpite salvo."
-                    >
-                      <div className="w-20">
-                        <Label>{teamName(game.team_a_id)}</Label>
-                        <Input
-                          name="predicted_score_a"
-                          type="number"
-                          min={0}
-                          required
-                          defaultValue={mine?.predicted_score_a ?? ""}
-                        />
+                        {mine ? (
+                          <span className="text-muted">
+                            Seu palpite: {mine.predicted_score_a} - {mine.predicted_score_b}
+                          </span>
+                        ) : (
+                          <span className="text-muted">Você não deu palpite neste jogo.</span>
+                        )}
                       </div>
-                      <div className="w-20">
-                        <Label>{teamName(game.team_b_id)}</Label>
-                        <Input
-                          name="predicted_score_b"
-                          type="number"
-                          min={0}
-                          required
-                          defaultValue={mine?.predicted_score_b ?? ""}
-                        />
-                      </div>
-                      <SubmitButton pendingText="Salvando…">
-                        {mine ? "Atualizar palpite" : "Salvar palpite"}
-                      </SubmitButton>
-                    </ActionForm>
-                  ) : (
-                    <p className="text-sm text-muted">Entre na sua conta para dar seu palpite.</p>
-                  )}
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                    ) : user ? (
+                      <ActionForm
+                        action={upsertPrediction.bind(null, id, game.id)}
+                        className="flex flex-wrap items-end gap-3"
+                        successMessage="Palpite salvo."
+                      >
+                        <div className="w-20">
+                          <Label>{teamName(game.team_a_id)}</Label>
+                          <Input
+                            name="predicted_score_a"
+                            type="number"
+                            min={0}
+                            required
+                            defaultValue={mine?.predicted_score_a ?? ""}
+                          />
+                        </div>
+                        <div className="w-20">
+                          <Label>{teamName(game.team_b_id)}</Label>
+                          <Input
+                            name="predicted_score_b"
+                            type="number"
+                            min={0}
+                            required
+                            defaultValue={mine?.predicted_score_b ?? ""}
+                          />
+                        </div>
+                        <SubmitButton pendingText="Salvando…">
+                          {mine ? "Atualizar palpite" : "Salvar palpite"}
+                        </SubmitButton>
+                      </ActionForm>
+                    ) : (
+                      <p className="text-sm text-muted">Entre na sua conta para dar seu palpite.</p>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ),
+    },
+  ];
 
-      {teams && teams.length > 1 && groupsDrawn && (
+  if (teams && teams.length > 1 && groupsDrawn) {
+    tabs.push({
+      id: "classificacao",
+      label: "Classificação",
+      content: (
         <div>
           <h2 className="mb-1 font-display text-lg font-bold uppercase tracking-wide text-foreground">
             Palpite de classificação
@@ -437,9 +430,15 @@ export default async function BolaoPage({
             })}
           </div>
         </div>
-      )}
+      ),
+    });
+  }
 
-      {allPlayers.length > 0 && (
+  if (allPlayers.length > 0) {
+    tabs.push({
+      id: "artilheiro",
+      label: "Artilheiro",
+      content: (
         <div>
           <h2 className="mb-1 font-display text-lg font-bold uppercase tracking-wide text-foreground">
             Palpite de artilheiro
@@ -501,9 +500,15 @@ export default async function BolaoPage({
             )}
           </Card>
         </div>
-      )}
+      ),
+    });
+  }
 
-      {teams && teams.length > 1 && (
+  if (teams && teams.length > 1) {
+    tabs.push({
+      id: "campeao",
+      label: "Campeão",
+      content: (
         <div>
           <h2 className="mb-1 font-display text-lg font-bold uppercase tracking-wide text-foreground">
             Palpite de campeão
@@ -563,7 +568,32 @@ export default async function BolaoPage({
             )}
           </Card>
         </div>
+      ),
+    });
+  }
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="mb-2 font-display text-2xl font-bold uppercase tracking-wide text-foreground">
+          Bolão
+        </h1>
+        <p className="text-sm text-muted">
+          Palpite o placar dos próximos jogos. Placar exato vale 3 pontos, acertar o vencedor (ou
+          o empate) sem cravar o placar vale 1 ponto.
+        </p>
+      </div>
+
+      {!user && (
+        <Card className="p-4 text-sm text-muted">
+          <Link href={`/login?redirectTo=/campeonato/${id}/bolao`} className="text-accent hover:underline">
+            Entre na sua conta
+          </Link>{" "}
+          para participar do bolão.
+        </Card>
       )}
+
+      <BolaoTabs tabs={tabs} />
 
       <div>
         <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
