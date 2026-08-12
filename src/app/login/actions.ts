@@ -37,6 +37,15 @@ export async function signInWithPassword(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
+    // Distinguir do genérico "senha errada": e-mail não confirmado tem uma
+    // causa e uma solução completamente diferentes (confirmar o e-mail, não
+    // trocar a senha), e o Supabase já devolve isso como um erro específico.
+    if (error.code === "email_not_confirmed") {
+      return {
+        error: "Este e-mail ainda não foi confirmado. Verifique a caixa de entrada (e o spam).",
+        info: null,
+      };
+    }
     return { error: "E-mail ou senha inválidos.", info: null };
   }
 
