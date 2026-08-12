@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, Input, Label, Select } from "@/components/ui";
@@ -7,6 +6,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { TeamCell } from "@/components/team-cell";
 import { naturalCompare } from "@/lib/datetime";
 import { BolaoTabs } from "./bolao-tabs";
+import { RankingPanel } from "./ranking-panel";
 import {
   computeBolaoPredictionTier,
   computeBolaoStandings,
@@ -236,8 +236,12 @@ export default async function BolaoPage({
     entry.championHit = true;
     merged.set(row.userId, entry);
   }
-  const standings = [...merged.entries()]
-    .map(([userId, v]) => ({ userId, ...v }))
+  // Todo mundo que já palpitou em qualquer categoria entra no ranking, mesmo
+  // com 0 pontos até agora (ex.: só apostou em jogos que ainda não rolaram) —
+  // `merged` só tem entradas pra quem já tem algo resolvido, então a lista
+  // completa vem de `userIds` e cai no `emptyRow()` quando falta em `merged`.
+  const standings = userIds
+    .map((userId) => ({ userId, ...(merged.get(userId) ?? emptyRow()) }))
     .sort((a, b) => b.points - a.points || b.exactCount - a.exactCount);
 
   const myTopscorerPrediction = (topscorerPredictions ?? []).find((p) => p.user_id === user?.id);
@@ -250,6 +254,106 @@ export default async function BolaoPage({
     const key = p.group_name ?? "";
     if (!myGroupPicks.has(key)) myGroupPicks.set(key, new Map());
     myGroupPicks.get(key)!.set(p.position, p.team_id);
+  }
+
+  const gamePredictionsByUser = new Map<string, typeof predictions>();
+  for (const p of predictions ?? []) {
+    if (!gamePredictionsByUser.has(p.user_id)) gamePredictionsByUser.set(p.user_id, []);
+    gamePredictionsByUser.get(p.user_id)!.push(p);
+  }
+
+  const groupPredictionsByUser = new Map<string, Map<string, Map<number, string>>>();
+  for (const p of groupPredictions ?? []) {
+    const key = p.group_name ?? "";
+    if (!groupPredictionsByUser.has(p.user_id)) groupPredictionsByUser.set(p.user_id, new Map());
+    const userGroups = groupPredictionsByUser.get(p.user_id)!;
+    if (!userGroups.has(key)) userGroups.set(key, new Map());
+    userGroups.get(key)!.set(p.position, p.team_id);
+  }
+
+  const topscorerPredictionByUser = new Map(
+    (topscorerPredictions ?? []).map((p) => [p.user_id, p.player_id])
+  );
+  const championPredictionByUser = new Map(
+    (championPredictions ?? []).map((p) => [p.user_id, p.team_id])
+  );
+
+  function userPredictionDetail(userId: string): ReactNode {
+    const userGames = gamePredictionsByUser.get(userId) ?? [];
+    const userGroups = groupPredictionsByUser.get(userId) ?? new Map<string, Map<number, string>>();
+    const userTopscorer = topscorerPredictionByUser.get(userId);
+    const userChampion = championPredictionByUser.get(userId);
+
+    return (
+      <div className="space-y-4">
+        <div>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Jogos</h4>
+          {userGames.length === 0 ? (
+            <p className="text-sm text-muted">Nenhum palpite de jogo.</p>
+          ) : (
+            <ul className="space-y-1 text-sm">
+              {userGames.map((p) => {
+                const game = games.find((g) => g.id === p.game_id);
+                if (!game) return null;
+                return (
+                  <li key={p.id} className="flex items-center justify-between gap-2">
+                    <span className="text-foreground">
+                      {teamName(game.team_a_id)} x {teamName(game.team_b_id)}
+                    </span>
+                    <span className="text-muted">
+                      {p.predicted_score_a} - {p.predicted_score_b}
+                      {game.played ? ` (real: ${game.score_a} - ${game.score_b})` : ""}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+
+        {groups.length > 0 && (
+          <div>
+            <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+              Classificação
+            </h4>
+            {userGroups.size === 0 ? (
+              <p className="text-sm text-muted">Nenhum palpite de classificação.</p>
+            ) : (
+              [...userGroups.entries()].map(([groupName, picks]) => (
+                <div key={groupName || "geral"} className="mb-2">
+                  <p className="mb-1 text-xs font-semibold text-foreground">
+                    {groupName || "Tabela geral"}
+                  </p>
+                  <ul className="space-y-0.5 text-sm text-muted">
+                    {[...picks.entries()]
+                      .sort((a, b) => a[0] - b[0])
+                      .map(([pos, teamId]) => (
+                        <li key={pos}>
+                          {pos}º — {teamName(teamId)}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        <div>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Artilheiro</h4>
+          <p className="text-sm text-muted">
+            {userTopscorer ? playerName(userTopscorer) : "Nenhum palpite."}
+          </p>
+        </div>
+
+        <div>
+          <h4 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted">Campeão</h4>
+          <p className="text-sm text-muted">
+            {userChampion ? teamName(userChampion) : "Nenhum palpite."}
+          </p>
+        </div>
+      </div>
+    );
   }
 
   const tabs: { id: string; label: string; content: ReactNode }[] = [
@@ -572,6 +676,39 @@ export default async function BolaoPage({
     });
   }
 
+  tabs.push({
+    id: "ranking",
+    label: "Ranking",
+    content: (
+      <div>
+        <h2 className="mb-1 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+          Ranking do bolão
+        </h2>
+        <p className="mb-3 text-sm text-muted">
+          Clique num torcedor pra ver os palpites dele em cada categoria.
+        </p>
+        <RankingPanel
+          rows={standings.map((row) => {
+            const profile = profileByUserId.get(row.userId);
+            return {
+              userId: row.userId,
+              name: profileName(row.userId),
+              avatarUrl: profile?.avatar_url ?? null,
+              isMe: row.userId === user?.id,
+              exactCount: row.exactCount,
+              correctCount: row.correctCount,
+              groupExactCount: row.groupExactCount,
+              topscorerHit: row.topscorerHit,
+              championHit: row.championHit,
+              points: row.points,
+              detail: userPredictionDetail(row.userId),
+            };
+          })}
+        />
+      </div>
+    ),
+  });
+
   return (
     <div className="space-y-8">
       <div>
@@ -594,74 +731,6 @@ export default async function BolaoPage({
       )}
 
       <BolaoTabs tabs={tabs} />
-
-      <div>
-        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
-          Ranking do bolão
-        </h2>
-        {standings.length === 0 ? (
-          <EmptyState>Ninguém pontuou ainda — os pontos aparecem conforme os jogos acontecem.</EmptyState>
-        ) : (
-          <Card className="overflow-x-auto">
-            <table className="w-full min-w-[28rem] text-sm">
-              <thead>
-                <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
-                  <th className="w-10 px-4 py-3">#</th>
-                  <th className="px-4 py-3">Torcedor</th>
-                  <th className="px-4 py-3 text-center">Cravadas</th>
-                  <th className="px-4 py-3 text-center">Acertos</th>
-                  <th className="px-4 py-3 text-center">Posições</th>
-                  <th className="px-4 py-3 text-center">Artilheiro</th>
-                  <th className="px-4 py-3 text-center">Campeão</th>
-                  <th className="px-4 py-3 text-center">Pontos</th>
-                </tr>
-              </thead>
-              <tbody>
-                {standings.map((row, index) => {
-                  const profile = profileByUserId.get(row.userId);
-                  return (
-                    <tr key={row.userId} className="border-b border-border last:border-0">
-                      <td className="px-4 py-3 text-muted">{index + 1}</td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          {profile?.avatar_url ? (
-                            <span className="relative h-7 w-7 shrink-0">
-                              <Image
-                                src={profile.avatar_url}
-                                alt=""
-                                fill
-                                loading="eager"
-                                sizes="28px"
-                                className="rounded-full object-cover"
-                              />
-                            </span>
-                          ) : (
-                            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-2 text-xs font-bold text-muted">
-                              {profileName(row.userId).slice(0, 2).toUpperCase()}
-                            </span>
-                          )}
-                          <span className="font-medium text-foreground">
-                            {profileName(row.userId)}
-                            {row.userId === user?.id ? " (você)" : ""}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-center text-foreground">{row.exactCount}</td>
-                      <td className="px-4 py-3 text-center text-foreground">{row.correctCount}</td>
-                      <td className="px-4 py-3 text-center text-foreground">{row.groupExactCount}</td>
-                      <td className="px-4 py-3 text-center text-foreground">{row.topscorerHit ? "✓" : "—"}</td>
-                      <td className="px-4 py-3 text-center text-foreground">{row.championHit ? "✓" : "—"}</td>
-                      <td className="px-4 py-3 text-center font-display text-base font-semibold text-accent">
-                        {row.points}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </Card>
-        )}
-      </div>
     </div>
   );
 }
