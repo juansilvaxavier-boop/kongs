@@ -31,13 +31,18 @@ export function FavoriteButton({
         event.preventDefault();
         event.stopPropagation();
         setPending(true);
-        const result = await toggleFavorite(kind, entityId, favorited);
-        if (result.ok) {
-          setFavorited(result.data);
-        } else {
-          toast.error(result.error);
+        try {
+          const result = await toggleFavorite(kind, entityId, favorited);
+          if (result.ok) {
+            setFavorited(result.data);
+          } else {
+            toast.error(result.error);
+          }
+        } catch {
+          toast.error("Não foi possível atualizar. Atualize a página (F5) e tente novamente.");
+        } finally {
+          setPending(false);
         }
-        setPending(false);
       }}
       aria-label={favorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}
       title={favorited ? "Remover dos favoritos" : "Adicionar aos favoritos"}

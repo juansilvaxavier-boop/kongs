@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Badge, Button, FileInput } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
 import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import { ContractPdfButton } from "./contract-pdf-button";
 import { deleteTeamContract, getTeamContractSignedUrl, uploadTeamContract } from "./actions";
 
@@ -39,17 +39,22 @@ export function ContractPanel({
   const [viewing, setViewing] = useState(false);
   const confirm = useConfirm();
   const toast = useToast();
-  const router = useRouter();
+  const runDelete = useDeleteAction();
 
   async function handleView() {
     setViewing(true);
-    const result = await getTeamContractSignedUrl(teamId);
-    setViewing(false);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
+    try {
+      const result = await getTeamContractSignedUrl(teamId);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      window.open(result.data, "_blank", "noopener,noreferrer");
+    } catch {
+      toast.error("Não foi possível abrir o contrato. Atualize a página (F5) e tente novamente.");
+    } finally {
+      setViewing(false);
     }
-    window.open(result.data, "_blank", "noopener,noreferrer");
   }
 
   async function handleDelete() {
@@ -59,12 +64,7 @@ export function ContractPanel({
       danger: true,
     });
     if (!ok) return;
-    const result = await deleteTeamContract(teamId, championshipId);
-    if (!result.ok) {
-      toast.error(result.error);
-      return;
-    }
-    router.refresh();
+    await runDelete(() => deleteTeamContract(teamId, championshipId));
   }
 
   return (

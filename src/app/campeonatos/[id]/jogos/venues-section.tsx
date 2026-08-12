@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button, Card, Input, Label } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
-import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import { createVenue, deleteVenue, updateVenue } from "./actions";
 
 type Venue = { id: string; name: string; address: string | null };
@@ -18,7 +18,7 @@ export function VenuesSection({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const confirm = useConfirm();
-  const toast = useToast();
+  const runDelete = useDeleteAction();
 
   return (
     <details className="mb-6 rounded-xl border border-border bg-surface/80 p-5 shadow-lg shadow-black/20 backdrop-blur">
@@ -86,8 +86,7 @@ export function VenuesSection({
                             danger: true,
                           });
                           if (ok) {
-                            const result = await deleteVenue(venue.id, championshipId);
-                            if (!result.ok) toast.error(result.error);
+                            await runDelete(() => deleteVenue(venue.id, championshipId));
                           }
                         }}
                       >

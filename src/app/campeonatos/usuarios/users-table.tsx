@@ -170,14 +170,19 @@ function ApplyRoleSelect({ userId, roles }: { userId: string; roles: CustomRole[
           });
           if (!ok) return;
           setPending(true);
-          const result = await applyCustomRole(userId, roleId);
-          setPending(false);
-          if (!result.ok) {
-            toast.error(result.error);
-            return;
+          try {
+            const result = await applyCustomRole(userId, roleId);
+            if (!result.ok) {
+              toast.error(result.error);
+              return;
+            }
+            toast.success("Cargo aplicado.");
+            setRoleId("");
+          } catch {
+            toast.error("Não foi possível aplicar o cargo. Atualize a página (F5) e tente novamente.");
+          } finally {
+            setPending(false);
           }
-          toast.success("Cargo aplicado.");
-          setRoleId("");
         }}
       >
         {pending ? "Aplicando…" : "Aplicar"}
@@ -223,15 +228,20 @@ function ResetPasswordControl({ userId, name }: { userId: string; name: string }
             });
             if (!ok) return;
             setPending(true);
-            const result = await adminResetUserPassword(userId, password);
-            setPending(false);
-            if (!result.ok) {
-              toast.error(result.error);
-              return;
+            try {
+              const result = await adminResetUserPassword(userId, password);
+              if (!result.ok) {
+                toast.error(result.error);
+                return;
+              }
+              toast.success("Senha redefinida.");
+              setPassword("");
+              setOpen(false);
+            } catch {
+              toast.error("Não foi possível redefinir a senha. Atualize a página (F5) e tente novamente.");
+            } finally {
+              setPending(false);
             }
-            toast.success("Senha redefinida.");
-            setPassword("");
-            setOpen(false);
           }}
         >
           {pending ? "Salvando…" : "Confirmar"}

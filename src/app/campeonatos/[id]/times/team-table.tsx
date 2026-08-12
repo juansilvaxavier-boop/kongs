@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Badge, Button, Card, EmptyState, FileInput, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
-import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import { deleteTeam, updateTeam } from "./actions";
 import { TeamRoster } from "./team-roster";
 import { TeamRosterLinkPanel } from "./team-roster-link-panel";
@@ -53,7 +53,7 @@ export function TeamTable({
   const [linkingId, setLinkingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const confirm = useConfirm();
-  const toast = useToast();
+  const runDelete = useDeleteAction();
   const coachName = (coachId: string | null) =>
     coaches.find((c) => c.id === coachId)?.name ?? "—";
   const expandedTeam = teams.find((t) => t.id === expandedId) ?? null;
@@ -224,8 +224,7 @@ export function TeamTable({
                               danger: true,
                             });
                             if (ok) {
-                              const result = await deleteTeam(team.id, championshipId);
-                              if (!result.ok) toast.error(result.error);
+                              await runDelete(() => deleteTeam(team.id, championshipId));
                             }
                           }}
                         >
@@ -363,8 +362,7 @@ export function TeamTable({
                     danger: true,
                   });
                   if (ok) {
-                    const result = await deleteTeam(team.id, championshipId);
-                    if (!result.ok) toast.error(result.error);
+                    await runDelete(() => deleteTeam(team.id, championshipId));
                   }
                 }}
               >

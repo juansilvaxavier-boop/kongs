@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Badge, Button, Card, Input, Label } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
-import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import { PERMISSION_LABELS, type Permission } from "@/lib/auth/roles";
 import { createCustomRole, deleteCustomRole } from "./actions";
 
@@ -23,7 +23,7 @@ export type CustomRole = {
 
 function DeleteRoleButton({ roleId, roleName }: { roleId: string; roleName: string }) {
   const confirm = useConfirm();
-  const toast = useToast();
+  const runDelete = useDeleteAction();
 
   return (
     <button
@@ -37,8 +37,7 @@ function DeleteRoleButton({ roleId, roleName }: { roleId: string; roleName: stri
           danger: true,
         });
         if (!ok) return;
-        const result = await deleteCustomRole(roleId);
-        if (!result.ok) toast.error(result.error);
+        await runDelete(() => deleteCustomRole(roleId));
       }}
     >
       excluir

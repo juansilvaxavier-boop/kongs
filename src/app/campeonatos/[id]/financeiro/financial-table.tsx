@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { Badge, Button, Card, EmptyState, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
-import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import {
   computeEntryPaymentStatus,
   type FinancialPaymentStatus,
@@ -165,7 +165,7 @@ function EntryFields({
 
 function DeleteEntryButton({ entryId, championshipId }: { entryId: string; championshipId: string }) {
   const confirm = useConfirm();
-  const toast = useToast();
+  const runDelete = useDeleteAction();
 
   return (
     <form
@@ -176,8 +176,7 @@ function DeleteEntryButton({ entryId, championshipId }: { entryId: string; champ
           danger: true,
         });
         if (ok) {
-          const result = await deleteFinancialEntry(entryId, championshipId);
-          if (!result.ok) toast.error(result.error);
+          await runDelete(() => deleteFinancialEntry(entryId, championshipId));
         }
       }}
     >

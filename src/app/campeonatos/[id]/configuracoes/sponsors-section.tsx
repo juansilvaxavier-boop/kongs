@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button, Card, FileInput, Input, Label } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
-import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import { createSponsor, deleteSponsor, updateSponsor } from "./sponsors-actions";
 
 type Sponsor = { id: string; name: string; logo_url: string | null; link_url: string | null };
@@ -21,7 +21,7 @@ export function SponsorsSection({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const confirm = useConfirm();
-  const toast = useToast();
+  const runDelete = useDeleteAction();
 
   return (
     <Card className="max-w-xl p-5">
@@ -119,8 +119,7 @@ export function SponsorsSection({
                           danger: true,
                         });
                         if (ok) {
-                          const result = await deleteSponsor(sponsor.id, championshipId);
-                          if (!result.ok) toast.error(result.error);
+                          await runDelete(() => deleteSponsor(sponsor.id, championshipId));
                         }
                       }}
                     >

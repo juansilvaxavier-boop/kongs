@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button, Card, Input, Label } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
-import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import { createReferee, deleteReferee, updateReferee } from "./actions";
 
 type Referee = { id: string; name: string; cpf: string | null };
@@ -21,7 +21,7 @@ export function RefereesSection({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const confirm = useConfirm();
-  const toast = useToast();
+  const runDelete = useDeleteAction();
 
   return (
     <details className="mb-6 rounded-xl border border-border bg-surface/80 p-5 shadow-lg shadow-black/20 backdrop-blur">
@@ -99,8 +99,7 @@ export function RefereesSection({
                             danger: true,
                           });
                           if (ok) {
-                            const result = await deleteReferee(referee.id, championshipId);
-                            if (!result.ok) toast.error(result.error);
+                            await runDelete(() => deleteReferee(referee.id, championshipId));
                           }
                         }}
                       >

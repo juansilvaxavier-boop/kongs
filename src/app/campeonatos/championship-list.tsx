@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Button, Card, Input } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
-import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import { deleteChampionship, renameChampionship } from "./actions";
 
 type Championship = {
@@ -18,7 +18,7 @@ type Championship = {
 export function ChampionshipList({ items }: { items: Championship[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const confirm = useConfirm();
-  const toast = useToast();
+  const runDelete = useDeleteAction();
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -92,8 +92,7 @@ export function ChampionshipList({ items }: { items: Championship[] }) {
                       danger: true,
                     });
                     if (ok) {
-                      const result = await deleteChampionship(championship.id);
-                      if (!result.ok) toast.error(result.error);
+                      await runDelete(() => deleteChampionship(championship.id));
                     }
                   }}
                 >
