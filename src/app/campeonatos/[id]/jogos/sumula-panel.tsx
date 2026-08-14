@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
-import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import { SumulaPdfButton } from "@/components/sumula-pdf-button";
 import { PreSumulaPanel, type CaptainSignature } from "@/components/pre-sumula-panel";
 import { PenaltyShootoutPanel } from "@/components/penalty-shootout-panel";
@@ -47,7 +47,7 @@ function TeamSumulaColumn({
   const teamGoals = goalEvents.filter((g) => playerIds.has(g.player_id));
   const teamCards = cardEvents.filter((c) => playerIds.has(c.player_id));
   const playerName = (id: string) => allPlayers.find((p) => p.id === id)?.name ?? "?";
-  const toast = useToast();
+  const runDelete = useDeleteAction();
 
   return (
     <Card className="p-3">
@@ -71,10 +71,7 @@ function TeamSumulaColumn({
                   <button
                     type="button"
                     className="text-xs text-muted underline hover:text-danger"
-                    onClick={async () => {
-                      const result = await deleteGoalEvent(goal.id, championshipId, gameId);
-                      if (!result.ok) toast.error(result.error);
-                    }}
+                    onClick={() => runDelete(() => deleteGoalEvent(goal.id, championshipId, gameId))}
                   >
                     remover
                   </button>
@@ -118,10 +115,7 @@ function TeamSumulaColumn({
                   <button
                     type="button"
                     className="text-xs text-muted underline hover:text-danger"
-                    onClick={async () => {
-                      const result = await deleteCardEvent(card.id, championshipId, gameId);
-                      if (!result.ok) toast.error(result.error);
-                    }}
+                    onClick={() => runDelete(() => deleteCardEvent(card.id, championshipId, gameId))}
                   >
                     remover
                   </button>

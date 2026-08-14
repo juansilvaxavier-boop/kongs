@@ -1,11 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Badge, Button, Card, FileInput, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
-import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import { ContractPanel } from "./contract-panel";
 import {
@@ -53,8 +52,7 @@ export function TeamRoster({
   const [creatingCoach, setCreatingCoach] = useState(false);
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null);
   const confirm = useConfirm();
-  const toast = useToast();
-  const router = useRouter();
+  const runDelete = useDeleteAction();
   const coachName = coaches.find((c) => c.id === coachId)?.name ?? null;
 
   async function handleDeletePlayer(player: Player) {
@@ -64,12 +62,7 @@ export function TeamRoster({
       danger: true,
     });
     if (!ok) return;
-    const result = await deletePlayer(player.id, championshipId);
-    if (!result.ok) {
-      toast.error(result.error);
-    } else {
-      router.refresh();
-    }
+    await runDelete(() => deletePlayer(player.id, championshipId));
   }
 
   return (
