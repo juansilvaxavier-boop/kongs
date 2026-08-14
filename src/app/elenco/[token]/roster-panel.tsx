@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { Badge, Button, Card, EmptyState, FileInput, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useConfirm } from "@/components/confirm-provider";
-import { useToast } from "@/components/toast-provider";
+import { useDeleteAction } from "@/components/use-delete-action";
 import { PLAYER_POSITIONS } from "@/lib/positions";
 import {
   rosterAddPlayer,
@@ -109,7 +109,7 @@ export function RosterPanel({
   const [error, setError] = useState<string | null>(null);
   const atCap = playerCount >= MAX_PLAYERS;
   const confirm = useConfirm();
-  const toast = useToast();
+  const runDelete = useDeleteAction();
 
   function saveProgress() {
     setSaved(true);
@@ -123,12 +123,7 @@ export function RosterPanel({
       danger: true,
     });
     if (!ok) return;
-    const result = await rosterDeletePlayer(token, player.id);
-    if (result.ok) {
-      router.refresh();
-    } else {
-      toast.error(result.error);
-    }
+    await runDelete(() => rosterDeletePlayer(token, player.id));
   }
 
   async function handleSubmit() {
@@ -142,13 +137,18 @@ export function RosterPanel({
     }
     setSubmitting(true);
     setError(null);
-    const result = await rosterSubmit(token);
-    if (!result.ok) {
-      setError(result.error);
-    } else {
-      router.refresh();
+    try {
+      const result = await rosterSubmit(token);
+      if (!result.ok) {
+        setError(result.error);
+      } else {
+        router.refresh();
+      }
+    } catch {
+      setError("Não foi possível enviar o elenco. Atualize a página (F5) e tente novamente.");
+    } finally {
+      setSubmitting(false);
     }
-    setSubmitting(false);
   }
 
   return (
