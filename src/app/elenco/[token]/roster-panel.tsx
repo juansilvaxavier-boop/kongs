@@ -85,6 +85,45 @@ function PlayerFields({ player }: { player?: Player }) {
   );
 }
 
+function PlayerEditForm({
+  token,
+  player,
+  onDone,
+  onCancel,
+}: {
+  token: string;
+  player: Player;
+  onDone: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <ActionForm
+      action={(formData) => rosterUpdatePlayer(token, player.id, formData)}
+      onSuccess={onDone}
+      className="flex flex-wrap items-end gap-2"
+    >
+      <PlayerFields player={player} />
+      <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
+      <Button type="button" variant="secondary" onClick={onCancel}>
+        Cancelar
+      </Button>
+    </ActionForm>
+  );
+}
+
+function PlayerActions({ onEdit, onDelete }: { onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div className="flex justify-end gap-2">
+      <Button variant="secondary" onClick={onEdit}>
+        Editar
+      </Button>
+      <Button type="button" variant="danger" onClick={onDelete}>
+        Excluir
+      </Button>
+    </div>
+  );
+}
+
 export function RosterPanel({
   token,
   teamName,
@@ -225,92 +264,137 @@ export function RosterPanel({
         {players.length === 0 ? (
           <EmptyState>Nenhum jogador cadastrado ainda.</EmptyState>
         ) : (
-          <Card className="overflow-x-auto">
-            <table className="w-full min-w-[48rem] text-sm">
-              <thead>
-                <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
-                  <th className="px-3 py-2">Foto</th>
-                  <th className="px-3 py-2">Jogador</th>
-                  <th className="px-3 py-2">Nascimento</th>
-                  <th className="px-3 py-2">Nº</th>
-                  <th className="px-3 py-2">Posição</th>
-                  <th className="px-3 py-2">Documento</th>
-                  {!submitted && <th className="w-36 px-3 py-2 text-right">Ações</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {players.map((player) => (
-                  <tr key={player.id} className="border-b border-border last:border-0">
-                    {editingId === player.id ? (
-                      <td colSpan={7} className="px-3 py-2">
-                        <ActionForm
-                          action={(formData) => rosterUpdatePlayer(token, player.id, formData)}
-                          onSuccess={() => setEditingId(null)}
-                          className="flex flex-wrap items-end gap-2"
-                        >
-                          <PlayerFields player={player} />
-                          <SubmitButton pendingText="Salvando…">Salvar</SubmitButton>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            onClick={() => setEditingId(null)}
-                          >
-                            Cancelar
-                          </Button>
-                        </ActionForm>
-                      </td>
-                    ) : (
-                      <>
-                        <td className="px-3 py-2">
-                          {player.photo_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={player.photo_url}
-                              alt=""
-                              className="h-9 w-9 rounded-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-muted">—</span>
-                          )}
+          <>
+            {/* Desktop: tabela */}
+            <Card className="hidden overflow-x-auto sm:block">
+              <table className="w-full min-w-[48rem] text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
+                    <th className="px-3 py-2">Foto</th>
+                    <th className="px-3 py-2">Jogador</th>
+                    <th className="px-3 py-2">Nascimento</th>
+                    <th className="px-3 py-2">Nº</th>
+                    <th className="px-3 py-2">Posição</th>
+                    <th className="px-3 py-2">Documento</th>
+                    {!submitted && <th className="w-36 px-3 py-2 text-right">Ações</th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {players.map((player) => (
+                    <tr key={player.id} className="border-b border-border last:border-0">
+                      {editingId === player.id ? (
+                        <td colSpan={7} className="px-3 py-2">
+                          <PlayerEditForm
+                            token={token}
+                            player={player}
+                            onDone={() => setEditingId(null)}
+                            onCancel={() => setEditingId(null)}
+                          />
                         </td>
-                        <td className="px-3 py-2 font-medium text-foreground">{player.name}</td>
-                        <td className="px-3 py-2 text-muted">
+                      ) : (
+                        <>
+                          <td className="px-3 py-2">
+                            {player.photo_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={player.photo_url}
+                                alt=""
+                                className="h-9 w-9 rounded-full object-cover"
+                              />
+                            ) : (
+                              <span className="text-muted">—</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 font-medium text-foreground">{player.name}</td>
+                          <td className="px-3 py-2 text-muted">
+                            {player.birth_date
+                              ? new Date(`${player.birth_date}T00:00:00`).toLocaleDateString("pt-BR")
+                              : "—"}
+                          </td>
+                          <td className="px-3 py-2 text-muted">{player.number ?? "—"}</td>
+                          <td className="px-3 py-2">
+                            {player.position ? <Badge>{player.position}</Badge> : "—"}
+                          </td>
+                          <td className="px-3 py-2 text-muted">
+                            {player.document_type
+                              ? `${DOCUMENT_LABELS[player.document_type] ?? player.document_type}: ${player.document_number}`
+                              : "—"}
+                          </td>
+                          {!submitted && (
+                            <td className="px-3 py-2">
+                              <PlayerActions
+                                onEdit={() => setEditingId(player.id)}
+                                onDelete={() => handleDeletePlayer(player)}
+                              />
+                            </td>
+                          )}
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Card>
+
+            {/* Mobile: cards empilhados */}
+            <div className="flex flex-col gap-3 sm:hidden">
+              {players.map((player) => (
+                <Card key={player.id} className="p-3">
+                  {editingId === player.id ? (
+                    <PlayerEditForm
+                      token={token}
+                      player={player}
+                      onDone={() => setEditingId(null)}
+                      onCancel={() => setEditingId(null)}
+                    />
+                  ) : (
+                    <>
+                      <div className="mb-2 flex items-center gap-3">
+                        {player.photo_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={player.photo_url}
+                            alt=""
+                            className="h-10 w-10 shrink-0 rounded-full object-cover"
+                          />
+                        ) : null}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="truncate font-medium text-foreground">{player.name}</span>
+                            {player.position && <Badge>{player.position}</Badge>}
+                          </div>
+                        </div>
+                      </div>
+                      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted">
+                        <dt>Nº</dt>
+                        <dd className="text-right text-foreground">{player.number ?? "—"}</dd>
+                        <dt>Nascimento</dt>
+                        <dd className="text-right text-foreground">
                           {player.birth_date
                             ? new Date(`${player.birth_date}T00:00:00`).toLocaleDateString("pt-BR")
                             : "—"}
-                        </td>
-                        <td className="px-3 py-2 text-muted">{player.number ?? "—"}</td>
-                        <td className="px-3 py-2">
-                          {player.position ? <Badge>{player.position}</Badge> : "—"}
-                        </td>
-                        <td className="px-3 py-2 text-muted">
+                        </dd>
+                        <dt>Documento</dt>
+                        <dd className="text-right text-foreground">
                           {player.document_type
                             ? `${DOCUMENT_LABELS[player.document_type] ?? player.document_type}: ${player.document_number}`
                             : "—"}
-                        </td>
-                        {!submitted && (
-                          <td className="px-3 py-2">
-                            <div className="flex justify-end gap-2">
-                              <Button variant="secondary" onClick={() => setEditingId(player.id)}>
-                                Editar
-                              </Button>
-                              <Button
-                                type="button"
-                                variant="danger"
-                                onClick={() => handleDeletePlayer(player)}
-                              >
-                                Excluir
-                              </Button>
-                            </div>
-                          </td>
-                        )}
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
+                        </dd>
+                      </dl>
+                      {!submitted && (
+                        <div className="mt-2">
+                          <PlayerActions
+                            onEdit={() => setEditingId(player.id)}
+                            onDelete={() => handleDeletePlayer(player)}
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </Card>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

@@ -77,8 +77,8 @@ export default async function PublicChampionshipLayout({
         </div>
       </header>
       <main
-        className={`mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:items-start md:gap-8 ${
-          hasSponsors ? "pb-24" : ""
+        className={`mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 px-4 py-8 sm:px-6 md:flex-row md:items-start md:gap-8 md:pb-8 ${
+          hasSponsors && user ? "pb-40" : hasSponsors || user ? "pb-24" : ""
         }`}
       >
         {user && <SidebarNav sponsors={sponsors ?? []} />}

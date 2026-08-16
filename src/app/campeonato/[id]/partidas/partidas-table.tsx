@@ -124,88 +124,153 @@ export function PartidasTable({
     venueId ? venues.find((v) => v.id === venueId)?.name ?? null : null;
 
   return (
-    <Card className="overflow-x-auto">
-      <table className="w-full min-w-[42rem] text-sm">
-        <thead>
-          <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
-            <th className="px-4 py-3">Rodada</th>
-            <th className="px-4 py-3">Data</th>
-            <th className="px-4 py-3">Confronto</th>
-            <th className="px-4 py-3">Local</th>
-            <th className="px-4 py-3">Placar</th>
-            <th className="px-4 py-3">Status</th>
-            <th className="px-4 py-3 text-right">Ações</th>
-          </tr>
-        </thead>
-        <tbody>
-          {games.map((game) => (
-            <Fragment key={game.id}>
-              <tr
-                className="cursor-pointer border-b border-border last:border-0 hover:bg-surface-2/40"
+    <>
+      {/* Desktop: tabela */}
+      <Card className="hidden overflow-x-auto sm:block">
+        <table className="w-full min-w-[42rem] text-sm">
+          <thead>
+            <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
+              <th className="px-4 py-3">Rodada</th>
+              <th className="px-4 py-3">Data</th>
+              <th className="px-4 py-3">Confronto</th>
+              <th className="px-4 py-3">Local</th>
+              <th className="px-4 py-3">Placar</th>
+              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3 text-right">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {games.map((game) => (
+              <Fragment key={game.id}>
+                <tr
+                  className="cursor-pointer border-b border-border last:border-0 hover:bg-surface-2/40"
+                  onClick={() => setOpenId(openId === game.id ? null : game.id)}
+                >
+                  <td className="px-4 py-3 text-foreground">{game.round}</td>
+                  <td className="px-4 py-3 text-muted">
+                    {game.date
+                      ? new Date(game.date).toLocaleString("pt-BR", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })
+                      : "—"}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-foreground">
+                    <div className="flex items-center gap-2">
+                      <TeamCell name={teamName(game.team_a_id)} crestUrl={teamCrest(game.team_a_id)} />
+                      <span className="text-muted">x</span>
+                      <TeamCell name={teamName(game.team_b_id)} crestUrl={teamCrest(game.team_b_id)} />
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-muted">{venueName(game.venue_id) ?? "—"}</td>
+                  <td className="px-4 py-3 text-foreground">
+                    {game.played ? `${game.score_a} - ${game.score_b}` : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge tone={game.played ? "success" : "warning"}>
+                      {game.played ? "Realizado" : "Agendado"}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/campeonato/${championshipId}/partidas/${game.id}`}
+                        onClick={(event) => event.stopPropagation()}
+                        className="text-xs text-accent hover:underline"
+                      >
+                        Ver jogo →
+                      </Link>
+                      <FavoriteButton
+                        kind="game"
+                        entityId={game.id}
+                        initialFavorited={favoritedGameIdSet.has(game.id)}
+                        size="sm"
+                      />
+                    </div>
+                  </td>
+                </tr>
+                {openId === game.id && (
+                  <tr className="border-b border-border last:border-0">
+                    <td colSpan={7} className="bg-surface-2/40 px-4 py-4">
+                      <h3 className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-muted">
+                        Retrospecto
+                      </h3>
+                      <H2HPanel
+                        game={game}
+                        allGames={allGames}
+                        teamName={teamName}
+                        teamCrest={teamCrest}
+                      />
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
+      </Card>
+
+      {/* Mobile: cards empilhados */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {games.map((game) => (
+          <Fragment key={game.id}>
+            <Card className="p-3">
+              <div
+                className="cursor-pointer"
                 onClick={() => setOpenId(openId === game.id ? null : game.id)}
               >
-                <td className="px-4 py-3 text-foreground">{game.round}</td>
-                <td className="px-4 py-3 text-muted">
-                  {game.date
-                    ? new Date(game.date).toLocaleString("pt-BR", {
-                        dateStyle: "short",
-                        timeStyle: "short",
-                      })
-                    : "—"}
-                </td>
-                <td className="px-4 py-3 font-medium text-foreground">
-                  <div className="flex items-center gap-2">
-                    <TeamCell name={teamName(game.team_a_id)} crestUrl={teamCrest(game.team_a_id)} />
-                    <span className="text-muted">x</span>
-                    <TeamCell name={teamName(game.team_b_id)} crestUrl={teamCrest(game.team_b_id)} />
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-muted">{venueName(game.venue_id) ?? "—"}</td>
-                <td className="px-4 py-3 text-foreground">
-                  {game.played ? `${game.score_a} - ${game.score_b}` : "—"}
-                </td>
-                <td className="px-4 py-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted">{game.round}</span>
                   <Badge tone={game.played ? "success" : "warning"}>
                     {game.played ? "Realizado" : "Agendado"}
                   </Badge>
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-2">
-                    <Link
-                      href={`/campeonato/${championshipId}/partidas/${game.id}`}
-                      onClick={(event) => event.stopPropagation()}
-                      className="text-xs text-accent hover:underline"
-                    >
-                      Ver jogo →
-                    </Link>
-                    <FavoriteButton
-                      kind="game"
-                      entityId={game.id}
-                      initialFavorited={favoritedGameIdSet.has(game.id)}
-                      size="sm"
-                    />
+                </div>
+                <div className="flex items-center gap-2">
+                  <TeamCell name={teamName(game.team_a_id)} crestUrl={teamCrest(game.team_a_id)} />
+                  <span className="text-muted">x</span>
+                  <TeamCell name={teamName(game.team_b_id)} crestUrl={teamCrest(game.team_b_id)} />
+                </div>
+                <p className="mt-1 font-display text-lg font-bold text-foreground">
+                  {game.played ? `${game.score_a} - ${game.score_b}` : "—"}
+                </p>
+                <dl className="mt-2 space-y-1 text-xs text-muted">
+                  <div>
+                    {game.date
+                      ? new Date(game.date).toLocaleString("pt-BR", {
+                          dateStyle: "short",
+                          timeStyle: "short",
+                        })
+                      : "Sem data definida"}
                   </div>
-                </td>
-              </tr>
-              {openId === game.id && (
-                <tr className="border-b border-border last:border-0">
-                  <td colSpan={7} className="bg-surface-2/40 px-4 py-4">
-                    <h3 className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-muted">
-                      Retrospecto
-                    </h3>
-                    <H2HPanel
-                      game={game}
-                      allGames={allGames}
-                      teamName={teamName}
-                      teamCrest={teamCrest}
-                    />
-                  </td>
-                </tr>
-              )}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
-    </Card>
+                  {venueName(game.venue_id) && <div>Local: {venueName(game.venue_id)}</div>}
+                </dl>
+              </div>
+              <div className="mt-3 flex items-center justify-end gap-2">
+                <Link
+                  href={`/campeonato/${championshipId}/partidas/${game.id}`}
+                  className="text-xs text-accent hover:underline"
+                >
+                  Ver jogo →
+                </Link>
+                <FavoriteButton
+                  kind="game"
+                  entityId={game.id}
+                  initialFavorited={favoritedGameIdSet.has(game.id)}
+                  size="sm"
+                />
+              </div>
+            </Card>
+            {openId === game.id && (
+              <Card className="p-3">
+                <h3 className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-muted">
+                  Retrospecto
+                </h3>
+                <H2HPanel game={game} allGames={allGames} teamName={teamName} teamCrest={teamCrest} />
+              </Card>
+            )}
+          </Fragment>
+        ))}
+      </div>
+    </>
   );
 }
