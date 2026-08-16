@@ -79,6 +79,7 @@ export function GameTable({
   referees: Referee[];
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [customRound, setCustomRound] = useState(false);
   const [eventingId, setEventingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [roundFilter, setRoundFilter] = useState("");
@@ -187,17 +188,38 @@ export function GameTable({
                 <td colSpan={8} className="px-4 py-4">
                   <ActionForm
                     action={(formData) => updateGame(game.id, championshipId, formData)}
-                    onSuccess={() => setEditingId(null)}
+                    onSuccess={() => {
+                      setEditingId(null);
+                      setCustomRound(false);
+                    }}
                     className="flex flex-col gap-3"
                   >
                     <div className="flex flex-wrap gap-2">
-                      <Input
-                        name="round"
-                        defaultValue={game.round}
-                        required
-                        placeholder="Rodada"
-                        className="max-w-[9rem]"
-                      />
+                      {customRound ? (
+                        <Input
+                          name="round"
+                          required
+                          autoFocus
+                          placeholder="Nome da rodada"
+                          className="max-w-[9rem]"
+                        />
+                      ) : (
+                        <Select
+                          name="round"
+                          defaultValue={game.round}
+                          className="max-w-[9rem]"
+                          onChange={(event) => {
+                            if (event.target.value === "__nova__") setCustomRound(true);
+                          }}
+                        >
+                          {rounds.map((round) => (
+                            <option key={round} value={round}>
+                              {round}
+                            </option>
+                          ))}
+                          <option value="__nova__">+ Nova rodada…</option>
+                        </Select>
+                      )}
                       <GameDateField
                         defaultValue={toDatetimeLocal(game.date)}
                         className="max-w-[12rem]"
@@ -283,7 +305,10 @@ export function GameTable({
                       <Button
                         type="button"
                         variant="secondary"
-                        onClick={() => setEditingId(null)}
+                        onClick={() => {
+                          setEditingId(null);
+                          setCustomRound(false);
+                        }}
                       >
                         Cancelar
                       </Button>
@@ -344,7 +369,10 @@ export function GameTable({
                       </Button>
                       <Button
                         variant="secondary"
-                        onClick={() => setEditingId(game.id)}
+                        onClick={() => {
+                          setEditingId(game.id);
+                          setCustomRound(false);
+                        }}
                       >
                         Editar
                       </Button>
