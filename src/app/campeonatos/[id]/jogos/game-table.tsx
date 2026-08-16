@@ -80,6 +80,8 @@ export function GameTable({
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [eventingId, setEventingId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [roundFilter, setRoundFilter] = useState("");
   const confirm = useConfirm();
   const runDelete = useDeleteAction();
   const teamName = (teamId: string) =>
@@ -93,9 +95,54 @@ export function GameTable({
     return <EmptyState>Nenhum jogo agendado ainda.</EmptyState>;
   }
 
+  const rounds = [...new Set(games.map((g) => g.round))];
+  const q = query.trim().toLowerCase();
+  const filteredGames = games.filter((game) => {
+    if (roundFilter && game.round !== roundFilter) return false;
+    if (!q) return true;
+    return (
+      game.round.toLowerCase().includes(q) ||
+      teamName(game.team_a_id).toLowerCase().includes(q) ||
+      teamName(game.team_b_id).toLowerCase().includes(q) ||
+      (venueName(game.venue_id) ?? "").toLowerCase().includes(q) ||
+      (refereeName(game.referee_id) ?? "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <>
-    <div className="mb-3 flex justify-end">
+    <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-wrap items-end gap-2">
+        <div className="w-56">
+          <Input
+            placeholder="Pesquisar jogo, time, local, árbitro…"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+          />
+        </div>
+        <div className="w-44">
+          <Select value={roundFilter} onChange={(event) => setRoundFilter(event.target.value)}>
+            <option value="">Todas as rodadas</option>
+            {rounds.map((round) => (
+              <option key={round} value={round}>
+                {round}
+              </option>
+            ))}
+          </Select>
+        </div>
+        {(query || roundFilter) && (
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              setQuery("");
+              setRoundFilter("");
+            }}
+          >
+            Limpar filtros
+          </Button>
+        )}
+      </div>
       <form
         action={async () => {
           const ok = await confirm({
@@ -115,6 +162,9 @@ export function GameTable({
         </Button>
       </form>
     </div>
+    {filteredGames.length === 0 ? (
+      <EmptyState>Nenhum jogo encontrado com esses filtros.</EmptyState>
+    ) : (
     <Card className="overflow-x-auto">
       <table className="w-full min-w-[52rem] text-sm">
         <thead>
@@ -130,7 +180,7 @@ export function GameTable({
           </tr>
         </thead>
         <tbody>
-          {games.map((game) => (
+          {filteredGames.map((game) => (
             <Fragment key={game.id}>
             <tr className="border-b border-border last:border-0">
               {editingId === game.id ? (
@@ -366,6 +416,7 @@ export function GameTable({
         </tbody>
       </table>
     </Card>
+    )}
     </>
   );
 }
