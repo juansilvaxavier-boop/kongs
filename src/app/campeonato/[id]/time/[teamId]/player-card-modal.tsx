@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Badge, Card } from "@/components/ui";
 import { PlayerCard } from "@/components/player-card";
 import { ExportImageButton } from "@/components/export-image-button";
+import { ShareStoryButton } from "@/components/share-story-button";
 import { computeOvrEvolution } from "@/lib/ovr-evolution";
 import type { Achievement } from "@/lib/achievements";
 import { computeRarity, type PlayerAttributes as Attributes, type Rarity } from "@/lib/gamification";
@@ -121,15 +122,17 @@ export function PlayerCardModal({
               revealed ? "rotate-0 scale-100 opacity-100" : "scale-75 rotate-6 opacity-0"
             } ${celebrating ? RARITY_GLOW[currentRarity] : ""}`}
           >
-            <PlayerCard
-              name={name}
-              position={position}
-              number={number}
-              photoUrl={photoUrl}
-              crestUrl={crestUrl}
-              attributes={attributes}
-              size="lg"
-            />
+            <div id={`player-card-story-${name}`}>
+              <PlayerCard
+                name={name}
+                position={position}
+                number={number}
+                photoUrl={photoUrl}
+                crestUrl={crestUrl}
+                attributes={attributes}
+                size="lg"
+              />
+            </div>
           </div>
         </div>
 
@@ -147,6 +150,10 @@ export function PlayerCardModal({
                 )}
                 <ExportImageButton
                   targetId={`player-card-export-${name}`}
+                  fileName={`carta-${name}`}
+                />
+                <ShareStoryButton
+                  targetId={`player-card-story-${name}`}
                   fileName={`carta-${name}`}
                 />
               </div>
