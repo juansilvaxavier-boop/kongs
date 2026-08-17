@@ -141,6 +141,7 @@ export function PlayerCard({
               fill
               loading="eager"
               sizes="40px"
+              unoptimized
               className="rounded-full object-cover"
               onError={() => setCrestFailed(true)}
             />
@@ -157,6 +158,7 @@ export function PlayerCard({
               fill
               loading="eager"
               sizes="112px"
+              unoptimized
               className="rounded-full border-2 border-current/30 object-cover"
               onError={() => setPhotoFailed(true)}
             />
