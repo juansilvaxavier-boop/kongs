@@ -45,22 +45,50 @@ export async function toggleLineupPlayer(
     const supabase = await createClient();
     await assertPlayerBelongsToGame(supabase, championshipId, gameId, playerId);
 
-    if (confirmed) {
-      const { error } = await supabase
-        .from("game_lineups")
-        .upsert(
-          { championship_id: championshipId, game_id: gameId, player_id: playerId },
-          { onConflict: "game_id,player_id" }
-        );
-      if (error) throw new Error(error.message);
-    } else {
-      const { error } = await supabase
-        .from("game_lineups")
-        .delete()
-        .eq("game_id", gameId)
-        .eq("player_id", playerId);
-      if (error) throw new Error(error.message);
+    const { error } = await supabase
+      .from("game_lineups")
+      .upsert(
+        { championship_id: championshipId, game_id: gameId, player_id: playerId, confirmed },
+        { onConflict: "game_id,player_id" }
+      );
+    if (error) throw new Error(error.message);
+
+    revalidateChampionship(championshipId);
+  });
+}
+
+export async function setShirtNumber(
+  gameId: string,
+  championshipId: string,
+  playerId: string,
+  shirtNumber: number | null
+): Promise<ActionResult> {
+  return runAction(async () => {
+    if (shirtNumber !== null && (shirtNumber < 0 || shirtNumber > 999)) {
+      throw new Error("Número de camisa inválido.");
     }
+
+    const supabase = await createClient();
+    await assertPlayerBelongsToGame(supabase, championshipId, gameId, playerId);
+
+    const { data: existing } = await supabase
+      .from("game_lineups")
+      .select("confirmed")
+      .eq("game_id", gameId)
+      .eq("player_id", playerId)
+      .maybeSingle();
+
+    const { error } = await supabase.from("game_lineups").upsert(
+      {
+        championship_id: championshipId,
+        game_id: gameId,
+        player_id: playerId,
+        confirmed: existing?.confirmed ?? false,
+        shirt_number: shirtNumber,
+      },
+      { onConflict: "game_id,player_id" }
+    );
+    if (error) throw new Error(error.message);
 
     revalidateChampionship(championshipId);
   });

@@ -18,6 +18,8 @@ function TeamLineupColumn({
   teamPlayers,
   confirmedPlayerIds,
   onToggle,
+  shirtNumberEdits,
+  onShirtNumberChange,
   signature,
   onSignCaptain,
 }: {
@@ -25,6 +27,8 @@ function TeamLineupColumn({
   teamPlayers: Player[];
   confirmedPlayerIds: Set<string>;
   onToggle: (playerId: string, confirmed: boolean) => Promise<ActionResult>;
+  shirtNumberEdits: Record<string, string>;
+  onShirtNumberChange: (playerId: string, value: string) => void;
   signature: CaptainSignature | null;
   onSignCaptain: (captainName: string, signatureDataUrl: string) => Promise<ActionResult>;
 }) {
@@ -50,22 +54,36 @@ function TeamLineupColumn({
           {teamPlayers.map((player) => {
             const confirmed = confirmedPlayerIds.has(player.id);
             return (
-              <li key={player.id} className="flex items-center justify-between text-sm">
+              <li key={player.id} className="flex items-center justify-between gap-2 text-sm">
                 <span className="text-foreground">{player.name}</span>
-                <label className="flex items-center gap-2 text-xs text-muted">
-                  <input
-                    type="checkbox"
-                    checked={confirmed}
-                    disabled={pendingId === player.id}
-                    onChange={async (event) => {
-                      setPendingId(player.id);
-                      const result = await onToggle(player.id, event.target.checked);
-                      if (!result.ok) toast.error(result.error);
-                      setPendingId(null);
-                    }}
-                  />
-                  Confirmado
-                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-1.5 text-xs text-muted">
+                    Nº
+                    <input
+                      type="number"
+                      min={0}
+                      max={999}
+                      placeholder="—"
+                      value={shirtNumberEdits[player.id] ?? ""}
+                      onChange={(event) => onShirtNumberChange(player.id, event.target.value)}
+                      className="w-14 rounded-lg border border-border bg-surface-2 px-2 py-1 text-sm text-foreground"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 text-xs text-muted">
+                    <input
+                      type="checkbox"
+                      checked={confirmed}
+                      disabled={pendingId === player.id}
+                      onChange={async (event) => {
+                        setPendingId(player.id);
+                        const result = await onToggle(player.id, event.target.checked);
+                        if (!result.ok) toast.error(result.error);
+                        setPendingId(null);
+                      }}
+                    />
+                    Confirmado
+                  </label>
+                </div>
               </li>
             );
           })}
@@ -74,7 +92,7 @@ function TeamLineupColumn({
 
       <div className="border-t border-border pt-3">
         <h5 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">
-          Assinatura do capitão
+          Assinatura do responsável
         </h5>
         {!showForm && signature ? (
           <div className="flex items-center gap-3">
@@ -140,6 +158,8 @@ export function PreSumulaPanel({
   teamBName,
   players,
   confirmedPlayerIds,
+  shirtNumberEdits,
+  onShirtNumberChange,
   signatures,
   onToggleLineup,
   onSignCaptain,
@@ -150,6 +170,8 @@ export function PreSumulaPanel({
   teamBName: string;
   players: Player[];
   confirmedPlayerIds: Set<string>;
+  shirtNumberEdits: Record<string, string>;
+  onShirtNumberChange: (playerId: string, value: string) => void;
   signatures: Record<string, CaptainSignature>;
   onToggleLineup: (playerId: string, confirmed: boolean) => Promise<ActionResult>;
   onSignCaptain: (
@@ -176,6 +198,8 @@ export function PreSumulaPanel({
           teamPlayers={teamAPlayers}
           confirmedPlayerIds={confirmedPlayerIds}
           onToggle={onToggleLineup}
+          shirtNumberEdits={shirtNumberEdits}
+          onShirtNumberChange={onShirtNumberChange}
           signature={signatures[teamAId] ?? null}
           onSignCaptain={(name, dataUrl) => onSignCaptain(teamAId, name, dataUrl)}
         />
@@ -184,6 +208,8 @@ export function PreSumulaPanel({
           teamPlayers={teamBPlayers}
           confirmedPlayerIds={confirmedPlayerIds}
           onToggle={onToggleLineup}
+          shirtNumberEdits={shirtNumberEdits}
+          onShirtNumberChange={onShirtNumberChange}
           signature={signatures[teamBId] ?? null}
           onSignCaptain={(name, dataUrl) => onSignCaptain(teamBId, name, dataUrl)}
         />

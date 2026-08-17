@@ -1,9 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge, Button, Card, Input, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
 import { useDeleteAction } from "@/components/use-delete-action";
+import { useToast } from "@/components/toast-provider";
 import { SumulaPdfButton } from "@/components/sumula-pdf-button";
 import { PreSumulaPanel, type CaptainSignature } from "@/components/pre-sumula-panel";
 import { PenaltyShootoutPanel } from "@/components/penalty-shootout-panel";
@@ -14,6 +16,7 @@ import {
   sumulaDeleteGoal,
   sumulaSetPenaltyScore,
   sumulaSetPlayed,
+  sumulaSetShirtNumber,
   sumulaSignCaptain,
   sumulaToggleLineup,
 } from "../actions";
@@ -175,6 +178,7 @@ export function SumulaGamePanel({
   goalEvents,
   cardEvents,
   confirmedPlayerIds,
+  shirtNumbers,
   signatures,
 }: {
   token: string;
@@ -193,10 +197,19 @@ export function SumulaGamePanel({
   goalEvents: GoalEvent[];
   cardEvents: CardEvent[];
   confirmedPlayerIds: Set<string>;
+  shirtNumbers: Record<string, number>;
   signatures: Record<string, CaptainSignature>;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savingSumula, setSavingSumula] = useState(false);
+  const [shirtNumberEdits, setShirtNumberEdits] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      players.map((p) => [p.id, (shirtNumbers[p.id] ?? p.number ?? "").toString()])
+    )
+  );
+  const toast = useToast();
+  const router = useRouter();
   const teamAPlayers = players.filter((p) => p.team_id === teamAId);
   const teamBPlayers = players.filter((p) => p.team_id === teamBId);
 
@@ -208,6 +221,35 @@ export function SumulaGamePanel({
     setPending(false);
   }
 
+  async function saveSumula() {
+    setSavingSumula(true);
+    try {
+      const results = await Promise.all(
+        players.map((player) => {
+          const raw = shirtNumberEdits[player.id] ?? "";
+          const parsed = raw.trim() === "" ? null : Number(raw);
+          return sumulaSetShirtNumber(
+            token,
+            gameId,
+            player.id,
+            parsed !== null && Number.isFinite(parsed) ? parsed : null
+          );
+        })
+      );
+      const failed = results.find((r) => !r.ok);
+      if (failed && !failed.ok) {
+        toast.error(failed.error);
+      } else {
+        toast.success("Súmula salva.");
+        router.refresh();
+      }
+    } catch {
+      toast.error("Não foi possível salvar a súmula. Atualize a página (F5) e tente novamente.");
+    } finally {
+      setSavingSumula(false);
+    }
+  }
+
   return (
     <div>
       <PreSumulaPanel
@@ -217,6 +259,10 @@ export function SumulaGamePanel({
         teamBName={teamBName}
         players={players}
         confirmedPlayerIds={confirmedPlayerIds}
+        shirtNumberEdits={shirtNumberEdits}
+        onShirtNumberChange={(playerId, value) =>
+          setShirtNumberEdits((prev) => ({ ...prev, [playerId]: value }))
+        }
         signatures={signatures}
         onToggleLineup={(playerId, confirmed) =>
           sumulaToggleLineup(token, gameId, playerId, confirmed)
@@ -245,8 +291,11 @@ export function SumulaGamePanel({
             {scoreA ?? 0} - {scoreB ?? 0}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Badge tone={played ? "success" : "warning"}>{played ? "Realizado" : "Agendado"}</Badge>
+          <Button type="button" variant="secondary" onClick={saveSumula} disabled={savingSumula}>
+            {savingSumula ? "Salvando…" : "Salvar súmula"}
+          </Button>
           <Button type="button" variant="secondary" onClick={togglePlayed} disabled={pending}>
             {pending ? "Salvando…" : played ? "Reabrir jogo" : "Encerrar jogo"}
           </Button>

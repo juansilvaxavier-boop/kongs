@@ -607,24 +607,30 @@ export type Database = {
       game_lineups: {
         Row: {
           championship_id: string
+          confirmed: boolean
           created_at: string
           game_id: string
           id: string
           player_id: string
+          shirt_number: number | null
         }
         Insert: {
           championship_id: string
+          confirmed?: boolean
           created_at?: string
           game_id: string
           id?: string
           player_id: string
+          shirt_number?: number | null
         }
         Update: {
           championship_id?: string
+          confirmed?: boolean
           created_at?: string
           game_id?: string
           id?: string
           player_id?: string
+          shirt_number?: number | null
         }
         Relationships: [
           {
@@ -1815,6 +1821,15 @@ export type Database = {
       }
       sumula_set_played: {
         Args: { p_game_id: string; p_played: boolean; p_token: string }
+        Returns: undefined
+      }
+      sumula_set_shirt_number: {
+        Args: {
+          p_game_id: string
+          p_player_id: string
+          p_shirt_number: number | null
+          p_token: string
+        }
         Returns: undefined
       }
       sumula_sign_captain: {

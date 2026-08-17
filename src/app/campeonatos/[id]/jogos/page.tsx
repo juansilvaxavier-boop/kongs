@@ -55,7 +55,7 @@ export default async function JogosPage({
         .order("name"),
       supabase
         .from("players")
-        .select("id, name, team_id")
+        .select("id, name, team_id, number")
         .eq("championship_id", id),
       supabase
         .from("goal_events")
@@ -72,7 +72,7 @@ export default async function JogosPage({
         .order("name"),
       supabase
         .from("game_lineups")
-        .select("game_id, player_id")
+        .select("game_id, player_id, confirmed, shirt_number")
         .eq("championship_id", id),
       supabase
         .from("game_captain_signatures")

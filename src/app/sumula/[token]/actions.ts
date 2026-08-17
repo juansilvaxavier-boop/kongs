@@ -170,6 +170,25 @@ export async function sumulaToggleLineup(
   });
 }
 
+export async function sumulaSetShirtNumber(
+  token: string,
+  gameId: string,
+  playerId: string,
+  shirtNumber: number | null
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("sumula_set_shirt_number", {
+      p_token: token,
+      p_game_id: gameId,
+      p_player_id: playerId,
+      p_shirt_number: shirtNumber,
+    });
+    if (error) throw new Error(error.message);
+    revalidatePath(`/sumula/${token}/${gameId}`);
+  });
+}
+
 export async function sumulaSignCaptain(
   token: string,
   gameId: string,

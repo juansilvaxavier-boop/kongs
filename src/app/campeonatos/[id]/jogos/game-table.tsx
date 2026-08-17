@@ -10,7 +10,7 @@ import { GameDateField } from "./game-date-field";
 import { SumulaPanel } from "./sumula-panel";
 
 type Team = { id: string; name: string };
-type Player = { id: string; name: string; team_id: string | null };
+type Player = { id: string; name: string; team_id: string | null; number: number | null };
 type GoalEvent = { id: string; player_id: string; minute: number | null; game_id: string };
 type CardEvent = {
   id: string;
@@ -37,7 +37,7 @@ type Game = {
 };
 type Venue = { id: string; name: string };
 type Referee = { id: string; name: string; cpf: string | null };
-type Lineup = { game_id: string; player_id: string };
+type Lineup = { game_id: string; player_id: string; confirmed: boolean; shirt_number: number | null };
 type Signature = {
   game_id: string;
   team_id: string;
@@ -298,8 +298,15 @@ export function GameTable({
         goalEvents={goalEvents}
         cardEvents={cardEvents}
         confirmedPlayerIds={
-          new Set(lineups.filter((l) => l.game_id === game.id).map((l) => l.player_id))
+          new Set(
+            lineups.filter((l) => l.game_id === game.id && l.confirmed).map((l) => l.player_id)
+          )
         }
+        shirtNumbers={Object.fromEntries(
+          lineups
+            .filter((l) => l.game_id === game.id && l.shirt_number !== null)
+            .map((l) => [l.player_id, l.shirt_number as number])
+        )}
         signatures={Object.fromEntries(
           signatures
             .filter((s) => s.game_id === game.id)

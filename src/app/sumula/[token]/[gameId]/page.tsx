@@ -42,7 +42,7 @@ export default async function SumulaGamePage({
       .eq("game_id", game.game_id),
     supabase
       .from("game_lineups")
-      .select("player_id")
+      .select("player_id, confirmed, shirt_number")
       .eq("game_id", game.game_id),
     supabase
       .from("game_captain_signatures")
@@ -82,7 +82,12 @@ export default async function SumulaGamePage({
           players={players ?? []}
           goalEvents={goalEvents ?? []}
           cardEvents={cardEvents ?? []}
-          confirmedPlayerIds={new Set((lineups ?? []).map((l) => l.player_id))}
+          confirmedPlayerIds={new Set((lineups ?? []).filter((l) => l.confirmed).map((l) => l.player_id))}
+          shirtNumbers={Object.fromEntries(
+            (lineups ?? [])
+              .filter((l) => l.shirt_number !== null)
+              .map((l) => [l.player_id, l.shirt_number as number])
+          )}
           signatures={Object.fromEntries(
             (signatures ?? []).map((s) => [
               s.team_id,
