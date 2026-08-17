@@ -1,4 +1,7 @@
+"use client";
+
 import Image from "next/image";
+import { useState } from "react";
 import { computeRarity, type PlayerAttributes as Attributes, type Rarity } from "@/lib/gamification";
 
 const CARD_WIDTH_PX = { sm: 128, md: 160, lg: 224 };
@@ -92,6 +95,20 @@ export function PlayerCard({
   const rarity = computeRarity(attributes.ovr);
   const style = RARITY_STYLES[rarity];
 
+  const [loadedPhotoUrl, setLoadedPhotoUrl] = useState(photoUrl);
+  const [photoFailed, setPhotoFailed] = useState(false);
+  if (photoUrl !== loadedPhotoUrl) {
+    setLoadedPhotoUrl(photoUrl);
+    setPhotoFailed(false);
+  }
+
+  const [loadedCrestUrl, setLoadedCrestUrl] = useState(crestUrl);
+  const [crestFailed, setCrestFailed] = useState(false);
+  if (crestUrl !== loadedCrestUrl) {
+    setLoadedCrestUrl(crestUrl);
+    setCrestFailed(false);
+  }
+
   const sizes = {
     sm: "w-32 px-3 pb-2 pt-4 text-xs",
     md: "w-40 px-3.5 pb-2 pt-5 text-sm",
@@ -116,15 +133,23 @@ export function PlayerCard({
             {position ?? "—"}
           </span>
         </div>
-        {crestUrl && (
+        {crestUrl && !crestFailed && (
           <span className={`relative shrink-0 ${crestSizes[size]}`}>
-            <Image src={crestUrl} alt="" fill loading="eager" sizes="40px" className="rounded-full object-cover" />
+            <Image
+              src={crestUrl}
+              alt=""
+              fill
+              loading="eager"
+              sizes="40px"
+              className="rounded-full object-cover"
+              onError={() => setCrestFailed(true)}
+            />
           </span>
         )}
       </div>
 
       <div className="mt-1 flex justify-center">
-        {photoUrl ? (
+        {photoUrl && !photoFailed ? (
           <span className={`relative ${photoSizes[size]}`}>
             <Image
               src={photoUrl}
@@ -133,6 +158,7 @@ export function PlayerCard({
               loading="eager"
               sizes="112px"
               className="rounded-full border-2 border-current/30 object-cover"
+              onError={() => setPhotoFailed(true)}
             />
           </span>
         ) : (
