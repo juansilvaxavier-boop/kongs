@@ -4,15 +4,14 @@ const TEMPLATE_SRC = "/instagram-story-template.png";
 const STORY_WIDTH = 1080;
 const STORY_HEIGHT = 1920;
 
-// Dimensões e posição da cartinha desenhada na arte, dentro da área em
-// branco abaixo do texto "JOGADOR CONFIRMADO" (que termina perto de y=620).
-const CARD_WIDTH = 480;
-const CARD_HEIGHT = 720;
+// Tamanho "de projeto" da cartinha — todas as posições e fontes abaixo são
+// proporcionais a essa largura, então CARD_WIDTH pode mudar livremente sem
+// precisar recalcular cada número à mão (ver `S()`).
+const BASE_WIDTH = 480;
+const CARD_WIDTH = 700;
+const CARD_HEIGHT = 1050;
 const CARD_LEFT = (STORY_WIDTH - CARD_WIDTH) / 2;
-const CARD_TOP = 720;
-const CORNER = 30;
-const TIP = 64;
-const PAD = 34;
+const CARD_TOP = 640;
 
 const RARITY_COLORS: Record<
   Rarity,
@@ -102,15 +101,15 @@ async function tryLoadImage(src: string | null | undefined): Promise<HTMLImageEl
   }
 }
 
-function shieldPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number) {
+function shieldPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, corner: number, tip: number) {
   ctx.beginPath();
-  ctx.moveTo(x + CORNER, y);
-  ctx.lineTo(x + w - CORNER, y);
-  ctx.lineTo(x + w, y + CORNER);
-  ctx.lineTo(x + w, y + h - TIP);
+  ctx.moveTo(x + corner, y);
+  ctx.lineTo(x + w - corner, y);
+  ctx.lineTo(x + w, y + corner);
+  ctx.lineTo(x + w, y + h - tip);
   ctx.lineTo(x + w / 2, y + h);
-  ctx.lineTo(x, y + h - TIP);
-  ctx.lineTo(x, y + CORNER);
+  ctx.lineTo(x, y + h - tip);
+  ctx.lineTo(x, y + corner);
   ctx.closePath();
 }
 
@@ -154,14 +153,16 @@ export type StoryCardData = {
 /**
  * Compõe a cartinha do jogador sobre a arte de story pronta (logo Kong's
  * League + "JOGADOR CONFIRMADO"), desenhando o card inteiro diretamente
- * via API de Canvas (não com html2canvas). Tentativas anteriores usando
- * html2canvas para "fotografar" a cartinha e colar na arte saíam cortadas
- * de forma inconsistente em alguns celulares — desenhar direto no canvas
- * evita depender de como cada navegador reconstrói o layout HTML/CSS.
+ * via API de Canvas (não com html2canvas) — ver histórico no git log
+ * desse arquivo pra entender por quê. Todo o layout interno é proporcional
+ * a CARD_WIDTH via `S()`, então o tamanho da cartinha pode ser ajustado só
+ * mudando CARD_WIDTH/CARD_HEIGHT no topo do arquivo.
  */
 export async function composeInstagramStoryImage(card: StoryCardData): Promise<Blob> {
   const rarity = computeRarity(card.attributes.ovr);
   const colors = RARITY_COLORS[rarity];
+  const scale = CARD_WIDTH / BASE_WIDTH;
+  const S = (value: number) => value * scale;
 
   const [templateImg, photoImg, crestImg] = await Promise.all([
     loadImage(TEMPLATE_SRC),
@@ -181,21 +182,17 @@ export async function composeInstagramStoryImage(card: StoryCardData): Promise<B
   const y = CARD_TOP;
   const w = CARD_WIDTH;
   const h = CARD_HEIGHT;
+  const corner = S(30);
+  const tip = S(64);
+  const pad = S(34);
 
   ctx.save();
-  shieldPath(ctx, x, y, w, h);
+  shieldPath(ctx, x, y, w, h, corner, tip);
   ctx.clip();
 
   let gradient: CanvasGradient;
   if (colors.radial) {
-    gradient = ctx.createRadialGradient(
-      x + w / 2,
-      y + h * 0.2,
-      0,
-      x + w / 2,
-      y + h * 0.2,
-      h * 0.9
-    );
+    gradient = ctx.createRadialGradient(x + w / 2, y + h * 0.2, 0, x + w / 2, y + h * 0.2, h * 0.9);
   } else {
     gradient = ctx.createLinearGradient(0, y, 0, y + h);
   }
@@ -206,26 +203,27 @@ export async function composeInstagramStoryImage(card: StoryCardData): Promise<B
   // OVR e posição
   ctx.fillStyle = colors.text;
   ctx.textBaseline = "alphabetic";
-  ctx.font = `900 68px ${card.displayFontFamily}`;
+  ctx.font = `900 ${S(68)}px ${card.displayFontFamily}`;
   ctx.textAlign = "left";
-  ctx.fillText(String(Math.round(card.attributes.ovr)), x + PAD, y + 100);
-  ctx.font = `700 20px ${card.bodyFontFamily}`;
-  ctx.fillText((card.position ?? "—").toUpperCase(), x + PAD, y + 130);
+  ctx.fillText(String(Math.round(card.attributes.ovr)), x + pad, y + S(100));
+  ctx.font = `700 ${S(20)}px ${card.bodyFontFamily}`;
+  ctx.fillText((card.position ?? "—").toUpperCase(), x + pad, y + S(130));
 
   // Escudo do time
-  const crestCenter = { x: x + w - PAD - 30, y: y + 68 };
+  const crestRadius = S(30);
+  const crestCenter = { x: x + w - pad - crestRadius, y: y + S(68) };
   if (crestImg) {
     ctx.save();
     ctx.beginPath();
-    ctx.arc(crestCenter.x, crestCenter.y, 30, 0, Math.PI * 2);
+    ctx.arc(crestCenter.x, crestCenter.y, crestRadius, 0, Math.PI * 2);
     ctx.clip();
-    drawCoverImage(ctx, crestImg, crestCenter.x, crestCenter.y, 60);
+    drawCoverImage(ctx, crestImg, crestCenter.x, crestCenter.y, crestRadius * 2);
     ctx.restore();
   }
 
   // Foto do jogador (ou iniciais)
-  const photoCenter = { x: x + w / 2, y: y + 260 };
-  const photoRadius = 108;
+  const photoCenter = { x: x + w / 2, y: y + S(260) };
+  const photoRadius = S(108);
   if (photoImg) {
     ctx.save();
     ctx.beginPath();
@@ -236,7 +234,7 @@ export async function composeInstagramStoryImage(card: StoryCardData): Promise<B
     ctx.beginPath();
     ctx.arc(photoCenter.x, photoCenter.y, photoRadius, 0, Math.PI * 2);
     ctx.strokeStyle = "rgba(255,255,255,0.3)";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = S(4);
     ctx.stroke();
   } else {
     ctx.beginPath();
@@ -244,66 +242,69 @@ export async function composeInstagramStoryImage(card: StoryCardData): Promise<B
     ctx.fillStyle = "rgba(0,0,0,0.1)";
     ctx.fill();
     ctx.strokeStyle = "rgba(255,255,255,0.3)";
-    ctx.lineWidth = 4;
+    ctx.lineWidth = S(4);
     ctx.stroke();
     ctx.fillStyle = colors.text;
-    ctx.font = `700 48px ${card.displayFontFamily}`;
+    ctx.font = `700 ${S(48)}px ${card.displayFontFamily}`;
     ctx.textAlign = "center";
-    ctx.fillText(initials(card.name), photoCenter.x, photoCenter.y + 16);
+    ctx.fillText(initials(card.name), photoCenter.x, photoCenter.y + S(16));
   }
 
   // Nome e raridade
   ctx.textAlign = "center";
   ctx.fillStyle = colors.text;
-  ctx.font = `700 34px ${card.displayFontFamily}`;
+  ctx.font = `700 ${S(34)}px ${card.displayFontFamily}`;
   const namePrefix = card.number ? `${card.number} · ` : "";
-  const nameLine = truncateToWidth(ctx, `${namePrefix}${card.name}`.toUpperCase(), w - PAD * 2);
-  ctx.fillText(nameLine, x + w / 2, y + 428);
+  const nameLine = truncateToWidth(ctx, `${namePrefix}${card.name}`.toUpperCase(), w - pad * 2);
+  ctx.fillText(nameLine, x + w / 2, y + S(428));
 
   ctx.fillStyle = colors.sub;
-  ctx.font = `600 20px ${card.bodyFontFamily}`;
-  ctx.fillText(RARITY_LABELS[rarity], x + w / 2, y + 460);
+  ctx.font = `600 ${S(20)}px ${card.bodyFontFamily}`;
+  ctx.fillText(RARITY_LABELS[rarity], x + w / 2, y + S(460));
 
   // Divisória
   ctx.strokeStyle = colors.divider;
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = S(1.5);
   ctx.beginPath();
-  ctx.moveTo(x + PAD + 20, y + 486);
-  ctx.lineTo(x + w - PAD - 20, y + 486);
+  ctx.moveTo(x + pad + S(20), y + S(486));
+  ctx.lineTo(x + w - pad - S(20), y + S(486));
   ctx.stroke();
 
-  // Atributos
-  const rowStartY = y + 520;
-  const rowGap = 40;
-  const colLeftX = x + PAD + 20;
-  const colRightX = x + w / 2 + 20;
+  // Atributos — número centralizado num "slot" fixo, seguido do rótulo,
+  // pra ficar alinhado independente do número ter 1 ou 2 dígitos.
+  const rowStartY = y + S(530);
+  const rowGap = S(46);
+  const numberSlot = S(46);
+  const colLeftX = x + pad + S(16);
+  const colRightX = x + w / 2 + S(16);
 
-  ctx.textAlign = "left";
-  LEFT_ATTRIBUTES.forEach(([key, label], index) => {
-    const rowY = rowStartY + index * rowGap;
-    ctx.fillStyle = colors.text;
-    ctx.font = `700 24px ${card.bodyFontFamily}`;
-    ctx.fillText(String(Math.round(card.attributes[key])), colLeftX, rowY);
-    ctx.fillStyle = colors.sub;
-    ctx.font = `700 18px ${card.bodyFontFamily}`;
-    ctx.fillText(label, colLeftX + 50, rowY);
-  });
-  RIGHT_ATTRIBUTES.forEach(([key, label], index) => {
-    const rowY = rowStartY + index * rowGap;
-    ctx.fillStyle = colors.text;
-    ctx.font = `700 24px ${card.bodyFontFamily}`;
-    ctx.fillText(String(Math.round(card.attributes[key])), colRightX, rowY);
-    ctx.fillStyle = colors.sub;
-    ctx.font = `700 18px ${card.bodyFontFamily}`;
-    ctx.fillText(label, colRightX + 50, rowY);
-  });
+  function drawAttributeColumn(
+    context: CanvasRenderingContext2D,
+    colX: number,
+    attrs: [keyof PlayerAttributes, string][]
+  ) {
+    attrs.forEach(([key, label], index) => {
+      const rowY = rowStartY + index * rowGap;
+      context.fillStyle = colors.text;
+      context.font = `700 ${S(28)}px ${card.bodyFontFamily}`;
+      context.textAlign = "center";
+      context.fillText(String(Math.round(card.attributes[key])), colX + numberSlot / 2, rowY);
+      context.fillStyle = colors.sub;
+      context.font = `700 ${S(18)}px ${card.bodyFontFamily}`;
+      context.textAlign = "left";
+      context.fillText(label, colX + numberSlot + S(10), rowY);
+    });
+  }
+
+  drawAttributeColumn(ctx, colLeftX, LEFT_ATTRIBUTES);
+  drawAttributeColumn(ctx, colRightX, RIGHT_ATTRIBUTES);
 
   ctx.restore();
 
   // Contorno da cartinha
-  shieldPath(ctx, x, y, w, h);
+  shieldPath(ctx, x, y, w, h, corner, tip);
   ctx.strokeStyle = colors.border;
-  ctx.lineWidth = 3;
+  ctx.lineWidth = S(3);
   ctx.stroke();
 
   return new Promise((resolve, reject) => {
