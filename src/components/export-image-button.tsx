@@ -29,7 +29,7 @@ export function ExportImageButton({
         setPending(true);
         try {
           const { default: html2canvas } = await import("html2canvas-pro");
-          const canvas = await html2canvas(el, { backgroundColor: "#faf9fb" });
+          const canvas = await html2canvas(el, { backgroundColor: "#faf9fb", useCORS: true });
           const link = document.createElement("a");
           link.download = `${fileName}.png`;
           link.href = canvas.toDataURL("image/png");

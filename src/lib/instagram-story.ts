@@ -25,7 +25,7 @@ export async function composeInstagramStoryImage(cardTargetId: string): Promise<
   const { default: html2canvas } = await import("html2canvas-pro");
   const [templateImg, cardCanvas] = await Promise.all([
     loadImage(TEMPLATE_SRC),
-    html2canvas(cardEl, { backgroundColor: null, scale: 3 }),
+    html2canvas(cardEl, { backgroundColor: null, scale: 3, useCORS: true }),
   ]);
 
   const composite = document.createElement("canvas");
