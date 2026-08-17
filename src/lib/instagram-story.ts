@@ -1,5 +1,8 @@
 const TEMPLATE_SRC = "/instagram-story-template.png";
-const CARD_BOX = { x: 108, y: 660, width: 864, height: 1180 };
+// Área abaixo do texto "JOGADOR CONFIRMADO" (que termina por volta de y=620)
+// dentro da arte de 1080x1920. Bem menor que o espaço disponível de propósito,
+// com boa margem de segurança pro caso do app de destino re-enquadrar a imagem.
+const CARD_BOX = { x: 300, y: 700, width: 480, height: 1000 };
 
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {

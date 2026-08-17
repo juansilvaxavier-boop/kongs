@@ -122,7 +122,7 @@ export function PlayerCardModal({
               revealed ? "rotate-0 scale-100 opacity-100" : "scale-75 rotate-6 opacity-0"
             } ${celebrating ? RARITY_GLOW[currentRarity] : ""}`}
           >
-            <div id={`player-card-story-${name}`}>
+            <div id={`player-card-story-${name}`} className="inline-block">
               <PlayerCard
                 name={name}
                 position={position}
