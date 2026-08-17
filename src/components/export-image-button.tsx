@@ -30,6 +30,17 @@ export function ExportImageButton({
         try {
           const { default: html2canvas } = await import("html2canvas-pro");
           const canvas = await html2canvas(el, { backgroundColor: "#faf9fb", useCORS: true });
+
+          // No Safari do iPhone, o <a download> não dispara um download de
+          // verdade (fica sem fazer nada visível) — usar o compartilhamento
+          // nativo do aparelho, que tem a opção de salvar na galeria.
+          const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+          const file = blob ? new File([blob], `${fileName}.png`, { type: "image/png" }) : null;
+          if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ files: [file] });
+            return;
+          }
+
           const link = document.createElement("a");
           link.download = `${fileName}.png`;
           link.href = canvas.toDataURL("image/png");

@@ -51,6 +51,11 @@ export async function composeInstagramStoryImage(cardTargetId: string): Promise<
       backgroundColor: "#ffffff",
       width: STORY_WIDTH,
       height: STORY_HEIGHT,
+      // Sem isso, a lib multiplica pela densidade de tela do aparelho (3x
+      // em boa parte dos celulares) e o canvas final passa do limite de
+      // tamanho do Safari no iOS, que corta o excesso sem avisar erro.
+      // 1080x1920 já é a resolução final desejada, não precisa de mais.
+      scale: 1,
     });
 
     return await new Promise<Blob>((resolve, reject) => {
