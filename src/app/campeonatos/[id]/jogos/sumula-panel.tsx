@@ -32,6 +32,7 @@ function TeamSumulaColumn({
   teamName,
   teamPlayers,
   allPlayers,
+  shirtNumberEdits,
   gameId,
   championshipId,
   goalEvents,
@@ -40,6 +41,7 @@ function TeamSumulaColumn({
   teamName: string;
   teamPlayers: Player[];
   allPlayers: Player[];
+  shirtNumberEdits: Record<string, string>;
   gameId: string;
   championshipId: string;
   goalEvents: GoalEvent[];
@@ -48,7 +50,14 @@ function TeamSumulaColumn({
   const playerIds = new Set(teamPlayers.map((p) => p.id));
   const teamGoals = goalEvents.filter((g) => playerIds.has(g.player_id));
   const teamCards = cardEvents.filter((c) => playerIds.has(c.player_id));
-  const playerName = (id: string) => allPlayers.find((p) => p.id === id)?.name ?? "?";
+  const playerLabel = (player: Player) => {
+    const shirtNumber = shirtNumberEdits[player.id]?.trim();
+    return shirtNumber ? `${shirtNumber} ${player.name}` : player.name;
+  };
+  const playerName = (id: string) => {
+    const player = allPlayers.find((p) => p.id === id);
+    return player ? playerLabel(player) : "?";
+  };
   const runDelete = useDeleteAction();
 
   return (
@@ -91,7 +100,7 @@ function TeamSumulaColumn({
                 </option>
                 {teamPlayers.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name}
+                    {playerLabel(p)}
                   </option>
                 ))}
               </Select>
@@ -135,7 +144,7 @@ function TeamSumulaColumn({
                 </option>
                 {teamPlayers.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name}
+                    {playerLabel(p)}
                   </option>
                 ))}
               </Select>
@@ -316,6 +325,7 @@ export function SumulaPanel({
           teamName={teamAName}
           teamPlayers={teamAPlayers}
           allPlayers={players}
+          shirtNumberEdits={shirtNumberEdits}
           gameId={gameId}
           championshipId={championshipId}
           goalEvents={gameGoals}
@@ -325,6 +335,7 @@ export function SumulaPanel({
           teamName={teamBName}
           teamPlayers={teamBPlayers}
           allPlayers={players}
+          shirtNumberEdits={shirtNumberEdits}
           gameId={gameId}
           championshipId={championshipId}
           goalEvents={gameGoals}
