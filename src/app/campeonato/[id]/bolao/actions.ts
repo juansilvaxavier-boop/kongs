@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { runAction, type ActionResult } from "@/lib/action-result";
-import { computeBolaoPredictionTier } from "@/lib/bolao";
+import { computeBolaoPredictionTier, hasSeasonStarted } from "@/lib/bolao";
 
 async function currentBolaoPredictionTier(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -18,6 +18,23 @@ async function currentBolaoPredictionTier(
     supabase.from("games").select("round, played").eq("championship_id", championshipId),
   ]);
   return computeBolaoPredictionTier(championship?.has_knockout_stage ?? false, games ?? []);
+}
+
+// Classificação, artilheiro e campeão só podem ser palpitados (ou
+// alterados) até o campeonato começar — diferente do palpite de jogo,
+// que trava individualmente quando aquele jogo específico é realizado.
+async function assertSeasonNotStarted(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  championshipId: string
+) {
+  const { data: games, error } = await supabase
+    .from("games")
+    .select("date, played")
+    .eq("championship_id", championshipId);
+  if (error) throw new Error(error.message);
+  if (hasSeasonStarted(games ?? [])) {
+    throw new Error("O campeonato já começou — não é mais possível dar ou alterar esse palpite.");
+  }
 }
 
 export async function upsertPrediction(
@@ -67,6 +84,7 @@ export async function upsertGroupPrediction(
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) throw new Error("Você precisa entrar na sua conta para dar seu palpite.");
+    await assertSeasonNotStarted(supabase, championshipId);
 
     const picks: { position: number; teamId: string }[] = [];
     for (const [key, value] of formData.entries()) {
@@ -91,22 +109,6 @@ export async function upsertGroupPrediction(
     }
     if (new Set(picks.map((p) => p.teamId)).size !== picks.length) {
       throw new Error("Você não pode escolher o mesmo time em mais de uma posição.");
-    }
-
-    const groupTeamIdArray = [...groupTeamIds];
-    if (groupTeamIdArray.length > 0) {
-      const { data: playedGroupGames, error: lockError } = await supabase
-        .from("games")
-        .select("id")
-        .eq("championship_id", championshipId)
-        .eq("played", true)
-        .in("team_a_id", groupTeamIdArray)
-        .in("team_b_id", groupTeamIdArray)
-        .limit(1);
-      if (lockError) throw new Error(lockError.message);
-      if (playedGroupGames && playedGroupGames.length > 0) {
-        throw new Error("Este grupo já começou — não é mais possível alterar o palpite.");
-      }
     }
 
     const deleteQuery = supabase
@@ -147,6 +149,7 @@ export async function upsertTopscorerPrediction(
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) throw new Error("Você precisa entrar na sua conta para dar seu palpite.");
+    await assertSeasonNotStarted(supabase, championshipId);
 
     const playerId = String(formData.get("player_id") || "");
     if (!playerId) throw new Error("Selecione um jogador.");
@@ -179,6 +182,7 @@ export async function upsertChampionPrediction(
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) throw new Error("Você precisa entrar na sua conta para dar seu palpite.");
+    await assertSeasonNotStarted(supabase, championshipId);
 
     const teamId = String(formData.get("team_id") || "");
     if (!teamId) throw new Error("Selecione um time.");

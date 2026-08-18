@@ -5,6 +5,7 @@ import {
   computeChampionPredictionPoints,
   computeGroupPredictionPoints,
   computeTopscorerPredictionPoints,
+  hasSeasonStarted,
 } from "./bolao";
 
 describe("computeBolaoStandings", () => {
@@ -230,5 +231,32 @@ describe("computeBolaoPredictionTier", () => {
         { round: "Final", played: true },
       ])
     ).toBe(5);
+  });
+});
+
+describe("hasSeasonStarted", () => {
+  const HOUR = 60 * 60 * 1000;
+
+  it("is false when there are no games", () => {
+    expect(hasSeasonStarted([])).toBe(false);
+  });
+
+  it("is false when every game is unplayed and scheduled in the future", () => {
+    const future = new Date(Date.now() + HOUR).toISOString();
+    expect(hasSeasonStarted([{ date: future, played: false }])).toBe(false);
+  });
+
+  it("is false when a game has no date yet and hasn't been played", () => {
+    expect(hasSeasonStarted([{ date: null, played: false }])).toBe(false);
+  });
+
+  it("is true once the earliest scheduled game's date/time has passed, even if not marked played", () => {
+    const past = new Date(Date.now() - HOUR).toISOString();
+    expect(hasSeasonStarted([{ date: past, played: false }])).toBe(true);
+  });
+
+  it("is true when any game is already marked played, regardless of its date", () => {
+    const future = new Date(Date.now() + HOUR).toISOString();
+    expect(hasSeasonStarted([{ date: future, played: true }])).toBe(true);
   });
 });

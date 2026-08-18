@@ -144,6 +144,19 @@ export function computeChampionPredictionPoints(
     .sort((a, b) => b.points - a.points);
 }
 
+/**
+ * Se o campeonato já começou: ou porque algum jogo já foi realizado, ou
+ * porque a data/hora do primeiro jogo agendado já passou (mesmo que o
+ * admin ainda não tenha marcado nenhum jogo como realizado). Usado pra
+ * travar os palpites de classificação, artilheiro e campeão, que só podem
+ * ser feitos (ou alterados) até o campeonato começar.
+ */
+export function hasSeasonStarted(games: { date: string | null; played: boolean }[]): boolean {
+  if (games.some((g) => g.played)) return true;
+  const now = Date.now();
+  return games.some((g) => g.date !== null && new Date(g.date).getTime() <= now);
+}
+
 export type BolaoPredictionTier = 10 | 5 | 3;
 
 const GROUP_ROUND_PATTERN = /Rodada \d+$/;
