@@ -8,6 +8,7 @@ import { useConfirm } from "@/components/confirm-provider";
 import { useToast } from "@/components/toast-provider";
 import { PERMISSION_LABELS, type Permission } from "@/lib/auth/roles";
 import {
+  adminConfirmUserEmail,
   adminResetUserPassword,
   applyCustomRole,
   setUserAdmin,
@@ -42,6 +43,7 @@ export type UserRow = {
   avatar_url: string | null;
   role: string | null;
   permissions: string[] | null;
+  email_confirmed_at: string | null;
 };
 
 function formatDate(value: string | null) {
@@ -261,6 +263,58 @@ function ResetPasswordControl({ userId, name }: { userId: string; name: string }
   );
 }
 
+function ConfirmEmailControl({
+  userId,
+  name,
+  confirmed,
+}: {
+  userId: string;
+  name: string;
+  confirmed: boolean;
+}) {
+  const [pending, setPending] = useState(false);
+  const confirm = useConfirm();
+  const toast = useToast();
+
+  if (confirmed) {
+    return <Badge tone="success">Confirmado</Badge>;
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <Badge tone="warning">Não confirmado</Badge>
+      <Button
+        variant="secondary"
+        disabled={pending}
+        onClick={async () => {
+          const ok = await confirm({
+            title: `Confirmar o e-mail de "${name}"?`,
+            description:
+              "Use isso quando o usuário se cadastrou mas não recebeu (ou não achou) o e-mail de confirmação. Ele poderá entrar sem precisar confirmar por e-mail.",
+            confirmLabel: "Confirmar e-mail",
+          });
+          if (!ok) return;
+          setPending(true);
+          try {
+            const result = await adminConfirmUserEmail(userId);
+            if (!result.ok) {
+              toast.error(result.error);
+              return;
+            }
+            toast.success("E-mail confirmado.");
+          } catch {
+            toast.error("Não foi possível confirmar o e-mail. Atualize a página (F5) e tente novamente.");
+          } finally {
+            setPending(false);
+          }
+        }}
+      >
+        {pending ? "Confirmando…" : "Confirmar e-mail"}
+      </Button>
+    </div>
+  );
+}
+
 export function UsersTable({
   users,
   currentUserId,
@@ -343,6 +397,16 @@ export function UsersTable({
                 <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">Senha</p>
                 <ResetPasswordControl userId={row.user_id} name={name || row.email || "usuário"} />
               </div>
+              <div className="mt-3 border-t border-border pt-3">
+                <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
+                  E-mail
+                </p>
+                <ConfirmEmailControl
+                  userId={row.user_id}
+                  name={name || row.email || "usuário"}
+                  confirmed={Boolean(row.email_confirmed_at)}
+                />
+              </div>
             </Card>
           );
         })}
@@ -361,6 +425,7 @@ export function UsersTable({
               <th className="px-4 py-3">Admin</th>
               <th className="px-4 py-3">Permissões</th>
               <th className="px-4 py-3">Senha</th>
+              <th className="px-4 py-3">E-mail</th>
             </tr>
           </thead>
           <tbody>
@@ -404,6 +469,13 @@ export function UsersTable({
                   </td>
                   <td className="px-4 py-3">
                     <ResetPasswordControl userId={row.user_id} name={name || row.email || "usuário"} />
+                  </td>
+                  <td className="px-4 py-3">
+                    <ConfirmEmailControl
+                      userId={row.user_id}
+                      name={name || row.email || "usuário"}
+                      confirmed={Boolean(row.email_confirmed_at)}
+                    />
                   </td>
                 </tr>
               );

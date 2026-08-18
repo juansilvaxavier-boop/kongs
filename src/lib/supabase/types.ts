@@ -1541,6 +1541,10 @@ export type Database = {
         Args: { p_role_id: string; p_user_id: string }
         Returns: undefined
       }
+      admin_confirm_user_email: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
       admin_list_audit_log: {
         Args: {
           p_action?: string
@@ -1571,6 +1575,7 @@ export type Database = {
           avatar_url: string
           created_at: string
           email: string
+          email_confirmed_at: string
           first_name: string
           last_name: string
           last_sign_in_at: string

@@ -85,3 +85,14 @@ export async function adminResetUserPassword(
     if (error) throw new Error(error.message);
   });
 }
+
+export async function adminConfirmUserEmail(userId: string): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("admin_confirm_user_email", {
+      p_user_id: userId,
+    });
+    if (error) throw new Error(error.message);
+    revalidatePath("/campeonatos/usuarios");
+  });
+}
