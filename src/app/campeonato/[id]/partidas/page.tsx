@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState, PageHeader } from "@/components/ui";
-import { naturalCompare } from "@/lib/datetime";
 import { TeamFilter } from "../team-filter";
 import { PartidasTable } from "./partidas-table";
 
@@ -50,7 +49,12 @@ export default async function PartidasPage({
   const favoritedGameIds = (favoriteRows ?? []).map((f) => f.entity_id);
 
   const allGames = gamesData
-    ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
+    ? [...gamesData].sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      })
     : [];
   const games = teamFilter
     ? allGames.filter((g) => g.team_a_id === teamFilter || g.team_b_id === teamFilter)
