@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, Input, Label, Select } from "@/components/ui";
 import { ActionForm, SubmitButton } from "@/components/action-form";
+import { SearchableSelect } from "@/components/searchable-select";
 import { TeamCell } from "@/components/team-cell";
 import { naturalCompare } from "@/lib/datetime";
 import { BolaoTabs } from "./bolao-tabs";
@@ -162,6 +163,15 @@ export default async function BolaoPage({
   );
 
   const allPlayers = players ?? [];
+  const topscorerOptions = [...allPlayers]
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    .map((p) => ({
+      value: p.id,
+      label: p.team_id ? `${p.name} (${teamName(p.team_id)})` : p.name,
+    }));
+  const championOptions = [...(teams ?? [])]
+    .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"))
+    .map((t) => ({ value: t.id, label: t.name }));
   const topScorers = computeTopScorers(allPlayers, goals ?? [], teams ?? []);
   const topScorerPlayerIds =
     seasonOver && topScorers.length > 0
@@ -585,18 +595,13 @@ export default async function BolaoPage({
                 className="flex flex-wrap items-end gap-3"
                 successMessage="Palpite salvo."
               >
-                <Select
+                <SearchableSelect
                   name="player_id"
+                  options={topscorerOptions}
                   defaultValue={myTopscorerPrediction?.player_id ?? ""}
+                  placeholder="Digite o nome do jogador…"
                   className="max-w-xs"
-                >
-                  <option value="">Selecione um jogador</option>
-                  {allPlayers.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </Select>
+                />
                 <SubmitButton pendingText="Salvando…">
                   {myTopscorerPrediction ? "Atualizar palpite" : "Salvar palpite"}
                 </SubmitButton>
@@ -653,18 +658,13 @@ export default async function BolaoPage({
                 className="flex flex-wrap items-end gap-3"
                 successMessage="Palpite salvo."
               >
-                <Select
+                <SearchableSelect
                   name="team_id"
+                  options={championOptions}
                   defaultValue={myChampionPrediction?.team_id ?? ""}
+                  placeholder="Digite o nome do time…"
                   className="max-w-xs"
-                >
-                  <option value="">Selecione um time</option>
-                  {(teams ?? []).map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                    </option>
-                  ))}
-                </Select>
+                />
                 <SubmitButton pendingText="Salvando…">
                   {myChampionPrediction ? "Atualizar palpite" : "Salvar palpite"}
                 </SubmitButton>
