@@ -676,6 +676,7 @@ export type Database = {
           team_a_id: string
           team_b_id: string
           venue_id: string | null
+          walkover_team_id: string | null
         }
         Insert: {
           championship_id: string
@@ -696,6 +697,7 @@ export type Database = {
           team_a_id: string
           team_b_id: string
           venue_id?: string | null
+          walkover_team_id?: string | null
         }
         Update: {
           championship_id?: string
@@ -716,6 +718,7 @@ export type Database = {
           team_a_id?: string
           team_b_id?: string
           venue_id?: string | null
+          walkover_team_id?: string | null
         }
         Relationships: [
           {
@@ -758,6 +761,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_walkover_team_id_fkey"
+            columns: ["walkover_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
         ]
@@ -1800,6 +1810,7 @@ export type Database = {
           team_a_name: string
           team_b_id: string
           team_b_name: string
+          walkover_team_id: string | null
         }[]
       }
       sumula_list_games: {
@@ -1826,6 +1837,10 @@ export type Database = {
       }
       sumula_set_played: {
         Args: { p_game_id: string; p_played: boolean; p_token: string }
+        Returns: undefined
+      }
+      sumula_set_walkover: {
+        Args: { p_game_id: string; p_token: string; p_winner_team_id: string | null }
         Returns: undefined
       }
       sumula_set_shirt_number: {

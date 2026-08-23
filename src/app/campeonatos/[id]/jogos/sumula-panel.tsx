@@ -15,7 +15,7 @@ import {
   deleteCardEvent,
   deleteGoalEvent,
 } from "./events-actions";
-import { setGamePenaltyScore, setGamePlayed } from "./actions";
+import { setGamePenaltyScore, setGamePlayed, setGameWalkover } from "./actions";
 import { setShirtNumber, signCaptain, toggleLineupPlayer } from "./lineup-actions";
 
 type Player = { id: string; name: string; team_id: string | null; number: number | null };
@@ -179,6 +179,7 @@ export function SumulaPanel({
   scoreB,
   penaltyScoreA,
   penaltyScoreB,
+  walkoverTeamId,
   played,
   players,
   goalEvents,
@@ -198,6 +199,7 @@ export function SumulaPanel({
   scoreB: number | null;
   penaltyScoreA: number | null;
   penaltyScoreB: number | null;
+  walkoverTeamId: string | null;
   played: boolean;
   players: Player[];
   goalEvents: GoalEvent[];
@@ -225,6 +227,14 @@ export function SumulaPanel({
     setPending(true);
     setError(null);
     const result = await setGamePlayed(gameId, championshipId, !played);
+    if (!result.ok) setError(result.error);
+    setPending(false);
+  }
+
+  async function handleWalkoverChange(teamId: string) {
+    setPending(true);
+    setError(null);
+    const result = await setGameWalkover(gameId, championshipId, teamId || null);
     if (!result.ok) setError(result.error);
     setPending(false);
   }
@@ -292,13 +302,26 @@ export function SumulaPanel({
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 p-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-wide text-muted">Placar (gerado pelos gols lançados)</p>
+          <p className="text-xs font-bold uppercase tracking-wide text-muted">
+            {walkoverTeamId ? "Placar (vitória por W.O.)" : "Placar (gerado pelos gols lançados)"}
+          </p>
           <p className="font-display text-2xl font-bold text-foreground">
             {scoreA ?? 0} - {scoreB ?? 0}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={played ? "success" : "warning"}>{played ? "Realizado" : "Agendado"}</Badge>
+          {walkoverTeamId && <Badge tone="warning">W.O.</Badge>}
+          <Select
+            value={walkoverTeamId ?? ""}
+            onChange={(event) => handleWalkoverChange(event.target.value)}
+            disabled={pending}
+            className="w-auto"
+          >
+            <option value="">Sem W.O.</option>
+            <option value={teamAId}>W.O. — vitória do {teamAName}</option>
+            <option value={teamBId}>W.O. — vitória do {teamBName}</option>
+          </Select>
           <Button type="button" variant="secondary" onClick={saveSumula} disabled={savingSumula}>
             {savingSumula ? "Salvando…" : "Salvar súmula"}
           </Button>

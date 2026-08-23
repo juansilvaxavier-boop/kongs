@@ -17,6 +17,7 @@ import {
   sumulaSetPenaltyScore,
   sumulaSetPlayed,
   sumulaSetShirtNumber,
+  sumulaSetWalkover,
   sumulaSignCaptain,
   sumulaToggleLineup,
 } from "../actions";
@@ -182,6 +183,7 @@ export function SumulaGamePanel({
   scoreB,
   penaltyScoreA,
   penaltyScoreB,
+  walkoverTeamId,
   played,
   players,
   goalEvents,
@@ -201,6 +203,7 @@ export function SumulaGamePanel({
   scoreB: number | null;
   penaltyScoreA: number | null;
   penaltyScoreB: number | null;
+  walkoverTeamId: string | null;
   played: boolean;
   players: Player[];
   goalEvents: GoalEvent[];
@@ -226,6 +229,14 @@ export function SumulaGamePanel({
     setPending(true);
     setError(null);
     const result = await sumulaSetPlayed(token, gameId, !played);
+    if (!result.ok) setError(result.error);
+    setPending(false);
+  }
+
+  async function handleWalkoverChange(teamId: string) {
+    setPending(true);
+    setError(null);
+    const result = await sumulaSetWalkover(token, gameId, teamId || null);
     if (!result.ok) setError(result.error);
     setPending(false);
   }
@@ -294,7 +305,7 @@ export function SumulaGamePanel({
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 p-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-wide text-muted">
-            Placar (gerado pelos gols lançados)
+            {walkoverTeamId ? "Placar (vitória por W.O.)" : "Placar (gerado pelos gols lançados)"}
           </p>
           <p className="font-display text-2xl font-bold text-foreground">
             {scoreA ?? 0} - {scoreB ?? 0}
@@ -302,6 +313,17 @@ export function SumulaGamePanel({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={played ? "success" : "warning"}>{played ? "Realizado" : "Agendado"}</Badge>
+          {walkoverTeamId && <Badge tone="warning">W.O.</Badge>}
+          <Select
+            value={walkoverTeamId ?? ""}
+            onChange={(event) => handleWalkoverChange(event.target.value)}
+            disabled={pending}
+            className="w-auto"
+          >
+            <option value="">Sem W.O.</option>
+            <option value={teamAId}>W.O. — vitória do {teamAName}</option>
+            <option value={teamBId}>W.O. — vitória do {teamBName}</option>
+          </Select>
           <Button type="button" variant="secondary" onClick={saveSumula} disabled={savingSumula}>
             {savingSumula ? "Salvando…" : "Salvar súmula"}
           </Button>

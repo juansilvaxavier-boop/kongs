@@ -222,6 +222,67 @@ export async function setGamePenaltyScore(
   });
 }
 
+// Vitória por W.O.: winnerTeamId decide o jogo 3x0 pra esse time sem
+// lançar gol pra ninguém (score_a/b passam a ser derivados desse campo
+// dentro de process_game_ovr, não mais da contagem de goal_events).
+// Passar null desfaz o W.O. e volta o placar a ser o de goal_events.
+export async function setGameWalkover(
+  id: string,
+  championshipId: string,
+  winnerTeamId: string | null
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { data: game, error: gameError } = await supabase
+      .from("games")
+      .select("id, team_a_id, team_b_id")
+      .eq("id", id)
+      .eq("championship_id", championshipId)
+      .maybeSingle();
+    if (gameError) throw new Error(gameError.message);
+    if (!game) throw new Error("Jogo não encontrado ou sem permissão para editar.");
+    if (winnerTeamId && winnerTeamId !== game.team_a_id && winnerTeamId !== game.team_b_id) {
+      throw new Error("O time vencedor do W.O. precisa ser um dos times deste jogo.");
+    }
+
+    const { error } = await supabase
+      .from("games")
+      .update({
+        walkover_team_id: winnerTeamId,
+        ...(winnerTeamId ? { played: true } : {}),
+      })
+      .eq("id", id)
+      .eq("championship_id", championshipId);
+    if (error) throw new Error(error.message);
+
+    await processGameOvr(supabase, id);
+    revalidateChampionship(championshipId);
+
+    if (winnerTeamId) {
+      const { data: updated } = await supabase
+        .from("games")
+        .select("round, team_a_id, team_b_id, score_a, score_b")
+        .eq("id", id)
+        .maybeSingle();
+      if (updated) {
+        const { data: teams } = await supabase
+          .from("teams")
+          .select("id, name")
+          .in("id", [updated.team_a_id, updated.team_b_id]);
+        const teamName = (teamId: string) => teams?.find((t) => t.id === teamId)?.name ?? "?";
+
+        await notifyChampionshipSubscribers(
+          supabase,
+          championshipId,
+          "Resultado publicado!",
+          `${teamName(updated.team_a_id)} ${updated.score_a ?? 0} x ${updated.score_b ?? 0} ${teamName(updated.team_b_id)} (${updated.round}) — vitória por W.O.`,
+          `/campeonato/${championshipId}/partidas`
+        );
+      }
+    }
+  });
+}
+
 export async function getChampionshipSumulaLink(championshipId: string): Promise<ActionResult<string>> {
   return runAction(async () => {
     const supabase = await createClient();

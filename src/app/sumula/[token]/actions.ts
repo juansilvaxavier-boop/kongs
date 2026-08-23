@@ -132,6 +132,47 @@ export async function sumulaSetPlayed(
   });
 }
 
+export async function sumulaSetWalkover(
+  token: string,
+  gameId: string,
+  winnerTeamId: string | null
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("sumula_set_walkover", {
+      p_token: token,
+      p_game_id: gameId,
+      p_winner_team_id: winnerTeamId,
+    });
+    if (error) throw new Error(error.message);
+    revalidatePath(`/sumula/${token}/${gameId}`);
+
+    if (winnerTeamId) {
+      const { data: game } = await supabase
+        .from("games")
+        .select("championship_id, round, team_a_id, team_b_id, score_a, score_b")
+        .eq("id", gameId)
+        .maybeSingle();
+
+      if (game) {
+        const { data: teams } = await supabase
+          .from("teams")
+          .select("id, name")
+          .in("id", [game.team_a_id, game.team_b_id]);
+        const teamName = (teamId: string) => teams?.find((t) => t.id === teamId)?.name ?? "?";
+
+        await notifyChampionshipSubscribers(
+          supabase,
+          game.championship_id,
+          "Resultado publicado!",
+          `${teamName(game.team_a_id)} ${game.score_a ?? 0} x ${game.score_b ?? 0} ${teamName(game.team_b_id)} (${game.round}) — vitória por W.O.`,
+          `/campeonato/${game.championship_id}/partidas`
+        );
+      }
+    }
+  });
+}
+
 export async function sumulaSetPenaltyScore(
   token: string,
   gameId: string,

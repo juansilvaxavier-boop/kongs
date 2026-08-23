@@ -34,6 +34,7 @@ type Game = {
   referee_id: string | null;
   referee_payment_amount: number | null;
   referee_paid: boolean;
+  walkover_team_id: string | null;
 };
 type Venue = { id: string; name: string };
 type Referee = { id: string; name: string; cpf: string | null };
@@ -293,6 +294,7 @@ export function GameTable({
         scoreB={game.score_b}
         penaltyScoreA={game.penalty_score_a}
         penaltyScoreB={game.penalty_score_b}
+        walkoverTeamId={game.walkover_team_id}
         played={game.played}
         players={players}
         goalEvents={goalEvents}

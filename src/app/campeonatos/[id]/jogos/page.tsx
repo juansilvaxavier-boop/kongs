@@ -44,7 +44,7 @@ export default async function JogosPage({
       supabase
         .from("games")
         .select(
-          "id, round, team_a_id, team_b_id, date, score_a, score_b, penalty_score_a, penalty_score_b, played, venue_id, referee_id, referee_payment_amount, referee_paid"
+          "id, round, team_a_id, team_b_id, date, score_a, score_b, penalty_score_a, penalty_score_b, played, venue_id, referee_id, referee_payment_amount, referee_paid, walkover_team_id"
         )
         .eq("championship_id", id)
         .order("date", { ascending: true, nullsFirst: false }),
