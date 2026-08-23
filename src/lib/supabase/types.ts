@@ -1624,6 +1624,10 @@ export type Database = {
           ritmo: number
         }[]
       }
+      bolao_participant_emails: {
+        Args: { p_championship_id: string; p_user_ids: string[] }
+        Returns: { email: string; user_id: string }[]
+      }
       bolao_prediction_tier: {
         Args: { p_championship_id: string }
         Returns: number

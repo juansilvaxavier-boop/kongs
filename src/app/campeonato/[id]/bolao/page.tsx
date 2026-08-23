@@ -114,10 +114,18 @@ export default async function BolaoPage({
           .in("user_id", userIds)
       : { data: [] };
   const profileByUserId = new Map((profiles ?? []).map((p) => [p.user_id, p]));
+  const { data: participantEmails } =
+    userIds.length > 0
+      ? await supabase.rpc("bolao_participant_emails", {
+          p_championship_id: id,
+          p_user_ids: userIds,
+        })
+      : { data: [] };
+  const emailByUserId = new Map((participantEmails ?? []).map((p) => [p.user_id, p.email]));
   const profileName = (userId: string) => {
     const profile = profileByUserId.get(userId);
     const name = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ");
-    return name || "Torcedor";
+    return name || emailByUserId.get(userId) || "Torcedor";
   };
 
   const myPredictionByGameId = new Map(
