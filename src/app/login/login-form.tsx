@@ -3,6 +3,7 @@
 import { useActionState, useState } from "react";
 import { Button, Input, Label } from "@/components/ui";
 import { PasswordInput } from "@/components/password-input";
+import { formatCpf } from "@/lib/cpf";
 import {
   type AuthState,
   sendPasswordReset,
@@ -41,6 +42,7 @@ const initialAuthState: AuthState = { error: null, info: null };
 
 export function LoginForm({ initialError = null }: { initialError?: string | null }) {
   const [mode, setMode] = useState<Mode>("signin");
+  const [cpf, setCpf] = useState("");
 
   const [signInState, signInAction, signInPending] = useActionState(
     signInWithPassword,
@@ -124,6 +126,18 @@ export function LoginForm({ initialError = null }: { initialError?: string | nul
           <div>
             <Label>Telefone</Label>
             <Input type="tel" name="phone" required placeholder="(00) 00000-0000" />
+          </div>
+          <div>
+            <Label>CPF</Label>
+            <Input
+              name="cpf"
+              required
+              inputMode="numeric"
+              placeholder="000.000.000-00"
+              value={cpf}
+              onChange={(event) => setCpf(formatCpf(event.target.value))}
+              maxLength={14}
+            />
           </div>
           <div>
             <Label>Senha</Label>

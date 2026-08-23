@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site-url";
 import { resolveAuthenticatedDestination } from "@/lib/auth/destination";
+import { isValidCpf, onlyDigits } from "@/lib/cpf";
 
 export type AuthState = {
   error: string | null;
@@ -21,6 +22,7 @@ function readSignUpCredentials(formData: FormData) {
   return {
     ...readCredentials(formData),
     phone: String(formData.get("phone") || "").trim(),
+    cpf: onlyDigits(String(formData.get("cpf") || "")),
   };
 }
 
@@ -56,9 +58,12 @@ export async function signUpWithPassword(
   _prevState: AuthState,
   formData: FormData
 ): Promise<AuthState> {
-  const { email, password, phone } = readSignUpCredentials(formData);
-  if (!email || !password || !phone) {
-    return { error: "Informe e-mail, telefone e senha.", info: null };
+  const { email, password, phone, cpf } = readSignUpCredentials(formData);
+  if (!email || !password || !phone || !cpf) {
+    return { error: "Informe e-mail, telefone, CPF e senha.", info: null };
+  }
+  if (!isValidCpf(cpf)) {
+    return { error: "Informe um CPF válido.", info: null };
   }
   if (password.length < 6) {
     return { error: "A senha deve ter ao menos 6 caracteres.", info: null };
@@ -70,7 +75,7 @@ export async function signUpWithPassword(
     password,
     options: {
       emailRedirectTo: `${getSiteUrl()}/auth/callback`,
-      data: { phone },
+      data: { phone, cpf },
     },
   });
 
