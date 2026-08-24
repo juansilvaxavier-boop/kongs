@@ -9,20 +9,12 @@ type GoalEvent = { player_id: string; minute: number | null };
 type CardEvent = { player_id: string; card_type: string; minute: number | null };
 
 function teamRows(teamPlayers: Player[], goalEvents: GoalEvent[], cardEvents: CardEvent[]) {
-  const playerIds = new Set(teamPlayers.map((p) => p.id));
-  const playerName = (id: string) => teamPlayers.find((p) => p.id === id)?.name ?? "?";
-  const rows: (string | number)[][] = [];
-  for (const goal of goalEvents.filter((g) => playerIds.has(g.player_id))) {
-    rows.push([playerName(goal.player_id), "Gol", goal.minute !== null ? `${goal.minute}'` : "—"]);
-  }
-  for (const card of cardEvents.filter((c) => playerIds.has(c.player_id))) {
-    rows.push([
-      playerName(card.player_id),
-      card.card_type === "red" ? "Cartão vermelho" : "Cartão amarelo",
-      card.minute !== null ? `${card.minute}'` : "—",
-    ]);
-  }
-  return rows;
+  return teamPlayers.map((player) => [
+    player.name,
+    goalEvents.filter((g) => g.player_id === player.id).length,
+    cardEvents.filter((c) => c.player_id === player.id && c.card_type === "yellow").length,
+    cardEvents.filter((c) => c.player_id === player.id && c.card_type === "red").length,
+  ]);
 }
 
 export function SumulaPdfButton({
@@ -70,7 +62,7 @@ export function SumulaPdfButton({
 
           autoTable(doc, {
             startY: round ? 30 : 24,
-            head: [[teamAName, "Evento", "Minuto"]],
+            head: [[teamAName, "Gols", "Cartão amarelo", "Cartão vermelho"]],
             body: teamRows(teamAPlayers, goalEvents, cardEvents),
           });
 
@@ -79,7 +71,7 @@ export function SumulaPdfButton({
 
           autoTable(doc, {
             startY: afterTeamA + 8,
-            head: [[teamBName, "Evento", "Minuto"]],
+            head: [[teamBName, "Gols", "Cartão amarelo", "Cartão vermelho"]],
             body: teamRows(teamBPlayers, goalEvents, cardEvents),
           });
 

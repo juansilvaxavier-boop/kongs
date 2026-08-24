@@ -454,6 +454,21 @@ export async function updatePlayer(
 export async function deletePlayer(id: string, championshipId: string): Promise<ActionResult> {
   return runAction(async () => {
     const supabase = await createClient();
+
+    const { data: playedGame, error: playedError } = await supabase
+      .from("game_lineups")
+      .select("game_id")
+      .eq("player_id", id)
+      .eq("confirmed", true)
+      .limit(1)
+      .maybeSingle();
+    if (playedError) throw new Error(playedError.message);
+    if (playedGame) {
+      throw new Error(
+        "Este jogador já disputou pelo menos uma partida e não pode ser excluído."
+      );
+    }
+
     const { error } = await supabase.from("players").delete().eq("id", id);
 
     if (error) throw new Error(error.message);

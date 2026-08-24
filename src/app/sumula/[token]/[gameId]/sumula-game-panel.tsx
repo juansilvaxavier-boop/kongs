@@ -336,8 +336,8 @@ export function SumulaGamePanel({
             teamBName={teamBName}
             scoreA={scoreA}
             scoreB={scoreB}
-            teamAPlayers={teamAPlayers}
-            teamBPlayers={teamBPlayers}
+            teamAPlayers={teamAPlayers.filter((p) => confirmedPlayerIds.has(p.id))}
+            teamBPlayers={teamBPlayers.filter((p) => confirmedPlayerIds.has(p.id))}
             goalEvents={goalEvents}
             cardEvents={cardEvents}
           />
