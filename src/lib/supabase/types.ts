@@ -1604,6 +1604,10 @@ export type Database = {
         Args: { p_new_password: string; p_user_id: string }
         Returns: undefined
       }
+      admin_set_game_lineup_shirt_number: {
+        Args: { p_game_id: string; p_player_id: string; p_shirt_number: number | null }
+        Returns: undefined
+      }
       admin_set_user_admin: {
         Args: { p_is_admin: boolean; p_user_id: string }
         Returns: undefined

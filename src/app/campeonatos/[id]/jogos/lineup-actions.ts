@@ -69,32 +69,17 @@ export async function setShirtNumber(
     }
 
     const supabase = await createClient();
-    await assertPlayerBelongsToGame(supabase, championshipId, gameId, playerId);
 
-    // Insere a linha só se ela ainda não existir (sem mexer em
-    // "confirmed" nesse caso — fica false, o default de linha nova),
-    // e depois atualiza só a coluna shirt_number. Antes isto lia
-    // "confirmed" e regravava ele junto num upsert só, o que corria o
-    // risco de reverter uma confirmação feita bem na hora (o toggle do
-    // checkbox e este salvamento em lote do botão "Salvar súmula"
-    // podem ficar em voo ao mesmo tempo).
-    const { error: insertError } = await supabase.from("game_lineups").upsert(
-      {
-        championship_id: championshipId,
-        game_id: gameId,
-        player_id: playerId,
-        confirmed: false,
-        shirt_number: shirtNumber,
-      },
-      { onConflict: "game_id,player_id", ignoreDuplicates: true }
-    );
-    if (insertError) throw new Error(insertError.message);
-
-    const { error } = await supabase
-      .from("game_lineups")
-      .update({ shirt_number: shirtNumber })
-      .eq("game_id", gameId)
-      .eq("player_id", playerId);
+    // RPC atômica (INSERT ... ON CONFLICT DO UPDATE SET shirt_number,
+    // num único statement) — nunca toca "confirmed" numa linha
+    // existente, evitando qualquer corrida com o toggle do checkbox
+    // "Confirmado". Espelha a mesma lógica já usada na rota pública
+    // (sumula_set_shirt_number).
+    const { error } = await supabase.rpc("admin_set_game_lineup_shirt_number", {
+      p_game_id: gameId,
+      p_player_id: playerId,
+      p_shirt_number: shirtNumber,
+    });
     if (error) throw new Error(error.message);
 
     revalidateChampionship(championshipId);
