@@ -70,6 +70,7 @@ export default async function SumulaGamePage({
           token={token}
           gameId={game.game_id}
           round={game.round}
+          date={game.date}
           teamAId={game.team_a_id}
           teamAName={game.team_a_name}
           teamBId={game.team_b_id}

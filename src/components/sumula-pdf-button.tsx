@@ -19,6 +19,7 @@ function teamRows(teamPlayers: Player[], goalEvents: GoalEvent[], cardEvents: Ca
 
 export function SumulaPdfButton({
   round,
+  date,
   teamAName,
   teamBName,
   scoreA,
@@ -29,6 +30,7 @@ export function SumulaPdfButton({
   cardEvents,
 }: {
   round?: string | null;
+  date?: string | null;
   teamAName: string;
   teamBName: string;
   scoreA: number | null;
@@ -53,15 +55,20 @@ export function SumulaPdfButton({
           const { default: autoTable } = await import("jspdf-autotable");
           const doc = new jsPDF();
 
+          const formattedDate = date
+            ? new Date(date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+            : null;
+          const subtitle = [round, formattedDate].filter(Boolean).join(" · ");
+
           doc.setFontSize(16);
           doc.text(`${teamAName} ${scoreA ?? 0} x ${scoreB ?? 0} ${teamBName}`, 14, 18);
-          if (round) {
+          if (subtitle) {
             doc.setFontSize(10);
-            doc.text(round, 14, 25);
+            doc.text(subtitle, 14, 25);
           }
 
           autoTable(doc, {
-            startY: round ? 30 : 24,
+            startY: subtitle ? 30 : 24,
             head: [[teamAName, "Gols", "Cartão amarelo", "Cartão vermelho"]],
             body: teamRows(teamAPlayers, goalEvents, cardEvents),
           });

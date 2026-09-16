@@ -171,6 +171,7 @@ export function SumulaPanel({
   gameId,
   championshipId,
   round,
+  date,
   teamAId,
   teamAName,
   teamBId,
@@ -191,6 +192,7 @@ export function SumulaPanel({
   gameId: string;
   championshipId: string;
   round?: string;
+  date: string | null;
   teamAId: string;
   teamAName: string;
   teamBId: string;
@@ -330,6 +332,7 @@ export function SumulaPanel({
           </Button>
           <SumulaPdfButton
             round={round}
+            date={date}
             teamAName={teamAName}
             teamBName={teamBName}
             scoreA={scoreA}

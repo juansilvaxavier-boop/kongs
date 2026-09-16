@@ -286,6 +286,7 @@ export function GameTable({
         gameId={game.id}
         championshipId={championshipId}
         round={game.round}
+        date={game.date}
         teamAId={game.team_a_id}
         teamAName={teamName(game.team_a_id)}
         teamBId={game.team_b_id}

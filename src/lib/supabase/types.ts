@@ -1807,6 +1807,7 @@ export type Database = {
         Args: { p_game_id: string; p_token: string }
         Returns: {
           championship_id: string
+          date: string | null
           game_id: string
           penalty_score_a: number
           penalty_score_b: number
