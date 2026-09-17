@@ -12,12 +12,12 @@ export type PlayerAttributes = {
 };
 
 export const OVR_WEIGHTS = {
-  gol: 0.3,
-  vitoria: 0.2,
-  amarelo: 0.15,
-  vermelho: 0.5,
-  impactoZagueiro: 0.15,
-  impactoGoleiro: 0.25,
+  gol: 2.0,
+  vitoria: 1.5,
+  amarelo: 1.0,
+  vermelho: 2.0,
+  impactoZagueiro: 0.5,
+  impactoGoleiro: 0.7,
   constanteGols: 3.5,
 };
 

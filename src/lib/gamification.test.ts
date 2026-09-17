@@ -24,31 +24,31 @@ describe("computeOvrLedger", () => {
     expect(computeOvrLedger(stats({ position: "Meia" }))).toEqual([]);
   });
 
-  it("adds a goal entry worth 0.30 per goal", () => {
+  it("adds a goal entry worth 2.00 per goal", () => {
     const entries = computeOvrLedger(stats({ goals: 1 }));
-    expect(entries).toEqual([{ reason: "1 gol", delta: 0.3 }]);
+    expect(entries).toEqual([{ reason: "1 gol", delta: 2.0 }]);
   });
 
   it("pluralizes multiple goals and multiplies the weight", () => {
     const entries = computeOvrLedger(stats({ goals: 2 }));
-    expect(entries).toEqual([{ reason: "2 gols", delta: 0.6 }]);
+    expect(entries).toEqual([{ reason: "2 gols", delta: 4.0 }]);
   });
 
-  it("adds a fixed 0.20 bonus for a win", () => {
+  it("adds a fixed 1.50 bonus for a win", () => {
     expect(computeOvrLedger(stats({ won: true }))).toEqual([
-      { reason: "Vitória", delta: 0.2 },
+      { reason: "Vitória", delta: 1.5 },
     ]);
   });
 
-  it("subtracts 0.15 per yellow card", () => {
+  it("subtracts 1.00 per yellow card", () => {
     expect(computeOvrLedger(stats({ yellowCards: 1 }))).toEqual([
-      { reason: "Cartão amarelo", delta: -0.15 },
+      { reason: "Cartão amarelo", delta: -1.0 },
     ]);
   });
 
-  it("subtracts 0.50 per red card", () => {
+  it("subtracts 2.00 per red card", () => {
     expect(computeOvrLedger(stats({ redCards: 1 }))).toEqual([
-      { reason: "Cartão vermelho", delta: -0.5 },
+      { reason: "Cartão vermelho", delta: -2.0 },
     ]);
   });
 
@@ -56,33 +56,33 @@ describe("computeOvrLedger", () => {
     const entries = computeOvrLedger(
       stats({ goals: 1, position: "Atacante", goalsConceded: 5 })
     );
-    expect(entries).toEqual([{ reason: "1 gol", delta: 0.3 }]);
+    expect(entries).toEqual([{ reason: "1 gol", delta: 2.0 }]);
   });
 
   it("gives Zagueiros a defensive impact term based on goals conceded", () => {
-    // (3.5 - 1) * 0.15 = 0.375 -> rounds to 0.38 (round2 uses standard rounding)
+    // (3.5 - 1) * 0.50 = 1.25
     const entries = computeOvrLedger(stats({ position: "Zagueiro", goalsConceded: 1 }));
     expect(entries).toEqual([
-      { reason: "Impacto defensivo (1 gols sofridos)", delta: 0.38 },
+      { reason: "Impacto defensivo (1 gols sofridos)", delta: 1.25 },
     ]);
   });
 
   it("gives Goleiros a larger defensive impact weight than Zagueiros", () => {
     const entries = computeOvrLedger(stats({ position: "Goleiro", goalsConceded: 1 }));
     expect(entries).toEqual([
-      { reason: "Impacto defensivo (1 gols sofridos)", delta: 0.63 },
+      { reason: "Impacto defensivo (1 gols sofridos)", delta: 1.75 },
     ]);
   });
 
   it("penalizes a Zagueiro who concedes more than the goals constant", () => {
     const entries = computeOvrLedger(stats({ position: "Zagueiro", goalsConceded: 5 }));
     expect(entries).toEqual([
-      { reason: "Impacto defensivo (5 gols sofridos)", delta: -0.22 },
+      { reason: "Impacto defensivo (5 gols sofridos)", delta: -0.75 },
     ]);
   });
 
   it("omits the defensive term entirely when it would be exactly zero", () => {
-    // (3.5 - 3.5) * 0.15 = 0, but goalsConceded is an int in practice; use 3.5 to hit zero directly
+    // (3.5 - 3.5) * 0.50 = 0, but goalsConceded is an int in practice; use 3.5 to hit zero directly
     const entries = computeOvrLedger(stats({ position: "Zagueiro", goalsConceded: 3.5 }));
     expect(entries).toEqual([]);
   });
@@ -92,10 +92,10 @@ describe("computeOvrLedger", () => {
       stats({ goals: 1, won: true, yellowCards: 1, position: "Zagueiro", goalsConceded: 0 })
     );
     expect(entries).toEqual([
-      { reason: "1 gol", delta: 0.3 },
-      { reason: "Vitória", delta: 0.2 },
-      { reason: "Cartão amarelo", delta: -0.15 },
-      { reason: "Impacto defensivo (0 gols sofridos)", delta: 0.53 },
+      { reason: "1 gol", delta: 2.0 },
+      { reason: "Vitória", delta: 1.5 },
+      { reason: "Cartão amarelo", delta: -1.0 },
+      { reason: "Impacto defensivo (0 gols sofridos)", delta: 1.75 },
     ]);
   });
 });
