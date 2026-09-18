@@ -243,6 +243,7 @@ export function GameTable({
   const [eventingId, setEventingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [roundFilter, setRoundFilter] = useState("");
+  const [dateSortAsc, setDateSortAsc] = useState(true);
   const confirm = useConfirm();
   const runDelete = useDeleteAction();
   const teamName = (teamId: string) =>
@@ -259,17 +260,26 @@ export function GameTable({
 
   const rounds = [...new Set(games.map((g) => g.round))];
   const q = query.trim().toLowerCase();
-  const filteredGames = games.filter((game) => {
-    if (roundFilter && game.round !== roundFilter) return false;
-    if (!q) return true;
-    return (
-      game.round.toLowerCase().includes(q) ||
-      teamName(game.team_a_id).toLowerCase().includes(q) ||
-      teamName(game.team_b_id).toLowerCase().includes(q) ||
-      (venueName(game.venue_id) ?? "").toLowerCase().includes(q) ||
-      (refereeName(game.referee_id) ?? "").toLowerCase().includes(q)
-    );
-  });
+  const filteredGames = games
+    .filter((game) => {
+      if (roundFilter && game.round !== roundFilter) return false;
+      if (!q) return true;
+      return (
+        game.round.toLowerCase().includes(q) ||
+        teamName(game.team_a_id).toLowerCase().includes(q) ||
+        teamName(game.team_b_id).toLowerCase().includes(q) ||
+        (venueName(game.venue_id) ?? "").toLowerCase().includes(q) ||
+        (refereeName(game.referee_id) ?? "").toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      // Jogos sem data definida sempre ficam por último, nos dois sentidos.
+      if (a.date === null && b.date === null) return 0;
+      if (a.date === null) return 1;
+      if (b.date === null) return -1;
+      const diff = new Date(a.date).getTime() - new Date(b.date).getTime();
+      return dateSortAsc ? diff : -diff;
+    });
 
   function startEdit(gameId: string) {
     setEditingId(gameId);
@@ -390,6 +400,13 @@ export function GameTable({
             ))}
           </Select>
         </div>
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setDateSortAsc((prev) => !prev)}
+        >
+          Ordenar por data {dateSortAsc ? "↑" : "↓"}
+        </Button>
         {(query || roundFilter) && (
           <Button
             type="button"
