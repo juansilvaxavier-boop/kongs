@@ -3,11 +3,27 @@
 import { useState } from "react";
 import { useToast } from "./toast-provider";
 import { Button } from "./ui";
-import { drawSumulaSection, type SumulaPdfGameData } from "@/lib/sumula-pdf";
+import {
+  drawSumulaSection,
+  loadImageAsDataUrl,
+  type SumulaPdfGameData,
+} from "@/lib/sumula-pdf";
 
 export type BulkSumulaGame = SumulaPdfGameData & { id: string; played: boolean };
 
-export function BulkSumulaPdfButton({ games }: { games: BulkSumulaGame[] }) {
+export function BulkSumulaPdfButton({
+  games,
+  championshipName,
+  championshipEdition,
+  championshipCity,
+  championshipLogoUrl,
+}: {
+  games: BulkSumulaGame[];
+  championshipName: string;
+  championshipEdition?: string | null;
+  championshipCity?: string | null;
+  championshipLogoUrl?: string | null;
+}) {
   const [pending, setPending] = useState<"all" | "played" | null>(null);
   const toast = useToast();
 
@@ -24,10 +40,18 @@ export function BulkSumulaPdfButton({ games }: { games: BulkSumulaGame[] }) {
     try {
       const { jsPDF } = await import("jspdf");
       const { default: autoTable } = await import("jspdf-autotable");
+      const logoDataUrl = championshipLogoUrl ? await loadImageAsDataUrl(championshipLogoUrl) : null;
+      const championship = {
+        name: championshipName,
+        edition: championshipEdition,
+        city: championshipCity,
+        logoDataUrl,
+      };
+
       const doc = new jsPDF();
       selected.forEach((game, index) => {
         if (index > 0) doc.addPage();
-        drawSumulaSection(doc, autoTable, game);
+        drawSumulaSection(doc, autoTable, game, championship);
       });
       doc.save(scope === "played" ? "sumulas-realizadas.pdf" : "sumulas-todos-os-jogos.pdf");
     } catch {

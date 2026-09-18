@@ -170,6 +170,10 @@ function TeamSumulaColumn({
 export function SumulaPanel({
   gameId,
   championshipId,
+  championshipName,
+  championshipEdition,
+  championshipCity,
+  championshipLogoUrl,
   round,
   date,
   teamAId,
@@ -191,6 +195,10 @@ export function SumulaPanel({
 }: {
   gameId: string;
   championshipId: string;
+  championshipName: string;
+  championshipEdition?: string | null;
+  championshipCity?: string | null;
+  championshipLogoUrl?: string | null;
   round?: string;
   date: string | null;
   teamAId: string;
@@ -331,6 +339,10 @@ export function SumulaPanel({
             {pending ? "Salvando…" : played ? "Reabrir jogo" : "Marcar como realizado"}
           </Button>
           <SumulaPdfButton
+            championshipName={championshipName}
+            championshipEdition={championshipEdition}
+            championshipCity={championshipCity}
+            championshipLogoUrl={championshipLogoUrl}
             round={round}
             date={date}
             teamAName={teamAName}

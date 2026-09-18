@@ -32,7 +32,7 @@ export default async function ConfiguracoesPage({
     supabase
       .from("championships")
       .select(
-        "format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text, logo_url"
+        "format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text, logo_url, edition, city"
       )
       .eq("id", id)
       .maybeSingle(),
@@ -152,6 +152,29 @@ export default async function ConfiguracoesPage({
               Cartão vermelho sempre suspende para o próximo jogo.
             </p>
           </div>
+
+          <div className="flex flex-wrap gap-5">
+            <div className="w-48">
+              <Label>Edição</Label>
+              <Input
+                name="edition"
+                placeholder="Ex.: 3ª Edição"
+                defaultValue={championship.edition ?? ""}
+              />
+            </div>
+            <div className="w-48">
+              <Label>Cidade</Label>
+              <Input
+                name="city"
+                placeholder="Ex.: São José do Rio Preto"
+                defaultValue={championship.city ?? ""}
+              />
+            </div>
+          </div>
+          <p className="-mt-3 text-xs text-muted">
+            Edição e cidade aparecem no cabeçalho da súmula em PDF, junto com a
+            logo do campeonato.
+          </p>
 
           <div>
             <Label>Regulamento do campeonato</Label>

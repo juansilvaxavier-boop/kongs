@@ -207,6 +207,10 @@ function GameActions({
 
 export function GameTable({
   championshipId,
+  championshipName,
+  championshipEdition,
+  championshipCity,
+  championshipLogoUrl,
   games,
   teams,
   players,
@@ -218,6 +222,10 @@ export function GameTable({
   referees,
 }: {
   championshipId: string;
+  championshipName: string;
+  championshipEdition?: string | null;
+  championshipCity?: string | null;
+  championshipLogoUrl?: string | null;
   games: Game[];
   teams: Team[];
   players: Player[];
@@ -306,6 +314,10 @@ export function GameTable({
       <SumulaPanel
         gameId={game.id}
         championshipId={championshipId}
+        championshipName={championshipName}
+        championshipEdition={championshipEdition}
+        championshipCity={championshipCity}
+        championshipLogoUrl={championshipLogoUrl}
         round={game.round}
         date={game.date}
         teamAId={game.team_a_id}
@@ -382,7 +394,13 @@ export function GameTable({
         )}
       </div>
       <div className="flex flex-wrap items-end gap-2">
-        <BulkSumulaPdfButton games={bulkSumulaGames} />
+        <BulkSumulaPdfButton
+          games={bulkSumulaGames}
+          championshipName={championshipName}
+          championshipEdition={championshipEdition}
+          championshipCity={championshipCity}
+          championshipLogoUrl={championshipLogoUrl}
+        />
         <form
           action={async () => {
             const ok = await confirm({

@@ -51,6 +51,8 @@ export async function updateChampionshipSettings(
     const teamCount = parsePositiveIntOrNull(formData, "team_count", "Quantidade de times");
     const groupCount = parsePositiveIntOrNull(formData, "group_count", "Quantidade de grupos");
     const rulesText = String(formData.get("rules_text") || "").trim();
+    const edition = String(formData.get("edition") || "").trim();
+    const city = String(formData.get("city") || "").trim();
     const logoFile = parseLogoFile(formData);
 
     const supabase = await createClient();
@@ -67,6 +69,8 @@ export async function updateChampionshipSettings(
         team_count: teamCount,
         group_count: groupCount,
         rules_text: rulesText ? rulesText : null,
+        edition: edition ? edition : null,
+        city: city ? city : null,
         ...(logoUrl ? { logo_url: logoUrl } : {}),
       })
       .eq("id", championshipId)

@@ -38,7 +38,7 @@ export default async function JogosPage({
       supabase.rpc("can_manage_teams_games", { p_championship_id: id }),
       supabase
         .from("championships")
-        .select("has_knockout_stage, format")
+        .select("has_knockout_stage, format, name, edition, city, logo_url")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -249,6 +249,10 @@ export default async function JogosPage({
       {games && games.length > 0 ? (
         <GameTable
           championshipId={id}
+          championshipName={championship?.name ?? ""}
+          championshipEdition={championship?.edition}
+          championshipCity={championship?.city}
+          championshipLogoUrl={championship?.logo_url}
           games={games}
           teams={teams ?? []}
           players={players ?? []}

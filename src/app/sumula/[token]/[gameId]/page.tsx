@@ -19,7 +19,8 @@ export default async function SumulaGamePage({
 
   if (gameError || !gameRows || gameRows.length === 0) notFound();
   const game = gameRows[0];
-  const championshipName = championshipRows?.[0]?.championship_name ?? "";
+  const championship = championshipRows?.[0];
+  const championshipName = championship?.championship_name ?? "";
 
   const [
     { data: players },
@@ -69,6 +70,10 @@ export default async function SumulaGamePage({
         <SumulaGamePanel
           token={token}
           gameId={game.game_id}
+          championshipName={championshipName}
+          championshipEdition={championship?.edition}
+          championshipCity={championship?.city}
+          championshipLogoUrl={championship?.logo_url}
           round={game.round}
           date={game.date}
           teamAId={game.team_a_id}

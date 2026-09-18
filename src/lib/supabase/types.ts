@@ -371,7 +371,9 @@ export type Database = {
       }
       championships: {
         Row: {
+          city: string | null
           created_at: string
+          edition: string | null
           format: string
           group_count: number | null
           has_knockout_stage: boolean
@@ -385,7 +387,9 @@ export type Database = {
           yellow_cards_for_suspension: number
         }
         Insert: {
+          city?: string | null
           created_at?: string
+          edition?: string | null
           format?: string
           group_count?: number | null
           has_knockout_stage?: boolean
@@ -399,7 +403,9 @@ export type Database = {
           yellow_cards_for_suspension?: number
         }
         Update: {
+          city?: string | null
           created_at?: string
+          edition?: string | null
           format?: string
           group_count?: number | null
           has_knockout_stage?: boolean
@@ -1801,6 +1807,9 @@ export type Database = {
         Returns: {
           championship_id: string
           championship_name: string
+          city: string | null
+          edition: string | null
+          logo_url: string | null
         }[]
       }
       sumula_get_game: {
