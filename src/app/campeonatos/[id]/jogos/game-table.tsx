@@ -8,6 +8,7 @@ import { useDeleteAction } from "@/components/use-delete-action";
 import { deleteAllGames, deleteGame, updateGame } from "./actions";
 import { GameDateField } from "./game-date-field";
 import { SumulaPanel } from "./sumula-panel";
+import { BulkSumulaPdfButton } from "@/components/bulk-sumula-pdf-button";
 
 type Team = { id: string; name: string };
 type Player = { id: string; name: string; team_id: string | null; number: number | null };
@@ -280,6 +281,26 @@ export function GameTable({
     }
   }
 
+  const bulkSumulaGames = games.map((game) => {
+    const confirmedIds = new Set(
+      lineups.filter((l) => l.game_id === game.id && l.confirmed).map((l) => l.player_id)
+    );
+    return {
+      id: game.id,
+      played: game.played,
+      round: game.round,
+      date: game.date,
+      teamAName: teamName(game.team_a_id),
+      teamBName: teamName(game.team_b_id),
+      scoreA: game.score_a,
+      scoreB: game.score_b,
+      teamAPlayers: players.filter((p) => p.team_id === game.team_a_id && confirmedIds.has(p.id)),
+      teamBPlayers: players.filter((p) => p.team_id === game.team_b_id && confirmedIds.has(p.id)),
+      goalEvents: goalEvents.filter((g) => g.game_id === game.id),
+      cardEvents: cardEvents.filter((c) => c.game_id === game.id),
+    };
+  });
+
   function renderSumula(game: Game) {
     return (
       <SumulaPanel
@@ -360,24 +381,27 @@ export function GameTable({
           </Button>
         )}
       </div>
-      <form
-        action={async () => {
-          const ok = await confirm({
-            title: `Excluir todos os ${games.length} jogos deste campeonato?`,
-            description:
-              "Os gols e cartões lançados também serão apagados. Essa ação não pode ser desfeita.",
-            confirmLabel: "Excluir tudo",
-            danger: true,
-          });
-          if (ok) {
-            await runDelete(() => deleteAllGames(championshipId));
-          }
-        }}
-      >
-        <Button type="submit" variant="danger">
-          Excluir todos os jogos
-        </Button>
-      </form>
+      <div className="flex flex-wrap items-end gap-2">
+        <BulkSumulaPdfButton games={bulkSumulaGames} />
+        <form
+          action={async () => {
+            const ok = await confirm({
+              title: `Excluir todos os ${games.length} jogos deste campeonato?`,
+              description:
+                "Os gols e cartões lançados também serão apagados. Essa ação não pode ser desfeita.",
+              confirmLabel: "Excluir tudo",
+              danger: true,
+            });
+            if (ok) {
+              await runDelete(() => deleteAllGames(championshipId));
+            }
+          }}
+        >
+          <Button type="submit" variant="danger">
+            Excluir todos os jogos
+          </Button>
+        </form>
+      </div>
     </div>
     {filteredGames.length === 0 ? (
       <EmptyState>Nenhum jogo encontrado com esses filtros.</EmptyState>

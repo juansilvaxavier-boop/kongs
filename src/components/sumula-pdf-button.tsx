@@ -3,43 +3,10 @@
 import { useState } from "react";
 import { useToast } from "./toast-provider";
 import { Button } from "./ui";
+import { drawSumulaSection, type SumulaPdfGameData } from "@/lib/sumula-pdf";
 
-type Player = { id: string; name: string; team_id: string | null };
-type GoalEvent = { player_id: string; minute: number | null };
-type CardEvent = { player_id: string; card_type: string; minute: number | null };
-
-function teamRows(teamPlayers: Player[], goalEvents: GoalEvent[], cardEvents: CardEvent[]) {
-  return teamPlayers.map((player) => [
-    player.name,
-    goalEvents.filter((g) => g.player_id === player.id).length,
-    cardEvents.filter((c) => c.player_id === player.id && c.card_type === "yellow").length,
-    cardEvents.filter((c) => c.player_id === player.id && c.card_type === "red").length,
-  ]);
-}
-
-export function SumulaPdfButton({
-  round,
-  date,
-  teamAName,
-  teamBName,
-  scoreA,
-  scoreB,
-  teamAPlayers,
-  teamBPlayers,
-  goalEvents,
-  cardEvents,
-}: {
-  round?: string | null;
-  date?: string | null;
-  teamAName: string;
-  teamBName: string;
-  scoreA: number | null;
-  scoreB: number | null;
-  teamAPlayers: Player[];
-  teamBPlayers: Player[];
-  goalEvents: GoalEvent[];
-  cardEvents: CardEvent[];
-}) {
+export function SumulaPdfButton(props: SumulaPdfGameData) {
+  const { teamAName, teamBName } = props;
   const [pending, setPending] = useState(false);
   const toast = useToast();
 
@@ -54,34 +21,7 @@ export function SumulaPdfButton({
           const { jsPDF } = await import("jspdf");
           const { default: autoTable } = await import("jspdf-autotable");
           const doc = new jsPDF();
-
-          const formattedDate = date
-            ? new Date(date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
-            : null;
-          const subtitle = [round, formattedDate].filter(Boolean).join(" · ");
-
-          doc.setFontSize(16);
-          doc.text(`${teamAName} ${scoreA ?? 0} x ${scoreB ?? 0} ${teamBName}`, 14, 18);
-          if (subtitle) {
-            doc.setFontSize(10);
-            doc.text(subtitle, 14, 25);
-          }
-
-          autoTable(doc, {
-            startY: subtitle ? 30 : 24,
-            head: [[teamAName, "Gols", "Cartão amarelo", "Cartão vermelho"]],
-            body: teamRows(teamAPlayers, goalEvents, cardEvents),
-          });
-
-          const afterTeamA = (doc as unknown as { lastAutoTable: { finalY: number } })
-            .lastAutoTable.finalY;
-
-          autoTable(doc, {
-            startY: afterTeamA + 8,
-            head: [[teamBName, "Gols", "Cartão amarelo", "Cartão vermelho"]],
-            body: teamRows(teamBPlayers, goalEvents, cardEvents),
-          });
-
+          drawSumulaSection(doc, autoTable, props);
           doc.save(`sumula-${teamAName}-x-${teamBName}.pdf`);
         } catch {
           toast.error("Não foi possível gerar o PDF. Tente novamente.");
