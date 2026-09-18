@@ -73,13 +73,16 @@ export default async function SumulaGamePage({
           championshipName={championshipName}
           championshipEdition={championship?.edition}
           championshipCity={championship?.city}
+          championshipArenaName={championship?.arena_name}
           championshipLogoUrl={championship?.logo_url}
           round={game.round}
           date={game.date}
           teamAId={game.team_a_id}
           teamAName={game.team_a_name}
+          teamACrestUrl={game.team_a_crest_url}
           teamBId={game.team_b_id}
           teamBName={game.team_b_name}
+          teamBCrestUrl={game.team_b_crest_url}
           scoreA={game.score_a}
           scoreB={game.score_b}
           penaltyScoreA={game.penalty_score_a}

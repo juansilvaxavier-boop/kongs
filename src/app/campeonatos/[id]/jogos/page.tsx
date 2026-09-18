@@ -38,7 +38,7 @@ export default async function JogosPage({
       supabase.rpc("can_manage_teams_games", { p_championship_id: id }),
       supabase
         .from("championships")
-        .select("has_knockout_stage, format, name, edition, city, logo_url")
+        .select("has_knockout_stage, format, name, edition, city, arena_name, logo_url")
         .eq("id", id)
         .maybeSingle(),
       supabase
@@ -50,7 +50,7 @@ export default async function JogosPage({
         .order("date", { ascending: true, nullsFirst: false }),
       supabase
         .from("teams")
-        .select("id, name, group_name")
+        .select("id, name, group_name, crest_url")
         .eq("championship_id", id)
         .order("name"),
       supabase
@@ -252,6 +252,7 @@ export default async function JogosPage({
           championshipName={championship?.name ?? ""}
           championshipEdition={championship?.edition}
           championshipCity={championship?.city}
+          championshipArenaName={championship?.arena_name}
           championshipLogoUrl={championship?.logo_url}
           games={games}
           teams={teams ?? []}

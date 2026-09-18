@@ -173,13 +173,17 @@ export function SumulaPanel({
   championshipName,
   championshipEdition,
   championshipCity,
+  championshipArenaName,
   championshipLogoUrl,
   round,
   date,
+  venueName,
   teamAId,
   teamAName,
+  teamACrestUrl,
   teamBId,
   teamBName,
+  teamBCrestUrl,
   scoreA,
   scoreB,
   penaltyScoreA,
@@ -198,13 +202,17 @@ export function SumulaPanel({
   championshipName: string;
   championshipEdition?: string | null;
   championshipCity?: string | null;
+  championshipArenaName?: string | null;
   championshipLogoUrl?: string | null;
   round?: string;
   date: string | null;
+  venueName?: string | null;
   teamAId: string;
   teamAName: string;
+  teamACrestUrl?: string | null;
   teamBId: string;
   teamBName: string;
+  teamBCrestUrl?: string | null;
   scoreA: number | null;
   scoreB: number | null;
   penaltyScoreA: number | null;
@@ -342,11 +350,15 @@ export function SumulaPanel({
             championshipName={championshipName}
             championshipEdition={championshipEdition}
             championshipCity={championshipCity}
+            championshipArenaName={championshipArenaName}
             championshipLogoUrl={championshipLogoUrl}
             round={round}
             date={date}
+            venueName={venueName}
             teamAName={teamAName}
+            teamACrestUrl={teamACrestUrl}
             teamBName={teamBName}
+            teamBCrestUrl={teamBCrestUrl}
             scoreA={scoreA}
             scoreB={scoreB}
             teamAPlayers={teamAPlayers.filter((p) => confirmedPlayerIds.has(p.id))}

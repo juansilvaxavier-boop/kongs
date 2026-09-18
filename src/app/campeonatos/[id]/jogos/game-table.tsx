@@ -10,7 +10,7 @@ import { GameDateField } from "./game-date-field";
 import { SumulaPanel } from "./sumula-panel";
 import { BulkSumulaPdfButton } from "@/components/bulk-sumula-pdf-button";
 
-type Team = { id: string; name: string };
+type Team = { id: string; name: string; crest_url?: string | null };
 type Player = { id: string; name: string; team_id: string | null; number: number | null };
 type GoalEvent = { id: string; player_id: string; minute: number | null; game_id: string };
 type CardEvent = {
@@ -210,6 +210,7 @@ export function GameTable({
   championshipName,
   championshipEdition,
   championshipCity,
+  championshipArenaName,
   championshipLogoUrl,
   games,
   teams,
@@ -225,6 +226,7 @@ export function GameTable({
   championshipName: string;
   championshipEdition?: string | null;
   championshipCity?: string | null;
+  championshipArenaName?: string | null;
   championshipLogoUrl?: string | null;
   games: Game[];
   teams: Team[];
@@ -245,6 +247,7 @@ export function GameTable({
   const runDelete = useDeleteAction();
   const teamName = (teamId: string) =>
     teams.find((t) => t.id === teamId)?.name ?? "?";
+  const teamCrestUrl = (teamId: string) => teams.find((t) => t.id === teamId)?.crest_url ?? null;
   const venueName = (venueId: string | null) =>
     venueId ? venues.find((v) => v.id === venueId)?.name ?? null : null;
   const refereeName = (refereeId: string | null) =>
@@ -298,8 +301,11 @@ export function GameTable({
       played: game.played,
       round: game.round,
       date: game.date,
+      venueName: venueName(game.venue_id),
       teamAName: teamName(game.team_a_id),
+      teamACrestUrl: teamCrestUrl(game.team_a_id),
       teamBName: teamName(game.team_b_id),
+      teamBCrestUrl: teamCrestUrl(game.team_b_id),
       scoreA: game.score_a,
       scoreB: game.score_b,
       teamAPlayers: players.filter((p) => p.team_id === game.team_a_id && confirmedIds.has(p.id)),
@@ -317,13 +323,17 @@ export function GameTable({
         championshipName={championshipName}
         championshipEdition={championshipEdition}
         championshipCity={championshipCity}
+        championshipArenaName={championshipArenaName}
         championshipLogoUrl={championshipLogoUrl}
         round={game.round}
         date={game.date}
+        venueName={venueName(game.venue_id)}
         teamAId={game.team_a_id}
         teamAName={teamName(game.team_a_id)}
+        teamACrestUrl={teamCrestUrl(game.team_a_id)}
         teamBId={game.team_b_id}
         teamBName={teamName(game.team_b_id)}
+        teamBCrestUrl={teamCrestUrl(game.team_b_id)}
         scoreA={game.score_a}
         scoreB={game.score_b}
         penaltyScoreA={game.penalty_score_a}
@@ -399,6 +409,7 @@ export function GameTable({
           championshipName={championshipName}
           championshipEdition={championshipEdition}
           championshipCity={championshipCity}
+          championshipArenaName={championshipArenaName}
           championshipLogoUrl={championshipLogoUrl}
         />
         <form

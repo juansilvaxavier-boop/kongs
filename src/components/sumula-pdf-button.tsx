@@ -9,10 +9,13 @@ import {
   type SumulaPdfGameData,
 } from "@/lib/sumula-pdf";
 
-type Props = SumulaPdfGameData & {
+type Props = Omit<SumulaPdfGameData, "teamACrestDataUrl" | "teamBCrestDataUrl"> & {
+  teamACrestUrl?: string | null;
+  teamBCrestUrl?: string | null;
   championshipName: string;
   championshipEdition?: string | null;
   championshipCity?: string | null;
+  championshipArenaName?: string | null;
   championshipLogoUrl?: string | null;
 };
 
@@ -20,7 +23,10 @@ export function SumulaPdfButton({
   championshipName,
   championshipEdition,
   championshipCity,
+  championshipArenaName,
   championshipLogoUrl,
+  teamACrestUrl,
+  teamBCrestUrl,
   ...game
 }: Props) {
   const { teamAName, teamBName } = game;
@@ -37,16 +43,24 @@ export function SumulaPdfButton({
         try {
           const { jsPDF } = await import("jspdf");
           const { default: autoTable } = await import("jspdf-autotable");
-          const logoDataUrl = championshipLogoUrl
-            ? await loadImageAsDataUrl(championshipLogoUrl)
-            : null;
+          const [logoDataUrl, teamACrestDataUrl, teamBCrestDataUrl] = await Promise.all([
+            championshipLogoUrl ? loadImageAsDataUrl(championshipLogoUrl) : null,
+            teamACrestUrl ? loadImageAsDataUrl(teamACrestUrl) : null,
+            teamBCrestUrl ? loadImageAsDataUrl(teamBCrestUrl) : null,
+          ]);
           const doc = new jsPDF();
-          drawSumulaSection(doc, autoTable, game, {
-            name: championshipName,
-            edition: championshipEdition,
-            city: championshipCity,
-            logoDataUrl,
-          });
+          drawSumulaSection(
+            doc,
+            autoTable,
+            { ...game, teamACrestDataUrl, teamBCrestDataUrl },
+            {
+              name: championshipName,
+              edition: championshipEdition,
+              city: championshipCity,
+              arenaName: championshipArenaName,
+              logoDataUrl,
+            }
+          );
           doc.save(`sumula-${teamAName}-x-${teamBName}.pdf`);
         } catch {
           toast.error("Não foi possível gerar o PDF. Tente novamente.");

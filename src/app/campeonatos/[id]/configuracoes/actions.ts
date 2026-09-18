@@ -53,6 +53,7 @@ export async function updateChampionshipSettings(
     const rulesText = String(formData.get("rules_text") || "").trim();
     const edition = String(formData.get("edition") || "").trim();
     const city = String(formData.get("city") || "").trim();
+    const arenaName = String(formData.get("arena_name") || "").trim();
     const logoFile = parseLogoFile(formData);
 
     const supabase = await createClient();
@@ -71,6 +72,7 @@ export async function updateChampionshipSettings(
         rules_text: rulesText ? rulesText : null,
         edition: edition ? edition : null,
         city: city ? city : null,
+        arena_name: arenaName ? arenaName : null,
         ...(logoUrl ? { logo_url: logoUrl } : {}),
       })
       .eq("id", championshipId)

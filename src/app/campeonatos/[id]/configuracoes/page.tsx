@@ -32,7 +32,7 @@ export default async function ConfiguracoesPage({
     supabase
       .from("championships")
       .select(
-        "format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text, logo_url, edition, city"
+        "format, has_knockout_stage, yellow_cards_for_suspension, team_count, group_count, rules_text, logo_url, edition, city, arena_name"
       )
       .eq("id", id)
       .maybeSingle(),
@@ -166,14 +166,22 @@ export default async function ConfiguracoesPage({
               <Label>Cidade</Label>
               <Input
                 name="city"
-                placeholder="Ex.: São José do Rio Preto"
+                placeholder="Ex.: São José do Rio Preto/SP"
                 defaultValue={championship.city ?? ""}
+              />
+            </div>
+            <div className="w-48">
+              <Label>Local do campeonato</Label>
+              <Input
+                name="arena_name"
+                placeholder="Ex.: Arena WR"
+                defaultValue={championship.arena_name ?? ""}
               />
             </div>
           </div>
           <p className="-mt-3 text-xs text-muted">
-            Edição e cidade aparecem no cabeçalho da súmula em PDF, junto com a
-            logo do campeonato.
+            Edição, cidade e local aparecem no cabeçalho da súmula em PDF, junto
+            com a logo do campeonato.
           </p>
 
           <div>

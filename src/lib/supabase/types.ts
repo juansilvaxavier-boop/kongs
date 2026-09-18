@@ -371,6 +371,7 @@ export type Database = {
       }
       championships: {
         Row: {
+          arena_name: string | null
           city: string | null
           created_at: string
           edition: string | null
@@ -387,6 +388,7 @@ export type Database = {
           yellow_cards_for_suspension: number
         }
         Insert: {
+          arena_name?: string | null
           city?: string | null
           created_at?: string
           edition?: string | null
@@ -403,6 +405,7 @@ export type Database = {
           yellow_cards_for_suspension?: number
         }
         Update: {
+          arena_name?: string | null
           city?: string | null
           created_at?: string
           edition?: string | null
@@ -1805,6 +1808,7 @@ export type Database = {
       sumula_get_championship: {
         Args: { p_token: string }
         Returns: {
+          arena_name: string | null
           championship_id: string
           championship_name: string
           city: string | null
@@ -1824,8 +1828,10 @@ export type Database = {
           round: string
           score_a: number
           score_b: number
+          team_a_crest_url: string | null
           team_a_id: string
           team_a_name: string
+          team_b_crest_url: string | null
           team_b_id: string
           team_b_name: string
           walkover_team_id: string | null
