@@ -89,14 +89,14 @@ function drawInfoBox(
   doc.setDrawColor(160);
   doc.rect(x, y, w, h);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(7);
+  doc.setFontSize(6);
   doc.setTextColor(90);
-  doc.text(label, x + 2, y + 4.5);
+  doc.text(label, x + 2, y + 3.3);
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
+  doc.setFontSize(8);
   doc.setTextColor(20);
   const lines = doc.splitTextToSize(value || "—", w - 4);
-  doc.text(lines.slice(0, 2), x + 2, y + 9.5);
+  doc.text(lines.slice(0, 2), x + 2, y + 7);
 }
 
 function drawCrest(doc: jsPDF, dataUrl: string | null | undefined, x: number, y: number, size: number) {
@@ -114,6 +114,11 @@ function drawCrest(doc: jsPDF, dataUrl: string | null | undefined, x: number, y:
  * página atual do documento. Compartilhado entre o botão de baixar uma
  * súmula e o de baixar várias juntas num PDF só (uma por página, cada
  * uma com o mesmo cabeçalho).
+ *
+ * Tudo aqui é dimensionado pra caber inteiro numa folha A4 (inclusive as
+ * duas tabelas de time, lado a lado em vez de uma embaixo da outra —
+ * cabe o dobro de jogadores na mesma altura sem cortar nenhuma coluna):
+ * cabeçalho compacto + fontes/preenchimento pequenos nas tabelas.
  */
 export function drawSumulaSection(
   doc: jsPDF,
@@ -123,28 +128,28 @@ export function drawSumulaSection(
 ) {
   doc.setTextColor(0);
 
-  const logoSize = 16;
+  const logoSize = 13;
   const hasLogo = Boolean(championship.logoDataUrl);
-  const textX = hasLogo ? PAGE_LEFT + logoSize + 4 : PAGE_LEFT;
+  const textX = hasLogo ? PAGE_LEFT + logoSize + 3 : PAGE_LEFT;
 
-  drawCrest(doc, championship.logoDataUrl, PAGE_LEFT, 6, logoSize);
+  drawCrest(doc, championship.logoDataUrl, PAGE_LEFT, 5, logoSize);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text(championship.name, textX, 13);
+  doc.setFontSize(12);
+  doc.text(championship.name, textX, 11);
 
   if (championship.edition) {
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.5);
-    doc.text(championship.edition, textX, 18.5);
+    doc.setFontSize(7.5);
+    doc.text(championship.edition, textX, 15.5);
   }
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.text("SÚMULA OFICIAL DE JOGO", (PAGE_LEFT + PAGE_RIGHT) / 2, 27, { align: "center" });
+  doc.setFontSize(9);
+  doc.text("SÚMULA OFICIAL DE JOGO", (PAGE_LEFT + PAGE_RIGHT) / 2, 21, { align: "center" });
 
   doc.setDrawColor(160);
-  doc.line(PAGE_LEFT, 30, PAGE_RIGHT, 30);
+  doc.line(PAGE_LEFT, 23.5, PAGE_RIGHT, 23.5);
 
   const formattedDate = game.date
     ? new Date(game.date).toLocaleDateString("pt-BR")
@@ -153,35 +158,27 @@ export function drawSumulaSection(
     ? new Date(game.date).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
     : null;
 
-  const row1Y = 34;
-  const row1H = 12;
+  const row1Y = 26;
+  const rowH = 9;
   const col1W = 61;
   const col2W = 61;
   const col3W = PAGE_RIGHT - PAGE_LEFT - col1W - col2W;
-  drawInfoBox(doc, PAGE_LEFT, row1Y, col1W, row1H, "DATA", formattedDate ?? "—");
-  drawInfoBox(doc, PAGE_LEFT + col1W, row1Y, col2W, row1H, "HORÁRIO", formattedTime ?? "—");
-  drawInfoBox(
-    doc,
-    PAGE_LEFT + col1W + col2W,
-    row1Y,
-    col3W,
-    row1H,
-    "FASE",
-    game.round ?? "—"
-  );
+  drawInfoBox(doc, PAGE_LEFT, row1Y, col1W, rowH, "DATA", formattedDate ?? "—");
+  drawInfoBox(doc, PAGE_LEFT + col1W, row1Y, col2W, rowH, "HORÁRIO", formattedTime ?? "—");
+  drawInfoBox(doc, PAGE_LEFT + col1W + col2W, row1Y, col3W, rowH, "FASE", game.round ?? "—");
 
-  const row2Y = row1Y + row1H;
-  const halfW = (PAGE_RIGHT - PAGE_LEFT) / 2;
-  drawInfoBox(doc, PAGE_LEFT, row2Y, halfW, row1H, "LOCAL", championship.arenaName ?? game.venueName ?? "—");
-  drawInfoBox(doc, PAGE_LEFT + halfW, row2Y, halfW, row1H, "CIDADE", championship.city ?? "—");
+  const row2Y = row1Y + rowH;
+  const halfBoxW = (PAGE_RIGHT - PAGE_LEFT) / 2;
+  drawInfoBox(doc, PAGE_LEFT, row2Y, halfBoxW, rowH, "LOCAL", championship.arenaName ?? game.venueName ?? "—");
+  drawInfoBox(doc, PAGE_LEFT + halfBoxW, row2Y, halfBoxW, rowH, "CIDADE", championship.city ?? "—");
 
-  const crestSize = 14;
-  const scoreY = row2Y + row1H + 12;
-  drawCrest(doc, game.teamACrestDataUrl, PAGE_LEFT, scoreY - 10, crestSize);
-  drawCrest(doc, game.teamBCrestDataUrl, PAGE_RIGHT - crestSize, scoreY - 10, crestSize);
+  const crestSize = 11;
+  const scoreY = row2Y + rowH + 8;
+  drawCrest(doc, game.teamACrestDataUrl, PAGE_LEFT, scoreY - 8, crestSize);
+  drawCrest(doc, game.teamBCrestDataUrl, PAGE_RIGHT - crestSize, scoreY - 8, crestSize);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(16);
+  doc.setFontSize(14);
   doc.text(
     `${game.teamAName}  ${game.scoreA ?? 0} x ${game.scoreB ?? 0}  ${game.teamBName}`,
     (PAGE_LEFT + PAGE_RIGHT) / 2,
@@ -190,19 +187,35 @@ export function drawSumulaSection(
   );
   doc.setFont("helvetica", "normal");
 
-  const tableStartY = scoreY + 10;
+  const tableStartY = scoreY + 8;
+  const tableGap = 6;
+  const tableW = (PAGE_RIGHT - PAGE_LEFT - tableGap) / 2;
+  const tableStyles = { fontSize: 7, cellPadding: 1 };
+  const tableColumnStyles = {
+    1: { cellWidth: 12, halign: "center" as const },
+    2: { cellWidth: 16, halign: "center" as const },
+    3: { cellWidth: 16, halign: "center" as const },
+  };
 
   drawTable(doc, {
     startY: tableStartY,
-    head: [[game.teamAName, "Gols", "Cartão amarelo", "Cartão vermelho"]],
+    margin: { left: PAGE_LEFT },
+    tableWidth: tableW,
+    head: [[game.teamAName, "Gols", "Amarelo", "Vermelho"]],
     body: teamRows(game.teamAPlayers, game.goalEvents, game.cardEvents),
+    styles: tableStyles,
+    headStyles: tableStyles,
+    columnStyles: tableColumnStyles,
   });
 
-  const afterTeamA = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
-
   drawTable(doc, {
-    startY: afterTeamA + 8,
-    head: [[game.teamBName, "Gols", "Cartão amarelo", "Cartão vermelho"]],
+    startY: tableStartY,
+    margin: { left: PAGE_LEFT + tableW + tableGap },
+    tableWidth: tableW,
+    head: [[game.teamBName, "Gols", "Amarelo", "Vermelho"]],
     body: teamRows(game.teamBPlayers, game.goalEvents, game.cardEvents),
+    styles: tableStyles,
+    headStyles: tableStyles,
+    columnStyles: tableColumnStyles,
   });
 }
