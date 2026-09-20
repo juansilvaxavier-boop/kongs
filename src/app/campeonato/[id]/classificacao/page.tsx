@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState, PageHeader } from "@/components/ui";
 import { StandingsTable } from "@/components/standings-table";
@@ -8,6 +9,7 @@ import { ExportImageButton } from "@/components/export-image-button";
 import { ExportTableButtons } from "@/components/export-table-buttons";
 import { BracketView } from "@/components/bracket-view";
 import { Tabs } from "@/components/tabs";
+import { isKnockoutRound } from "@/lib/bracket";
 
 export default async function ClassificacaoPublicaPage({
   params,
@@ -73,6 +75,61 @@ export default async function ClassificacaoPublicaPage({
     ])
   );
 
+  let content: ReactNode = null;
+  if (!teams || teams.length === 0) {
+    content = <EmptyState>Ainda não há times cadastrados.</EmptyState>;
+  } else {
+    const groupStageContent = (
+      <div id="classificacao-export" className="space-y-8 bg-background p-1">
+        {groups.map((group) => (
+          <div key={group.groupName ?? "geral"}>
+            {group.groupName && (
+              <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+                {group.groupName}
+              </h2>
+            )}
+            <StandingsTable
+              standings={computeStandings(group.teams, gamesWithinTeams(games, group.teams))}
+              teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
+            />
+          </div>
+        ))}
+      </div>
+    );
+
+    const tabs = [
+      {
+        id: "grupos",
+        label: hasMultipleGroups ? "Fase de Grupos" : "Classificação",
+        content: groupStageContent,
+      },
+    ];
+
+    if (hasMultipleGroups) {
+      const groupStageGames = games.filter((g) => !isKnockoutRound(g.round));
+      tabs.push({
+        id: "geral",
+        label: "Classificação Geral",
+        content: (
+          <StandingsTable
+            standings={computeStandings(teams, groupStageGames)}
+            teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
+          />
+        ),
+      });
+    }
+
+    if (championship?.has_knockout_stage) {
+      tabs.push({
+        id: "mata-mata",
+        label: "Mata-mata",
+        content: <BracketView games={games} teamName={teamName} />,
+      });
+    }
+
+    content = tabs.length > 1 ? <Tabs tabs={tabs} /> : groupStageContent;
+  }
+
   return (
     <div>
       <PageHeader
@@ -95,56 +152,7 @@ export default async function ClassificacaoPublicaPage({
           ) : undefined
         }
       />
-      {!teams || teams.length === 0 ? (
-        <EmptyState>Ainda não há times cadastrados.</EmptyState>
-      ) : championship?.has_knockout_stage ? (
-        <Tabs
-          tabs={[
-            {
-              id: "grupos",
-              label: "Fase de Grupos",
-              content: (
-                <div id="classificacao-export" className="space-y-8 bg-background p-1">
-                  {groups.map((group) => (
-                    <div key={group.groupName ?? "geral"}>
-                      {group.groupName && (
-                        <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
-                          {group.groupName}
-                        </h2>
-                      )}
-                      <StandingsTable
-                        standings={computeStandings(group.teams, gamesWithinTeams(games, group.teams))}
-                        teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ),
-            },
-            {
-              id: "mata-mata",
-              label: "Mata-mata",
-              content: <BracketView games={games} teamName={teamName} />,
-            },
-          ]}
-        />
-      ) : (
-        <div id="classificacao-export" className="space-y-8 bg-background p-1">
-          {groups.map((group) => (
-            <div key={group.groupName ?? "geral"}>
-              {group.groupName && (
-                <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
-                  {group.groupName}
-                </h2>
-              )}
-              <StandingsTable
-                standings={computeStandings(group.teams, gamesWithinTeams(games, group.teams))}
-                teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
-              />
-            </div>
-          ))}
-        </div>
-      )}
+      {content}
     </div>
   );
 }

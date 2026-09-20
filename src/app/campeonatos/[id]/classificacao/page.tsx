@@ -6,6 +6,7 @@ import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
 import { ExportTableButtons } from "@/components/export-table-buttons";
 import { BracketView } from "@/components/bracket-view";
 import { Tabs } from "@/components/tabs";
+import { isKnockoutRound } from "@/lib/bracket";
 import { SortearGruposButton } from "./sortear-grupos-button";
 
 export default async function ClassificacaoPage({
@@ -78,6 +79,48 @@ export default async function ClassificacaoPage({
     ])
   );
 
+  const groupStageContent = (
+    <div className="space-y-10">
+      {groups.map((group) => (
+        <div key={group.groupName ?? "geral"}>
+          {group.groupName && (
+            <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+              {group.groupName}
+            </h2>
+          )}
+          <StandingsTable
+            standings={computeStandings(group.teams, gamesWithinTeams(games ?? [], group.teams))}
+          />
+        </div>
+      ))}
+    </div>
+  );
+
+  const tabs = [
+    {
+      id: "grupos",
+      label: hasMultipleGroups ? "Fase de Grupos" : "Classificação",
+      content: groupStageContent,
+    },
+  ];
+
+  if (hasMultipleGroups) {
+    const groupStageGames = (games ?? []).filter((g) => !isKnockoutRound(g.round));
+    tabs.push({
+      id: "geral",
+      label: "Classificação Geral",
+      content: <StandingsTable standings={computeStandings(teams, groupStageGames)} />,
+    });
+  }
+
+  if (championship?.has_knockout_stage) {
+    tabs.push({
+      id: "mata-mata",
+      label: "Mata-mata",
+      content: <BracketView games={games ?? []} teamName={teamName} />,
+    });
+  }
+
   return (
     <div className="space-y-10">
       <PageHeader
@@ -97,56 +140,7 @@ export default async function ClassificacaoPage({
         rows={standingsRows}
       />
 
-      {championship?.has_knockout_stage ? (
-        <Tabs
-          tabs={[
-            {
-              id: "grupos",
-              label: "Fase de Grupos",
-              content: (
-                <div className="space-y-10">
-                  {groups.map((group) => (
-                    <div key={group.groupName ?? "geral"}>
-                      {group.groupName && (
-                        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
-                          {group.groupName}
-                        </h2>
-                      )}
-                      <StandingsTable
-                        standings={computeStandings(
-                          group.teams,
-                          gamesWithinTeams(games ?? [], group.teams)
-                        )}
-                      />
-                    </div>
-                  ))}
-                </div>
-              ),
-            },
-            {
-              id: "mata-mata",
-              label: "Mata-mata",
-              content: <BracketView games={games ?? []} teamName={teamName} />,
-            },
-          ]}
-        />
-      ) : (
-        groups.map((group) => (
-          <div key={group.groupName ?? "geral"}>
-            {group.groupName && (
-              <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
-                {group.groupName}
-              </h2>
-            )}
-            <StandingsTable
-              standings={computeStandings(
-                group.teams,
-                gamesWithinTeams(games ?? [], group.teams)
-              )}
-            />
-          </div>
-        ))
-      )}
+      {tabs.length > 1 ? <Tabs tabs={tabs} /> : groupStageContent}
     </div>
   );
 }
