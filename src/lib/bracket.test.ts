@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildBracketColumns } from "./bracket";
+import { bracketSideOf, buildBracketColumns, isKnockoutRound, stripBracketSide } from "./bracket";
 
 function game(overrides: Partial<Parameters<typeof buildBracketColumns>[0][number]>) {
   return {
@@ -54,5 +54,35 @@ describe("buildBracketColumns", () => {
     ];
     const columns = buildBracketColumns(games);
     expect(columns.map((c) => c.round)).toEqual(["Com data", "Sem data"]);
+  });
+});
+
+describe("isKnockoutRound", () => {
+  it("treats rounds ending in a Rodada N suffix as group/league stage", () => {
+    expect(isKnockoutRound("Rodada 1")).toBe(false);
+    expect(isKnockoutRound("Grupo A - Rodada 2")).toBe(false);
+  });
+
+  it("treats anything else as knockout", () => {
+    expect(isKnockoutRound("Semifinal")).toBe(true);
+    expect(isKnockoutRound("Final")).toBe(true);
+    expect(isKnockoutRound("Lado A - Oitavas de Final")).toBe(true);
+  });
+});
+
+describe("bracketSideOf / stripBracketSide", () => {
+  it("detects the side prefix", () => {
+    expect(bracketSideOf("Lado A - Oitavas de Final")).toBe("Lado A");
+    expect(bracketSideOf("Lado B - Semifinal")).toBe("Lado B");
+  });
+
+  it("returns null for rounds without a side prefix", () => {
+    expect(bracketSideOf("Final")).toBeNull();
+    expect(bracketSideOf("Rodada 1")).toBeNull();
+  });
+
+  it("strips the side prefix, leaving the round name untouched otherwise", () => {
+    expect(stripBracketSide("Lado A - Oitavas de Final")).toBe("Oitavas de Final");
+    expect(stripBracketSide("Final")).toBe("Final");
   });
 });

@@ -1,5 +1,5 @@
 import { Badge, Card, EmptyState } from "@/components/ui";
-import { buildBracketColumns } from "@/lib/bracket";
+import { bracketSideOf, buildBracketColumns, isKnockoutRound, stripBracketSide } from "@/lib/bracket";
 import { gameWinnerId } from "@/lib/game-result";
 
 type Game = {
@@ -15,28 +15,23 @@ type Game = {
   played: boolean;
 };
 
-/** Visualização do chaveamento das fases eliminatórias, em colunas por
- * fase — compartilhada entre a página dedicada de Chaveamento e a aba
- * "Mata-mata" da Classificação. */
-export function BracketView({
+function BracketColumns({
   games,
   teamName,
+  stripSideFromLabel,
 }: {
   games: Game[];
   teamName: (teamId: string) => string;
+  stripSideFromLabel?: boolean;
 }) {
   const columns = buildBracketColumns(games);
-
-  if (columns.length === 0) {
-    return <EmptyState>Nenhum jogo agendado ainda.</EmptyState>;
-  }
 
   return (
     <div className="flex gap-4 overflow-x-auto pb-2">
       {columns.map((column) => (
         <div key={column.round} className="w-64 flex-none">
           <h2 className="mb-3 text-center font-display text-sm font-bold uppercase tracking-wide text-muted">
-            {column.round}
+            {stripSideFromLabel ? stripBracketSide(column.round) : column.round}
           </h2>
           <div className="flex flex-col gap-3">
             {column.games.map((game) => {
@@ -94,6 +89,66 @@ export function BracketView({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/**
+ * Visualização do chaveamento das fases eliminatórias — só o mata-mata,
+ * mesmo que a lista de jogos recebida inclua a fase de grupos/liga
+ * também (ela é filtrada aqui). Quando as rodadas seguem a convenção
+ * "Lado A - "/"Lado B - " (ver `src/lib/bracket.ts`), separa a
+ * visualização em duas chaves que só se encontram na Final; campeonatos
+ * sem essa convenção continuam vendo uma única sequência de colunas,
+ * como antes.
+ */
+export function BracketView({
+  games,
+  teamName,
+}: {
+  games: Game[];
+  teamName: (teamId: string) => string;
+}) {
+  const knockoutGames = games.filter((g) => isKnockoutRound(g.round));
+
+  if (knockoutGames.length === 0) {
+    return <EmptyState>O mata-mata ainda não começou.</EmptyState>;
+  }
+
+  const sideAGames = knockoutGames.filter((g) => bracketSideOf(g.round) === "Lado A");
+  const sideBGames = knockoutGames.filter((g) => bracketSideOf(g.round) === "Lado B");
+  const finalGames = knockoutGames.filter((g) => bracketSideOf(g.round) === null);
+
+  if (sideAGames.length === 0 && sideBGames.length === 0) {
+    return <BracketColumns games={knockoutGames} teamName={teamName} />;
+  }
+
+  return (
+    <div className="space-y-6">
+      {sideAGames.length > 0 && (
+        <div>
+          <h3 className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-accent">
+            Lado A
+          </h3>
+          <BracketColumns games={sideAGames} teamName={teamName} stripSideFromLabel />
+        </div>
+      )}
+      {sideBGames.length > 0 && (
+        <div>
+          <h3 className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-accent">
+            Lado B
+          </h3>
+          <BracketColumns games={sideBGames} teamName={teamName} stripSideFromLabel />
+        </div>
+      )}
+      {finalGames.length > 0 && (
+        <div>
+          <h3 className="mb-2 font-display text-xs font-bold uppercase tracking-wide text-accent">
+            Final
+          </h3>
+          <BracketColumns games={finalGames} teamName={teamName} />
+        </div>
+      )}
     </div>
   );
 }

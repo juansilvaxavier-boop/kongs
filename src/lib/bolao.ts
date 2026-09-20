@@ -1,3 +1,5 @@
+import { isKnockoutRound } from "./bracket";
+
 export type BolaoPrediction = {
   userId: string;
   gameId: string;
@@ -159,8 +161,6 @@ export function hasSeasonStarted(games: { date: string | null; played: boolean }
 
 export type BolaoPredictionTier = 10 | 5 | 3;
 
-const GROUP_ROUND_PATTERN = /Rodada \d+$/;
-
 /**
  * Quanto vale um palpite de artilheiro/campeão feito (ou alterado) agora:
  * 10 pontos antes de qualquer jogo, 5 pontos já com a fase de grupos/liga
@@ -181,7 +181,7 @@ export function computeBolaoPredictionTier(
   const anyPlayed = games.some((g) => g.played);
   if (!anyPlayed) return 10;
 
-  const knockoutStarted = games.some((g) => g.played && !GROUP_ROUND_PATTERN.test(g.round));
+  const knockoutStarted = games.some((g) => g.played && isKnockoutRound(g.round));
   if (hasKnockoutStage && knockoutStarted) return 3;
 
   return 5;

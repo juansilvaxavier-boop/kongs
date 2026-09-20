@@ -1,5 +1,28 @@
 import { naturalCompare } from "./datetime";
 
+/** Rodadas da fase de grupos/liga terminam em "Rodada N" (com ou sem
+ * prefixo de grupo, ex.: "Grupo A - Rodada 2"). Qualquer outro nome de
+ * rodada (ex.: "Semifinal", "Lado A - Oitavas de Final") é mata-mata. */
+const GROUP_ROUND_PATTERN = /Rodada \d+$/;
+export function isKnockoutRound(round: string): boolean {
+  return !GROUP_ROUND_PATTERN.test(round);
+}
+
+/** Convenção pra separar o mata-mata em dois lados que só se encontram
+ * na final: rodadas prefixadas com "Lado A - "/"Lado B - " (ex.: "Lado A
+ * - Oitavas de Final"). A final em si não tem prefixo de lado. */
+const SIDE_PREFIXES = ["Lado A", "Lado B"] as const;
+export type BracketSide = (typeof SIDE_PREFIXES)[number];
+
+export function bracketSideOf(round: string): BracketSide | null {
+  return SIDE_PREFIXES.find((side) => round.startsWith(`${side} - `)) ?? null;
+}
+
+export function stripBracketSide(round: string): string {
+  const side = bracketSideOf(round);
+  return side ? round.slice(`${side} - `.length) : round;
+}
+
 type Game = {
   id: string;
   round: string;
