@@ -4,6 +4,8 @@ import { StandingsTable } from "@/components/standings-table";
 import { computeStandings } from "@/lib/standings";
 import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
 import { ExportTableButtons } from "@/components/export-table-buttons";
+import { BracketView } from "@/components/bracket-view";
+import { Tabs } from "@/components/tabs";
 import { SortearGruposButton } from "./sortear-grupos-button";
 
 export default async function ClassificacaoPage({
@@ -17,7 +19,7 @@ export default async function ClassificacaoPage({
   const [{ data: championship }, { data: teams }, { data: games }] = await Promise.all([
     supabase
       .from("championships")
-      .select("format, group_count")
+      .select("format, group_count, has_knockout_stage")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -27,7 +29,9 @@ export default async function ClassificacaoPage({
       .order("name"),
     supabase
       .from("games")
-      .select("team_a_id, team_b_id, score_a, score_b, played")
+      .select(
+        "id, round, team_a_id, team_b_id, date, score_a, score_b, penalty_score_a, penalty_score_b, played"
+      )
       .eq("championship_id", id),
   ]);
 
@@ -43,6 +47,7 @@ export default async function ClassificacaoPage({
   }
 
   const groups = groupTeamsByFormat(championship?.format ?? "liga", teams);
+  const teamName = (teamId: string) => teams.find((t) => t.id === teamId)?.name ?? "?";
   const hasMultipleGroups = groups.length > 1;
   const standingsColumns = [
     ...(hasMultipleGroups ? ["Grupo"] : []),
@@ -92,21 +97,56 @@ export default async function ClassificacaoPage({
         rows={standingsRows}
       />
 
-      {groups.map((group) => (
-        <div key={group.groupName ?? "geral"}>
-          {group.groupName && (
-            <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
-              {group.groupName}
-            </h2>
-          )}
-          <StandingsTable
-            standings={computeStandings(
-              group.teams,
-              gamesWithinTeams(games ?? [], group.teams)
+      {championship?.has_knockout_stage ? (
+        <Tabs
+          tabs={[
+            {
+              id: "grupos",
+              label: "Fase de Grupos",
+              content: (
+                <div className="space-y-10">
+                  {groups.map((group) => (
+                    <div key={group.groupName ?? "geral"}>
+                      {group.groupName && (
+                        <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+                          {group.groupName}
+                        </h2>
+                      )}
+                      <StandingsTable
+                        standings={computeStandings(
+                          group.teams,
+                          gamesWithinTeams(games ?? [], group.teams)
+                        )}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              id: "mata-mata",
+              label: "Mata-mata",
+              content: <BracketView games={games ?? []} teamName={teamName} />,
+            },
+          ]}
+        />
+      ) : (
+        groups.map((group) => (
+          <div key={group.groupName ?? "geral"}>
+            {group.groupName && (
+              <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+                {group.groupName}
+              </h2>
             )}
-          />
-        </div>
-      ))}
+            <StandingsTable
+              standings={computeStandings(
+                group.teams,
+                gamesWithinTeams(games ?? [], group.teams)
+              )}
+            />
+          </div>
+        ))
+      )}
     </div>
   );
 }

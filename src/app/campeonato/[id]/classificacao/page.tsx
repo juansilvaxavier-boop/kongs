@@ -6,6 +6,8 @@ import { naturalCompare } from "@/lib/datetime";
 import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
 import { ExportImageButton } from "@/components/export-image-button";
 import { ExportTableButtons } from "@/components/export-table-buttons";
+import { BracketView } from "@/components/bracket-view";
+import { Tabs } from "@/components/tabs";
 
 export default async function ClassificacaoPublicaPage({
   params,
@@ -18,7 +20,7 @@ export default async function ClassificacaoPublicaPage({
   const [{ data: championship }, { data: teams }, { data: gamesData }] = await Promise.all([
     supabase
       .from("championships")
-      .select("format")
+      .select("format, has_knockout_stage")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -28,7 +30,9 @@ export default async function ClassificacaoPublicaPage({
       .order("name"),
     supabase
       .from("games")
-      .select("id, round, team_a_id, team_b_id, date, score_a, score_b, played")
+      .select(
+        "id, round, team_a_id, team_b_id, date, score_a, score_b, penalty_score_a, penalty_score_b, played"
+      )
       .eq("championship_id", id)
       .order("date", { ascending: true, nullsFirst: false }),
   ]);
@@ -37,6 +41,7 @@ export default async function ClassificacaoPublicaPage({
     ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
     : [];
   const groups = groupTeamsByFormat(championship?.format ?? "liga", teams ?? []);
+  const teamName = (teamId: string) => teams?.find((t) => t.id === teamId)?.name ?? "?";
 
   const hasMultipleGroups = groups.length > 1;
   const standingsColumns = [
@@ -92,6 +97,37 @@ export default async function ClassificacaoPublicaPage({
       />
       {!teams || teams.length === 0 ? (
         <EmptyState>Ainda não há times cadastrados.</EmptyState>
+      ) : championship?.has_knockout_stage ? (
+        <Tabs
+          tabs={[
+            {
+              id: "grupos",
+              label: "Fase de Grupos",
+              content: (
+                <div id="classificacao-export" className="space-y-8 bg-background p-1">
+                  {groups.map((group) => (
+                    <div key={group.groupName ?? "geral"}>
+                      {group.groupName && (
+                        <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+                          {group.groupName}
+                        </h2>
+                      )}
+                      <StandingsTable
+                        standings={computeStandings(group.teams, gamesWithinTeams(games, group.teams))}
+                        teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ),
+            },
+            {
+              id: "mata-mata",
+              label: "Mata-mata",
+              content: <BracketView games={games} teamName={teamName} />,
+            },
+          ]}
+        />
       ) : (
         <div id="classificacao-export" className="space-y-8 bg-background p-1">
           {groups.map((group) => (
