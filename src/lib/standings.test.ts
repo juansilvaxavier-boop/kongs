@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeStandings } from "./standings";
+import { computeStandings, computeYellowCardCounts } from "./standings";
 
 const teams = [
   { id: "a", name: "Atlético Vale Verde" },
@@ -50,5 +50,36 @@ describe("computeStandings", () => {
     const standings = computeStandings(teams, []);
     expect(standings).toHaveLength(3);
     expect(standings.every((r) => r.pts === 0 && r.sg === 0)).toBe(true);
+  });
+});
+
+describe("computeYellowCardCounts", () => {
+  const players = [
+    { id: "p1", team_id: "a" },
+    { id: "p2", team_id: "a" },
+    { id: "p3", team_id: "b" },
+  ];
+
+  it("counts yellow cards per team, ignoring other card types", () => {
+    const cardEvents = [
+      { card_type: "yellow", game_id: "g1", player_id: "p1" },
+      { card_type: "yellow", game_id: "g1", player_id: "p2" },
+      { card_type: "red", game_id: "g1", player_id: "p3" },
+    ];
+    const counts = computeYellowCardCounts(cardEvents, players, new Set(["g1"]));
+    expect(counts.get("a")).toBe(2);
+    expect(counts.has("b")).toBe(false);
+  });
+
+  it("ignores events from games outside the given set", () => {
+    const cardEvents = [{ card_type: "yellow", game_id: "g2", player_id: "p1" }];
+    const counts = computeYellowCardCounts(cardEvents, players, new Set(["g1"]));
+    expect(counts.size).toBe(0);
+  });
+
+  it("ignores events for players with no known team", () => {
+    const cardEvents = [{ card_type: "yellow", game_id: "g1", player_id: "unknown" }];
+    const counts = computeYellowCardCounts(cardEvents, players, new Set(["g1"]));
+    expect(counts.size).toBe(0);
   });
 });

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState, PageHeader } from "@/components/ui";
 import { StandingsTable } from "@/components/standings-table";
-import { computeStandings } from "@/lib/standings";
+import { computeStandings, computeYellowCardCounts } from "@/lib/standings";
 import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
 import { ExportTableButtons } from "@/components/export-table-buttons";
 import { BracketView } from "@/components/bracket-view";
@@ -17,24 +17,31 @@ export default async function ClassificacaoPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: championship }, { data: teams }, { data: games }] = await Promise.all([
-    supabase
-      .from("championships")
-      .select("format, group_count, has_knockout_stage")
-      .eq("id", id)
-      .maybeSingle(),
-    supabase
-      .from("teams")
-      .select("id, name, crest_url, group_name")
-      .eq("championship_id", id)
-      .order("name"),
-    supabase
-      .from("games")
-      .select(
-        "id, round, team_a_id, team_b_id, date, score_a, score_b, penalty_score_a, penalty_score_b, played"
-      )
-      .eq("championship_id", id),
-  ]);
+  const [{ data: championship }, { data: teams }, { data: games }, { data: cardEvents }, { data: players }] =
+    await Promise.all([
+      supabase
+        .from("championships")
+        .select("format, group_count, has_knockout_stage")
+        .eq("id", id)
+        .maybeSingle(),
+      supabase
+        .from("teams")
+        .select("id, name, crest_url, group_name")
+        .eq("championship_id", id)
+        .order("name"),
+      supabase
+        .from("games")
+        .select(
+          "id, round, team_a_id, team_b_id, date, score_a, score_b, penalty_score_a, penalty_score_b, played"
+        )
+        .eq("championship_id", id),
+      supabase
+        .from("card_events")
+        .select("card_type, game_id, player_id")
+        .eq("championship_id", id)
+        .eq("card_type", "yellow"),
+      supabase.from("players").select("id, team_id").eq("championship_id", id),
+    ]);
 
   if (!teams || teams.length === 0) {
     return (
@@ -62,9 +69,16 @@ export default async function ClassificacaoPage({
     "GP",
     "GC",
     "SG",
+    "CA",
   ];
-  const standingsRows = groups.flatMap((group) =>
-    computeStandings(group.teams, gamesWithinTeams(games ?? [], group.teams)).map((row) => [
+  const standingsRows = groups.flatMap((group) => {
+    const groupGames = gamesWithinTeams(games ?? [], group.teams);
+    const yellowCards = computeYellowCardCounts(
+      cardEvents ?? [],
+      players ?? [],
+      new Set(groupGames.map((g) => g.id))
+    );
+    return computeStandings(group.teams, groupGames).map((row) => [
       ...(hasMultipleGroups ? [group.groupName ?? "Geral"] : []),
       row.pos,
       row.teamName,
@@ -76,23 +90,32 @@ export default async function ClassificacaoPage({
       row.gp,
       row.gc,
       row.sg,
-    ])
-  );
+      yellowCards.get(row.teamId) ?? 0,
+    ]);
+  });
 
   const groupStageContent = (
     <div className="space-y-10">
-      {groups.map((group) => (
-        <div key={group.groupName ?? "geral"}>
-          {group.groupName && (
-            <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
-              {group.groupName}
-            </h2>
-          )}
-          <StandingsTable
-            standings={computeStandings(group.teams, gamesWithinTeams(games ?? [], group.teams))}
-          />
-        </div>
-      ))}
+      {groups.map((group) => {
+        const groupGames = gamesWithinTeams(games ?? [], group.teams);
+        return (
+          <div key={group.groupName ?? "geral"}>
+            {group.groupName && (
+              <h2 className="mb-3 font-display text-lg font-bold uppercase tracking-wide text-foreground">
+                {group.groupName}
+              </h2>
+            )}
+            <StandingsTable
+              standings={computeStandings(group.teams, groupGames)}
+              yellowCardsByTeam={computeYellowCardCounts(
+                cardEvents ?? [],
+                players ?? [],
+                new Set(groupGames.map((g) => g.id))
+              )}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -109,7 +132,16 @@ export default async function ClassificacaoPage({
     tabs.push({
       id: "geral",
       label: "Classificação Geral",
-      content: <StandingsTable standings={computeStandings(teams, groupStageGames)} />,
+      content: (
+        <StandingsTable
+          standings={computeStandings(teams, groupStageGames)}
+          yellowCardsByTeam={computeYellowCardCounts(
+            cardEvents ?? [],
+            players ?? [],
+            new Set(groupStageGames.map((g) => g.id))
+          )}
+        />
+      ),
     });
   }
 

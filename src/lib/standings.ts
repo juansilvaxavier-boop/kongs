@@ -84,3 +84,26 @@ export function computeStandings(teams: Team[], games: Game[]): StandingRow[] {
 
   return rows.map((row, index) => ({ ...row, pos: index + 1 }));
 }
+
+/**
+ * Total de cartões amarelos por time, considerando só os jogos em
+ * `gameIds` (pra poder restringir por grupo, ou excluir o mata-mata,
+ * do mesmo jeito que a classificação já faz para os placares).
+ */
+export function computeYellowCardCounts(
+  cardEvents: { card_type: string; game_id: string; player_id: string }[],
+  players: { id: string; team_id: string | null }[],
+  gameIds: Set<string>
+): Map<string, number> {
+  const teamByPlayer = new Map(players.map((p) => [p.id, p.team_id]));
+  const counts = new Map<string, number>();
+
+  for (const event of cardEvents) {
+    if (event.card_type !== "yellow" || !gameIds.has(event.game_id)) continue;
+    const teamId = teamByPlayer.get(event.player_id);
+    if (!teamId) continue;
+    counts.set(teamId, (counts.get(teamId) ?? 0) + 1);
+  }
+
+  return counts;
+}

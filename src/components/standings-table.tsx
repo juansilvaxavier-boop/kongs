@@ -5,9 +5,11 @@ import type { StandingRow } from "@/lib/standings";
 export function StandingsTable({
   standings,
   teamHref,
+  yellowCardsByTeam,
 }: {
   standings: StandingRow[];
   teamHref?: (teamId: string) => string;
+  yellowCardsByTeam?: Map<string, number>;
 }) {
   return (
     <Card className="overflow-x-auto">
@@ -24,6 +26,7 @@ export function StandingsTable({
             <th className="px-4 py-3 text-center">GP</th>
             <th className="px-4 py-3 text-center">GC</th>
             <th className="px-4 py-3 text-center">SG</th>
+            {yellowCardsByTeam && <th className="px-4 py-3 text-center">CA</th>}
           </tr>
         </thead>
         <tbody>
@@ -61,6 +64,11 @@ export function StandingsTable({
               <td className="px-4 py-3 text-center text-muted">{row.gp}</td>
               <td className="px-4 py-3 text-center text-muted">{row.gc}</td>
               <td className="px-4 py-3 text-center text-muted">{row.sg}</td>
+              {yellowCardsByTeam && (
+                <td className="px-4 py-3 text-center text-muted">
+                  {yellowCardsByTeam.get(row.teamId) ?? 0}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

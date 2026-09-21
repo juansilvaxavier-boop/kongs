@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { EmptyState, PageHeader } from "@/components/ui";
 import { StandingsTable } from "@/components/standings-table";
-import { computeStandings } from "@/lib/standings";
+import { computeStandings, computeYellowCardCounts } from "@/lib/standings";
 import { naturalCompare } from "@/lib/datetime";
 import { gamesWithinTeams, groupTeamsByFormat } from "@/lib/groups";
 import { ExportImageButton } from "@/components/export-image-button";
@@ -19,25 +19,32 @@ export default async function ClassificacaoPublicaPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: championship }, { data: teams }, { data: gamesData }] = await Promise.all([
-    supabase
-      .from("championships")
-      .select("format, has_knockout_stage")
-      .eq("id", id)
-      .maybeSingle(),
-    supabase
-      .from("teams")
-      .select("id, name, crest_url, group_name")
-      .eq("championship_id", id)
-      .order("name"),
-    supabase
-      .from("games")
-      .select(
-        "id, round, team_a_id, team_b_id, date, score_a, score_b, penalty_score_a, penalty_score_b, played"
-      )
-      .eq("championship_id", id)
-      .order("date", { ascending: true, nullsFirst: false }),
-  ]);
+  const [{ data: championship }, { data: teams }, { data: gamesData }, { data: cardEvents }, { data: players }] =
+    await Promise.all([
+      supabase
+        .from("championships")
+        .select("format, has_knockout_stage")
+        .eq("id", id)
+        .maybeSingle(),
+      supabase
+        .from("teams")
+        .select("id, name, crest_url, group_name")
+        .eq("championship_id", id)
+        .order("name"),
+      supabase
+        .from("games")
+        .select(
+          "id, round, team_a_id, team_b_id, date, score_a, score_b, penalty_score_a, penalty_score_b, played"
+        )
+        .eq("championship_id", id)
+        .order("date", { ascending: true, nullsFirst: false }),
+      supabase
+        .from("card_events")
+        .select("card_type, game_id, player_id")
+        .eq("championship_id", id)
+        .eq("card_type", "yellow"),
+      supabase.from("players").select("id, team_id").eq("championship_id", id),
+    ]);
 
   const games = gamesData
     ? [...gamesData].sort((a, b) => naturalCompare(a.round, b.round))
@@ -58,9 +65,16 @@ export default async function ClassificacaoPublicaPage({
     "GP",
     "GC",
     "SG",
+    "CA",
   ];
-  const standingsRows = groups.flatMap((group) =>
-    computeStandings(group.teams, gamesWithinTeams(games, group.teams)).map((row) => [
+  const standingsRows = groups.flatMap((group) => {
+    const groupGames = gamesWithinTeams(games, group.teams);
+    const yellowCards = computeYellowCardCounts(
+      cardEvents ?? [],
+      players ?? [],
+      new Set(groupGames.map((g) => g.id))
+    );
+    return computeStandings(group.teams, groupGames).map((row) => [
       ...(hasMultipleGroups ? [group.groupName ?? "Geral"] : []),
       row.pos,
       row.teamName,
@@ -72,8 +86,9 @@ export default async function ClassificacaoPublicaPage({
       row.gp,
       row.gc,
       row.sg,
-    ])
-  );
+      yellowCards.get(row.teamId) ?? 0,
+    ]);
+  });
 
   let content: ReactNode = null;
   if (!teams || teams.length === 0) {
@@ -81,19 +96,27 @@ export default async function ClassificacaoPublicaPage({
   } else {
     const groupStageContent = (
       <div id="classificacao-export" className="space-y-8 bg-background p-1">
-        {groups.map((group) => (
-          <div key={group.groupName ?? "geral"}>
-            {group.groupName && (
-              <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
-                {group.groupName}
-              </h2>
-            )}
-            <StandingsTable
-              standings={computeStandings(group.teams, gamesWithinTeams(games, group.teams))}
-              teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
-            />
-          </div>
-        ))}
+        {groups.map((group) => {
+          const groupGames = gamesWithinTeams(games, group.teams);
+          return (
+            <div key={group.groupName ?? "geral"}>
+              {group.groupName && (
+                <h2 className="mb-3 font-display text-base font-bold uppercase tracking-wide text-foreground">
+                  {group.groupName}
+                </h2>
+              )}
+              <StandingsTable
+                standings={computeStandings(group.teams, groupGames)}
+                teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
+                yellowCardsByTeam={computeYellowCardCounts(
+                  cardEvents ?? [],
+                  players ?? [],
+                  new Set(groupGames.map((g) => g.id))
+                )}
+              />
+            </div>
+          );
+        })}
       </div>
     );
 
@@ -114,6 +137,11 @@ export default async function ClassificacaoPublicaPage({
           <StandingsTable
             standings={computeStandings(teams, groupStageGames)}
             teamHref={(teamId) => `/campeonato/${id}/time/${teamId}`}
+            yellowCardsByTeam={computeYellowCardCounts(
+              cardEvents ?? [],
+              players ?? [],
+              new Set(groupStageGames.map((g) => g.id))
+            )}
           />
         ),
       });
