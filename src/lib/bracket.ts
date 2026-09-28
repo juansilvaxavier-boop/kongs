@@ -33,6 +33,7 @@ type Game = {
   score_b: number | null;
   penalty_score_a?: number | null;
   penalty_score_b?: number | null;
+  tiebreak_winner_team_id?: string | null;
   played: boolean;
 };
 

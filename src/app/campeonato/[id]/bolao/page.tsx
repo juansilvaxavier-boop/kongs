@@ -64,7 +64,7 @@ export default async function BolaoPage({
     supabase
       .from("games")
       .select(
-        "id, round, team_a_id, team_b_id, date, played, score_a, score_b, penalty_score_a, penalty_score_b"
+        "id, round, team_a_id, team_b_id, date, played, score_a, score_b, penalty_score_a, penalty_score_b, tiebreak_winner_team_id"
       )
       .eq("championship_id", id),
     supabase

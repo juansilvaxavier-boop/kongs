@@ -88,6 +88,7 @@ export default async function SumulaGamePage({
           penaltyScoreA={game.penalty_score_a}
           penaltyScoreB={game.penalty_score_b}
           walkoverTeamId={game.walkover_team_id}
+          tiebreakWinnerTeamId={game.tiebreak_winner_team_id}
           played={game.played}
           players={players ?? []}
           goalEvents={goalEvents ?? []}

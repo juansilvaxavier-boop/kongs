@@ -71,6 +71,20 @@ describe("computeChampionTeamId", () => {
     expect(computeChampionTeamId(true, "copa", teams, games)).toBe("t2");
   });
 
+  it("knockout: uses the direct tiebreak choice when the final is tied with no penalties", () => {
+    const games = [
+      game({
+        id: "g1",
+        round: "Final",
+        score_a: 1,
+        score_b: 1,
+        tiebreak_winner_team_id: "t2",
+        played: true,
+      }),
+    ];
+    expect(computeChampionTeamId(true, "copa", teams, games)).toBe("t2");
+  });
+
   it("copa without knockout stage (só fase de grupos): returns null — ambíguo", () => {
     const games = [game({ id: "g1", score_a: 2, score_b: 0, played: true })];
     expect(computeChampionTeamId(false, "copa", teams, games)).toBeNull();

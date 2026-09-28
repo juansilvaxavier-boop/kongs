@@ -5,13 +5,15 @@ export type GameResult = {
   scoreB: number | null;
   penaltyScoreA?: number | null;
   penaltyScoreB?: number | null;
+  tiebreakWinnerTeamId?: string | null;
   played: boolean;
 };
 
 /**
  * Retorna o id do time vencedor do jogo, ou null se o jogo ainda não
- * aconteceu ou terminou empatado sem disputa de pênaltis registrada
- * (empate de fato, em campeonatos que não usam mata-mata).
+ * aconteceu ou terminou empatado sem disputa de pênaltis nem escolha
+ * direta de quem avançou registradas (empate de fato, em campeonatos
+ * que não usam mata-mata).
  */
 export function gameWinnerId(game: GameResult): string | null {
   if (!game.played || game.scoreA === null || game.scoreB === null) return null;
@@ -28,6 +30,8 @@ export function gameWinnerId(game: GameResult): string | null {
   ) {
     return game.penaltyScoreA > game.penaltyScoreB ? game.teamAId : game.teamBId;
   }
+
+  if (game.tiebreakWinnerTeamId) return game.tiebreakWinnerTeamId;
 
   return null;
 }

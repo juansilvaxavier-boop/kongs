@@ -52,7 +52,7 @@ export default async function VisaoGeralPage({
     supabase
       .from("games")
       .select(
-        "id, round, team_a_id, team_b_id, played, score_a, score_b, penalty_score_a, penalty_score_b, date, created_at"
+        "id, round, team_a_id, team_b_id, played, score_a, score_b, penalty_score_a, penalty_score_b, tiebreak_winner_team_id, date, created_at"
       )
       .eq("championship_id", id),
     supabase.from("card_events").select("game_id").eq("championship_id", id),

@@ -12,6 +12,7 @@ type Game = {
   score_b: number | null;
   penalty_score_a: number | null;
   penalty_score_b: number | null;
+  tiebreak_winner_team_id?: string | null;
   played: boolean;
 };
 
@@ -42,9 +43,11 @@ function BracketColumns({
                 scoreB: game.score_b,
                 penaltyScoreA: game.penalty_score_a,
                 penaltyScoreB: game.penalty_score_b,
+                tiebreakWinnerTeamId: game.tiebreak_winner_team_id,
                 played: game.played,
               });
               const hadPenalties = game.penalty_score_a !== null && game.penalty_score_b !== null;
+              const decidedByTiebreakChoice = !hadPenalties && Boolean(game.tiebreak_winner_team_id);
 
               return (
                 <Card key={game.id} className="p-3">
@@ -76,6 +79,11 @@ function BracketColumns({
                   {hadPenalties && (
                     <p className="mt-1 text-center text-xs text-muted">
                       Pênaltis: {game.penalty_score_a} - {game.penalty_score_b}
+                    </p>
+                  )}
+                  {decidedByTiebreakChoice && (
+                    <p className="mt-1 text-center text-xs text-muted">
+                      Classificado direto (empate)
                     </p>
                   )}
                   <div className="mt-2 text-center">

@@ -38,4 +38,23 @@ describe("gameWinnerId", () => {
       gameWinnerId({ ...base, scoreA: 1, scoreB: 1, penaltyScoreA: 3, penaltyScoreB: 3 })
     ).toBeNull();
   });
+
+  it("uses the tiebreak winner to break a tie with no penalty shootout", () => {
+    expect(
+      gameWinnerId({ ...base, scoreA: 1, scoreB: 1, tiebreakWinnerTeamId: "b" })
+    ).toBe("b");
+  });
+
+  it("prefers the penalty shootout over the tiebreak winner when both are set", () => {
+    expect(
+      gameWinnerId({
+        ...base,
+        scoreA: 1,
+        scoreB: 1,
+        penaltyScoreA: 4,
+        penaltyScoreB: 3,
+        tiebreakWinnerTeamId: "b",
+      })
+    ).toBe("a");
+  });
 });

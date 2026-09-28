@@ -13,6 +13,7 @@ type Game = {
   score_b: number | null;
   penalty_score_a?: number | null;
   penalty_score_b?: number | null;
+  tiebreak_winner_team_id?: string | null;
   played: boolean;
 };
 
@@ -46,6 +47,7 @@ export function computeChampionTeamId(
       scoreB: finalGame.score_b,
       penaltyScoreA: finalGame.penalty_score_a,
       penaltyScoreB: finalGame.penalty_score_b,
+      tiebreakWinnerTeamId: finalGame.tiebreak_winner_team_id,
       played: finalGame.played,
     });
   }

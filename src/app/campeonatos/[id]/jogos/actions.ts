@@ -283,6 +283,39 @@ export async function setGameWalkover(
   });
 }
 
+// Jogo de mata-mata empatado, sem disputa de pênaltis lançada: o admin
+// escolhe direto quem avança. Diferente do W.O., não mexe no placar
+// real do jogo nem no campo `played` — só marca quem passou de fase.
+export async function setGameTiebreakWinner(
+  id: string,
+  championshipId: string,
+  winnerTeamId: string | null
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { data: game, error: gameError } = await supabase
+      .from("games")
+      .select("id, team_a_id, team_b_id")
+      .eq("id", id)
+      .eq("championship_id", championshipId)
+      .maybeSingle();
+    if (gameError) throw new Error(gameError.message);
+    if (!game) throw new Error("Jogo não encontrado ou sem permissão para editar.");
+    if (winnerTeamId && winnerTeamId !== game.team_a_id && winnerTeamId !== game.team_b_id) {
+      throw new Error("O time escolhido precisa ser um dos times deste jogo.");
+    }
+
+    const { error } = await supabase
+      .from("games")
+      .update({ tiebreak_winner_team_id: winnerTeamId })
+      .eq("id", id)
+      .eq("championship_id", championshipId);
+    if (error) throw new Error(error.message);
+
+    revalidateChampionship(championshipId);
+  });
+}
+
 export async function getChampionshipSumulaLink(championshipId: string): Promise<ActionResult<string>> {
   return runAction(async () => {
     const supabase = await createClient();

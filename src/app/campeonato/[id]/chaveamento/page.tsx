@@ -14,7 +14,7 @@ export default async function ChaveamentoPage({
     supabase
       .from("games")
       .select(
-        "id, round, team_a_id, team_b_id, date, score_a, score_b, penalty_score_a, penalty_score_b, played"
+        "id, round, team_a_id, team_b_id, date, score_a, score_b, penalty_score_a, penalty_score_b, tiebreak_winner_team_id, played"
       )
       .eq("championship_id", id),
     supabase.from("teams").select("id, name").eq("championship_id", id),

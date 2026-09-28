@@ -684,6 +684,7 @@ export type Database = {
           score_b: number | null
           team_a_id: string
           team_b_id: string
+          tiebreak_winner_team_id: string | null
           venue_id: string | null
           walkover_team_id: string | null
         }
@@ -705,6 +706,7 @@ export type Database = {
           score_b?: number | null
           team_a_id: string
           team_b_id: string
+          tiebreak_winner_team_id?: string | null
           venue_id?: string | null
           walkover_team_id?: string | null
         }
@@ -726,6 +728,7 @@ export type Database = {
           score_b?: number | null
           team_a_id?: string
           team_b_id?: string
+          tiebreak_winner_team_id?: string | null
           venue_id?: string | null
           walkover_team_id?: string | null
         }
@@ -770,6 +773,13 @@ export type Database = {
             columns: ["venue_id"]
             isOneToOne: false
             referencedRelation: "venues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "games_tiebreak_winner_team_id_fkey"
+            columns: ["tiebreak_winner_team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
             referencedColumns: ["id"]
           },
           {
@@ -1834,6 +1844,7 @@ export type Database = {
           team_b_crest_url: string | null
           team_b_id: string
           team_b_name: string
+          tiebreak_winner_team_id: string | null
           walkover_team_id: string | null
         }[]
       }
@@ -1861,6 +1872,10 @@ export type Database = {
       }
       sumula_set_played: {
         Args: { p_game_id: string; p_played: boolean; p_token: string }
+        Returns: undefined
+      }
+      sumula_set_tiebreak_winner: {
+        Args: { p_game_id: string; p_token: string; p_winner_team_id: string | null }
         Returns: undefined
       }
       sumula_set_walkover: {

@@ -173,6 +173,23 @@ export async function sumulaSetWalkover(
   });
 }
 
+export async function sumulaSetTiebreakWinner(
+  token: string,
+  gameId: string,
+  winnerTeamId: string | null
+): Promise<ActionResult> {
+  return runAction(async () => {
+    const supabase = await createClient();
+    const { error } = await supabase.rpc("sumula_set_tiebreak_winner", {
+      p_token: token,
+      p_game_id: gameId,
+      p_winner_team_id: winnerTeamId,
+    });
+    if (error) throw new Error(error.message);
+    revalidatePath(`/sumula/${token}/${gameId}`);
+  });
+}
+
 export async function sumulaSetPenaltyScore(
   token: string,
   gameId: string,

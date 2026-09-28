@@ -9,13 +9,20 @@ import { useToast } from "@/components/toast-provider";
 import { SumulaPdfButton } from "@/components/sumula-pdf-button";
 import { PreSumulaPanel, type CaptainSignature } from "@/components/pre-sumula-panel";
 import { PenaltyShootoutPanel } from "@/components/penalty-shootout-panel";
+import { TiebreakWinnerPanel } from "@/components/tiebreak-winner-panel";
+import { isKnockoutRound } from "@/lib/bracket";
 import {
   createCardEvent,
   createGoalEvent,
   deleteCardEvent,
   deleteGoalEvent,
 } from "./events-actions";
-import { setGamePenaltyScore, setGamePlayed, setGameWalkover } from "./actions";
+import {
+  setGamePenaltyScore,
+  setGamePlayed,
+  setGameTiebreakWinner,
+  setGameWalkover,
+} from "./actions";
 import { setShirtNumber, signCaptain, toggleLineupPlayer } from "./lineup-actions";
 
 type Player = { id: string; name: string; team_id: string | null; number: number | null };
@@ -189,6 +196,7 @@ export function SumulaPanel({
   penaltyScoreA,
   penaltyScoreB,
   walkoverTeamId,
+  tiebreakWinnerTeamId,
   played,
   players,
   goalEvents,
@@ -218,6 +226,7 @@ export function SumulaPanel({
   penaltyScoreA: number | null;
   penaltyScoreB: number | null;
   walkoverTeamId: string | null;
+  tiebreakWinnerTeamId: string | null;
   played: boolean;
   players: Player[];
   goalEvents: GoalEvent[];
@@ -317,6 +326,22 @@ export function SumulaPanel({
           onSave={(a, b) => setGamePenaltyScore(gameId, championshipId, a, b)}
         />
       )}
+
+      {played &&
+        scoreA !== null &&
+        scoreB !== null &&
+        scoreA === scoreB &&
+        round &&
+        isKnockoutRound(round) && (
+          <TiebreakWinnerPanel
+            teamAId={teamAId}
+            teamAName={teamAName}
+            teamBId={teamBId}
+            teamBName={teamBName}
+            winnerTeamId={tiebreakWinnerTeamId}
+            onSave={(winnerTeamId) => setGameTiebreakWinner(gameId, championshipId, winnerTeamId)}
+          />
+        )}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface-2/40 p-3">
         <div>
