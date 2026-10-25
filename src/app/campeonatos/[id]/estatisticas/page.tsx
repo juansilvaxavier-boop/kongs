@@ -1,8 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { Badge, Card, EmptyState, PageHeader } from "@/components/ui";
 import { TeamCell } from "@/components/team-cell";
+import { DisciplineTable } from "@/components/discipline-table";
+import { Tabs } from "@/components/tabs";
 import { computeDiscipline, computeTopScorers } from "@/lib/stats";
-import { computeSuspensions } from "@/lib/discipline";
+import { computeSuspensions, type SuspensionStatus } from "@/lib/discipline";
+import { isKnockoutRound } from "@/lib/bracket";
 import { ExportTableButtons } from "@/components/export-table-buttons";
 
 export default async function EstatisticasPage({
@@ -23,7 +26,7 @@ export default async function EstatisticasPage({
   ] = await Promise.all([
     supabase
       .from("championships")
-      .select("yellow_cards_for_suspension")
+      .select("yellow_cards_for_suspension, has_knockout_stage")
       .eq("id", id)
       .maybeSingle(),
     supabase.from("players").select("id, name, team_id").eq("championship_id", id),
@@ -38,6 +41,20 @@ export default async function EstatisticasPage({
 
   const scorers = computeTopScorers(players ?? [], goals ?? [], teams ?? []);
   const discipline = computeDiscipline(players ?? [], cards ?? [], teams ?? []);
+  const groupGameIds = new Set((games ?? []).filter((g) => !isKnockoutRound(g.round)).map((g) => g.id));
+  const knockoutGameIds = new Set((games ?? []).filter((g) => isKnockoutRound(g.round)).map((g) => g.id));
+  const disciplineGroupStage = computeDiscipline(players ?? [], cards ?? [], teams ?? [], groupGameIds);
+  const disciplineKnockout = computeDiscipline(players ?? [], cards ?? [], teams ?? [], knockoutGameIds);
+  const renderSituacao = (status: SuspensionStatus | undefined) =>
+    status?.suspended ? (
+      <Badge tone="warning">
+        {status.reason === "red" ? "Suspenso (vermelho)" : "Suspenso (amarelos)"}
+      </Badge>
+    ) : status?.pendingSuspension ? (
+      <Badge tone="default">Pendurado</Badge>
+    ) : (
+      <span className="text-muted">—</span>
+    );
   const suspensions = computeSuspensions(
     players ?? [],
     cards ?? [],
@@ -125,50 +142,44 @@ export default async function EstatisticasPage({
           com 1 cartão vermelho. A situação é apenas informativa e considera o
           último jogo disputado pelo time.
         </p>
-        {discipline.length === 0 ? (
-          <EmptyState>Nenhum cartão lançado ainda.</EmptyState>
+        {championship?.has_knockout_stage ? (
+          <Tabs
+            tabs={[
+              {
+                id: "geral",
+                label: "Geral",
+                content: (
+                  <DisciplineTable
+                    rows={discipline}
+                    suspensions={suspensions}
+                    renderSituacao={renderSituacao}
+                  />
+                ),
+              },
+              {
+                id: "grupos",
+                label: "Fase de Grupos",
+                content: (
+                  <DisciplineTable
+                    rows={disciplineGroupStage}
+                    emptyMessage="Nenhum cartão lançado na fase de grupos ainda."
+                  />
+                ),
+              },
+              {
+                id: "mata-mata",
+                label: "Mata-mata",
+                content: (
+                  <DisciplineTable
+                    rows={disciplineKnockout}
+                    emptyMessage="Nenhum cartão lançado no mata-mata ainda."
+                  />
+                ),
+              },
+            ]}
+          />
         ) : (
-          <Card className="overflow-x-auto">
-            <table className="w-full min-w-[32rem] text-sm">
-              <thead>
-                <tr className="border-b border-border bg-surface-2/60 text-left text-xs uppercase tracking-wide text-muted">
-                  <th className="px-4 py-3">Jogador</th>
-                  <th className="px-4 py-3">Time</th>
-                  <th className="px-4 py-3 text-center">Amarelos</th>
-                  <th className="px-4 py-3 text-center">Vermelhos</th>
-                  <th className="px-4 py-3">Situação</th>
-                </tr>
-              </thead>
-              <tbody>
-                {discipline.map((row) => {
-                  const status = suspensions.get(row.playerId);
-                  return (
-                    <tr key={row.playerId} className="border-b border-border last:border-0">
-                      <td className="px-4 py-3 font-medium text-foreground">{row.playerName}</td>
-                      <td className="px-4 py-3 text-muted">
-                      <TeamCell name={row.teamName} crestUrl={row.teamCrestUrl} />
-                    </td>
-                      <td className="px-4 py-3 text-center text-foreground">{row.yellow}</td>
-                      <td className="px-4 py-3 text-center text-danger">{row.red}</td>
-                      <td className="px-4 py-3">
-                        {status?.suspended ? (
-                          <Badge tone="warning">
-                            {status.reason === "red"
-                              ? "Suspenso (vermelho)"
-                              : "Suspenso (amarelos)"}
-                          </Badge>
-                        ) : status?.pendingSuspension ? (
-                          <Badge tone="default">Pendurado</Badge>
-                        ) : (
-                          <span className="text-muted">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </Card>
+          <DisciplineTable rows={discipline} suspensions={suspensions} renderSituacao={renderSituacao} />
         )}
       </div>
     </div>

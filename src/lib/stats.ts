@@ -1,7 +1,7 @@
 type Player = { id: string; name: string; team_id: string | null };
 type Team = { id: string; name: string; crest_url?: string | null };
 type GoalEvent = { player_id: string };
-type CardEvent = { player_id: string; card_type: string };
+type CardEvent = { player_id: string; card_type: string; game_id?: string };
 
 export type ScorerRow = {
   playerId: string;
@@ -54,13 +54,20 @@ export function computeTopScorers(
     .sort((a, b) => b.goals - a.goals || a.playerName.localeCompare(b.playerName, "pt-BR"));
 }
 
+/**
+ * Conta cartões por jogador. Quando `gameIds` é informado, só considera
+ * cartões de jogos daquele conjunto (ex.: só fase de grupos, ou só
+ * mata-mata) — útil pra ver a disciplina separada por fase.
+ */
 export function computeDiscipline(
   players: Player[],
   cards: CardEvent[],
-  teams: Team[]
+  teams: Team[],
+  gameIds?: Set<string>
 ): DisciplineRow[] {
   const counts = new Map<string, { yellow: number; red: number }>();
   for (const card of cards) {
+    if (gameIds && (!card.game_id || !gameIds.has(card.game_id))) continue;
     const entry = counts.get(card.player_id) ?? { yellow: 0, red: 0 };
     if (card.card_type === "yellow") entry.yellow += 1;
     else if (card.card_type === "red") entry.red += 1;

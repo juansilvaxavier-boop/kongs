@@ -79,4 +79,27 @@ describe("computeDiscipline", () => {
       red: 0,
     });
   });
+
+  it("scopes counts to the given game ids, e.g. só fase de grupos ou só mata-mata", () => {
+    const cards = [
+      { player_id: "p1", card_type: "yellow", game_id: "g1" },
+      { player_id: "p1", card_type: "yellow", game_id: "g2" },
+      { player_id: "p2", card_type: "red", game_id: "g2" },
+    ];
+
+    const groupRows = computeDiscipline(players, cards, teams, new Set(["g1"]));
+    expect(groupRows).toEqual([
+      {
+        playerId: "p1",
+        playerName: "Diego Farias",
+        teamName: "Leões da Serra",
+        teamCrestUrl: null,
+        yellow: 1,
+        red: 0,
+      },
+    ]);
+
+    const knockoutRows = computeDiscipline(players, cards, teams, new Set(["g2"]));
+    expect(knockoutRows.map((r) => r.playerId)).toEqual(["p2", "p1"]);
+  });
 });
