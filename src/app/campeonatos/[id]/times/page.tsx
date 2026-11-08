@@ -4,6 +4,7 @@ import { ActionForm, SubmitButton } from "@/components/action-form";
 import { generateGroupLabels } from "@/lib/groups";
 import { createTeam } from "./actions";
 import { TeamTable } from "./team-table";
+import { AllPlayersPdfButton } from "./all-players-pdf-button";
 
 export default async function TimesPage({
   params,
@@ -66,11 +67,18 @@ export default async function TimesPage({
         eyebrow="Elenco de clubes"
         title="Times"
         action={
-          teamCount ? (
-            <span className="text-sm text-muted">
-              {(teams ?? []).length} de {teamCount} times cadastrados
-            </span>
-          ) : undefined
+          <div className="flex flex-wrap items-center gap-3">
+            {teamCount ? (
+              <span className="text-sm text-muted">
+                {(teams ?? []).length} de {teamCount} times cadastrados
+              </span>
+            ) : null}
+            <AllPlayersPdfButton
+              championshipName={championship?.name ?? ""}
+              teams={teams ?? []}
+              players={players ?? []}
+            />
+          </div>
         }
       />
 
